@@ -11,17 +11,22 @@ One-time setup on the droplet, then a repeatable `deploy.sh` for updates.
    sudo chown -R movie-ranking:movie-ranking /opt/movie-ranking
    ```
 
-2. **Install Node 22** (matches the CI workflow) if not already present:
+2. **Install Node 22** (matches the CI workflow) and build tools (`better-sqlite3`
+   compiles a native addon on install) if not already present:
    ```
    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-   sudo apt-get install -y nodejs
+   sudo apt-get install -y nodejs build-essential python3
    ```
 
-3. **Copy this repo's `server/` and `data/` directories to the droplet** the
-   first time (subsequent updates use `deploy.sh` instead):
+3. **Copy this repo's `server/`, `data/`, and `src/lib/` directories to the
+   droplet** the first time (subsequent updates use `deploy.sh` instead —
+   `server/rankingService.js` imports `elo.js`/`categoryGenerator.js` from
+   `../src/lib`, so that directory must exist alongside `server/` on the
+   droplet too):
    ```
    rsync -az --exclude node_modules server/ user@droplet:/opt/movie-ranking/server/
    rsync -az data/ user@droplet:/opt/movie-ranking/data/
+   rsync -az src/lib/ user@droplet:/opt/movie-ranking/src/lib/
    ```
 
 4. **Create `/opt/movie-ranking/server/.env`** on the droplet (never commit this):

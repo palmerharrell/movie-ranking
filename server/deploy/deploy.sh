@@ -8,7 +8,9 @@ REMOTE_DIR="${REMOTE_DIR:-/opt/movie-ranking/server}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$(dirname "$SCRIPT_DIR")"
-DATA_DIR="$(dirname "$SERVER_DIR")/data"
+REPO_DIR="$(dirname "$SERVER_DIR")"
+DATA_DIR="$REPO_DIR/data"
+LIB_DIR="$REPO_DIR/src/lib"
 
 echo "Syncing server code to ${DROPLET_HOST}:${REMOTE_DIR} ..."
 rsync -az --delete \
@@ -19,6 +21,9 @@ rsync -az --delete \
 
 echo "Syncing enriched movie data ..."
 rsync -az "$DATA_DIR/" "${DROPLET_HOST}:$(dirname "$REMOTE_DIR")/data/"
+
+echo "Syncing shared elo/categoryGenerator lib (server imports these from ../src/lib) ..."
+rsync -az "$LIB_DIR/" "${DROPLET_HOST}:$(dirname "$REMOTE_DIR")/src/lib/"
 
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"
