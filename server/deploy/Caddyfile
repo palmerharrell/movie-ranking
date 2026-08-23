@@ -1,0 +1,7 @@
+# Reverse proxy for the Movie Ranking API.
+# Replace api.example.com with your droplet's actual subdomain, then:
+#   sudo cp Caddyfile /etc/caddy/Caddyfile   (or paste this block into the existing one)
+#   sudo systemctl reload caddy
+api.example.com {
+	reverse_proxy 127.0.0.1:3001
+}

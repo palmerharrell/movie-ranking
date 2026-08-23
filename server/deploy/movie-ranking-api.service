@@ -1,0 +1,17 @@
+[Unit]
+Description=Movie Ranking API
+After=network.target
+
+[Service]
+Type=simple
+User=movie-ranking
+WorkingDirectory=/opt/movie-ranking/server
+EnvironmentFile=/opt/movie-ranking/server/.env
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
