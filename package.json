@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "enrich": "node scripts/enrich.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
