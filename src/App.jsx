@@ -1,93 +1,83 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ListPicker } from './components/ListPicker.jsx'
-import { rankFivePack } from './lib/elo.js'
-import { generateCategory } from './lib/categoryGenerator.js'
-import { sampleMovies } from './lib/sampleMovies.js'
-import { sampleCuratedLists } from './lib/sampleCuratedLists.js'
-
-// Per-list movie sources, standing in for the real /data/movies.json +
-// enriched curated-list JSON until the backend (issue #10/#11) is wired up.
-// Each list_id gets independent Elo state, per CLAUDE.md.
-const LIST_SOURCES = {
-  personal: sampleMovies,
-  ...sampleCuratedLists,
-}
-
-function withRankingState(movies) {
-  return movies.map((m) => ({ ...m, eloRating: 1000, timesRanked: 0 }))
-}
-
-function pickCategory(movies) {
-  const rankedIds = new Set(movies.filter((m) => m.timesRanked > 0).map((m) => m.id))
-  return generateCategory(movies, {
-    isRanked: (m) => rankedIds.has(m.id),
-    totalRankedCount: rankedIds.size,
-  })
-}
-
-function initialStateFor(listId) {
-  const movies = withRankingState(LIST_SOURCES[listId])
-  return { movies, category: pickCategory(movies) }
-}
+import * as api from './lib/api.js'
 
 function App() {
-  const [activeListId, setActiveListId] = useState('personal')
-  const [listState, setListState] = useState(() => ({
-    personal: initialStateFor('personal'),
-  }))
+  const [lists, setLists] = useState([])
+  const [activeListId, setActiveListId] = useState(null)
+  const [movies, setMovies] = useState(null)
+  const [category, setCategory] = useState(null)
+  const [error, setError] = useState(null)
+  const [ranking, setRanking] = useState(false)
 
-  const { movies, category } = listState[activeListId] ?? {}
-  const movieMap = useMemo(() => new Map((movies || []).map((m) => [m.id, m])), [movies])
+  useEffect(() => {
+    api
+      .getLists()
+      .then((data) => {
+        setLists(data)
+        if (data.length > 0) setActiveListId(data[0].id)
+      })
+      .catch((err) => setError(err.message))
+  }, [])
 
-  function handleSelectList(listId) {
-    setActiveListId(listId)
-    setListState((prev) =>
-      prev[listId] ? prev : { ...prev, [listId]: initialStateFor(listId) },
-    )
-  }
+  useEffect(() => {
+    if (!activeListId) return
+    setError(null)
+    setMovies(null)
+    setCategory(null)
+    api.getListMovies(activeListId).then(setMovies).catch((err) => setError(err.message))
+    api.getCategory(activeListId).then(setCategory).catch((err) => setError(err.message))
+  }, [activeListId])
 
   function handleReorder(reorderedMovies) {
-    setListState((prev) => ({
-      ...prev,
-      [activeListId]: { ...prev[activeListId], category: { ...prev[activeListId].category, movies: reorderedMovies } },
-    }))
+    setCategory((prev) => ({ ...prev, movies: reorderedMovies }))
   }
 
-  function handleRank() {
-    const currentPack = category.movies.map((m) => movieMap.get(m.id))
-    const updatedRatings = rankFivePack(currentPack)
-
-    const updatedMovies = movies.map((m) =>
-      m.id in updatedRatings
-        ? { ...m, eloRating: updatedRatings[m.id], timesRanked: m.timesRanked + 1 }
-        : m,
-    )
-    const newCategory = pickCategory(updatedMovies) ?? category
-
-    setListState((prev) => ({
-      ...prev,
-      [activeListId]: { movies: updatedMovies, category: newCategory },
-    }))
+  async function handleRank() {
+    setRanking(true)
+    try {
+      const movieIds = category.movies.map((m) => m.id)
+      const updatedMovies = await api.rankFivePack(activeListId, movieIds)
+      const nextCategory = await api.getCategory(activeListId)
+      setMovies(updatedMovies)
+      setCategory(nextCategory)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRanking(false)
+    }
   }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col">
       <h1 className="pt-6 text-center text-2xl font-semibold">Movie Ranking</h1>
-      <ListPicker activeListId={activeListId} onSelect={handleSelectList} />
+      {lists.length > 0 && (
+        <ListPicker lists={lists} activeListId={activeListId} onSelect={setActiveListId} />
+      )}
       <div className="flex flex-1 gap-8 px-6 pb-6">
         <div className="w-1/2 border-r border-gray-200 pr-6">
-          <LeftPanel movies={movies} />
+          {movies ? (
+            <LeftPanel movies={movies} />
+          ) : error ? (
+            <p className="text-red-600">{error}</p>
+          ) : (
+            <p className="text-gray-500">Loading…</p>
+          )}
         </div>
         <div className="flex w-1/2 flex-col items-center gap-6">
           {category ? (
             <RightPanel category={category} onReorder={handleReorder} />
-          ) : (
+          ) : error ? (
+            <p className="text-red-600">{error}</p>
+          ) : movies ? (
             <p className="text-gray-500">Not enough movies to build a category yet.</p>
+          ) : (
+            <p className="text-gray-500">Loading…</p>
           )}
-          <RankButton onClick={handleRank} disabled={!category} />
+          <RankButton onClick={handleRank} disabled={!category || ranking} />
         </div>
       </div>
     </div>

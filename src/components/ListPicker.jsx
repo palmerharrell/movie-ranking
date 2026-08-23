@@ -1,9 +1,7 @@
-import manifest from '../../data/curated-lists/manifest.json'
-
-export function ListPicker({ activeListId, onSelect }) {
+export function ListPicker({ lists, activeListId, onSelect }) {
   return (
     <div className="flex flex-wrap justify-center gap-2 py-4">
-      {manifest.map((list) => (
+      {lists.map((list) => (
         <button
           key={list.id}
           type="button"
