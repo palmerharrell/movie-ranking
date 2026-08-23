@@ -1,0 +1,7 @@
+[
+  { "id": "1", "title": "M1", "year": 1985, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"] },
+  { "id": "2", "title": "M2", "year": 1986, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"] },
+  { "id": "3", "title": "M3", "year": 1987, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"] },
+  { "id": "4", "title": "M4", "year": 1988, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"] },
+  { "id": "5", "title": "M5", "year": 1989, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor Z"] }
+]
