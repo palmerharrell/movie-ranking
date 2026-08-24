@@ -19,20 +19,16 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-export function getLists() {
-  return request('/api/lists')
+export function getMovies() {
+  return request('/api/movies')
 }
 
-export function getListMovies(listId) {
-  return request(`/api/lists/${listId}/movies`)
+export function getCategory() {
+  return request('/api/category')
 }
 
-export function getCategory(listId) {
-  return request(`/api/lists/${listId}/category`)
-}
-
-export function rankFivePack(listId, movieIds) {
-  return request(`/api/lists/${listId}/rank`, {
+export function rankFivePack(movieIds) {
+  return request('/api/rank', {
     method: 'POST',
     body: JSON.stringify({ movieIds }),
   })

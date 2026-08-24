@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { RankButton } from './components/RankButton.jsx'
-import { ListPicker } from './components/ListPicker.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
 import * as api from './lib/api.js'
 
@@ -15,8 +14,6 @@ function initialTheme() {
 
 function App() {
   const [theme, setTheme] = useState(initialTheme)
-  const [lists, setLists] = useState([])
-  const [activeListId, setActiveListId] = useState(null)
   const [movies, setMovies] = useState(null)
   const [category, setCategory] = useState(null)
   const [error, setError] = useState(null)
@@ -27,23 +24,9 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    api
-      .getLists()
-      .then((data) => {
-        setLists(data)
-        if (data.length > 0) setActiveListId(data[0].id)
-      })
-      .catch((err) => setError(err.message))
+    api.getMovies().then(setMovies).catch((err) => setError(err.message))
+    api.getCategory().then(setCategory).catch((err) => setError(err.message))
   }, [])
-
-  useEffect(() => {
-    if (!activeListId) return
-    setError(null)
-    setMovies(null)
-    setCategory(null)
-    api.getListMovies(activeListId).then(setMovies).catch((err) => setError(err.message))
-    api.getCategory(activeListId).then(setCategory).catch((err) => setError(err.message))
-  }, [activeListId])
 
   function handleReorder(reorderedMovies) {
     setCategory((prev) => ({ ...prev, movies: reorderedMovies }))
@@ -53,8 +36,8 @@ function App() {
     setRanking(true)
     try {
       const movieIds = category.movies.map((m) => m.id)
-      const updatedMovies = await api.rankFivePack(activeListId, movieIds)
-      const nextCategory = await api.getCategory(activeListId)
+      const updatedMovies = await api.rankFivePack(movieIds)
+      const nextCategory = await api.getCategory()
       setMovies(updatedMovies)
       setCategory(nextCategory)
     } catch (err) {
@@ -87,9 +70,6 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center">
-            {lists.length > 0 && (
-              <ListPicker lists={lists} activeListId={activeListId} onSelect={setActiveListId} />
-            )}
             <ThemeToggle theme={theme} onChange={setTheme} />
           </div>
         </header>
