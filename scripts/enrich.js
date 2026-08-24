@@ -19,8 +19,8 @@ function decadeOf(year) {
 async function enrichMovie(apiKey, movie) {
   const match = await searchMovie(apiKey, movie.title, movie.year)
   if (!match) {
-    console.warn(`No TMDb match for "${movie.title}" (${movie.year})`)
-    return { ...movie, decade: decadeOf(movie.year) }
+    console.warn(`No TMDb match for "${movie.title}" (${movie.year}) — skipping (likely a TV series or other non-movie entry)`)
+    return null
   }
   const details = await getMovieDetails(apiKey, match.id)
   const fields = toEnrichedFields(details)
@@ -58,7 +58,7 @@ async function main() {
   const enriched = []
   for (const [i, movie] of movies.entries()) {
     const result = await enrichMovie(apiKey, movie)
-    enriched.push(result)
+    if (result) enriched.push(result)
     if ((i + 1) % 20 === 0) {
       console.log(`  ${i + 1}/${movies.length}`)
     }
