@@ -15,7 +15,8 @@ using an Elo-style rating system.
 - **Build:** React + Vite, Tailwind for styling. Movie metadata lives in local
   JSON files (no database for metadata). Ranking state (Elo ratings) is persisted
   via a small backend API — see **Online deployment** below.
-- **Source control:** GitHub, with GitHub Issues for work items.
+- **Source control:** GitHub, with GitHub Issues for work items. Branching
+  strategy and PR workflow are documented below in **Branching & PR workflow**.
 - **Multiple ranking pools:** in addition to the user's personal Letterboxd list,
   the app supports ranking curated static lists (e.g. "Top 100 Movies of the 80s",
   "Top 100 Comedies", "Top 80s Action Movies"). See **Curated lists** below.
@@ -167,6 +168,26 @@ deployment**), scoped per list.
    point the frontend at it for ranking state instead of local JSON writes.
 8. Deploy: frontend to GitHub Pages, backend to the DigitalOcean droplet.
 
+## Branching & PR workflow
+- **`main`** is the deployed branch — pushing to `main` triggers
+  `.github/workflows/deploy.yml` (GitHub Pages build/deploy). Nothing lands on
+  `main` except by merging a PR from `dev`.
+- **`dev`** is the integration branch. Feature/fix work branches off `dev`, and
+  PRs merge back into `dev`. Once `dev` is in a good state, open a PR from
+  `dev` → `main` to release/deploy.
+- **Per-task branches:** for any non-trivial task (a GitHub issue, a feature, a
+  fix), create a branch off `dev` — e.g. `issue-17-theme-redesign` or
+  `fix/rank-button-disabled-state` — rather than committing directly to `dev`.
+  Use `git worktree add` for the branch so it gets its own working directory
+  (keeps `node_modules`/dev servers isolated per task and avoids clobbering
+  in-progress work in the main checkout).
+- **Pull requests:** open a PR (`gh pr create`) for branch → `dev` and for
+  `dev` → `main`, rather than pushing straight to either. Fill in a summary and
+  test plan per the usual PR conventions.
+- **After merge:** delete the merged branch (`git push origin --delete
+  <branch>` / `git branch -d <branch>`) and remove its worktree
+  (`git worktree remove <path>`) — see **Dev/test cleanup** below.
+
 ## Dev/test cleanup
 When wrapping up a task that involved running the app locally (e.g. `npm run dev`
 for visual verification), clean up before finishing:
@@ -176,4 +197,5 @@ for visual verification), clean up before finishing:
   something to stop per-task.
 - Close any browser tabs opened for testing.
 - Check `git branch -a` / `git worktree list` for stray branches or worktrees
-  created during the task and remove ones no longer needed.
+  created during the task and remove ones no longer needed (especially after a
+  PR merges — see **Branching & PR workflow** above).
