@@ -166,3 +166,14 @@ deployment**), scoped per list.
 7. Build the backend (`/server`) with the endpoints in **Online deployment**, and
    point the frontend at it for ranking state instead of local JSON writes.
 8. Deploy: frontend to GitHub Pages, backend to the DigitalOcean droplet.
+
+## Dev/test cleanup
+When wrapping up a task that involved running the app locally (e.g. `npm run dev`
+for visual verification), clean up before finishing:
+- Stop any `vite`/frontend dev server processes you started.
+- Leave the `server/` backend (`node index.js`, port 3001) running if it was
+  already running before you started — it's a long-lived local process, not
+  something to stop per-task.
+- Close any browser tabs opened for testing.
+- Check `git branch -a` / `git worktree list` for stray branches or worktrees
+  created during the task and remove ones no longer needed.
