@@ -1,25 +1,35 @@
 # Movie Ranking — Project Spec
 
 ## Overview
-A React app that pulls a user's rated/liked/reviewed movies from Letterboxd — or
-one of several curated "Top 100" style lists — then uses a repeated 5-at-a-time
-drag-and-drop ranking game to build a full ranking of every movie in that pool,
-using an Elo-style rating system.
+A React app that builds one continuously-growing pool of movies — starting from
+the owner's personal Letterboxd ratings, then expanded over time with other
+published lists (AFI Top 100, best-of-decade lists, genre lists, etc.) — and
+uses a repeated 5-at-a-time drag-and-drop ranking game to build a full ranking
+of every movie in that pool, using an Elo-style rating system.
+
+> **Note:** this spec originally described a personal Letterboxd pool *plus*
+> several separate curated lists, switchable via a list picker. That model was
+> replaced (see #20/#21/#13) with the single-pool model described here — the
+> personal Letterboxd import is just the first source merged into the one list,
+> not a separate ranking pool.
 
 ## Confirmed decisions
-- **Data source:** Letterboxd's own CSV export (Settings → Import & Export). No
-  scraping — avoids ToS issues.
-- **Metadata enrichment:** TMDb API, since Letterboxd's export has no director,
-  genre, cast, or poster info. Signup steps below.
+- **Data source:** Letterboxd's own CSV export (Settings → Import & Export) for
+  the personal-ratings source. No scraping — avoids ToS issues.
+- **Metadata enrichment:** TMDb API, since none of the source data (Letterboxd
+  export or hand-maintained title/year lists) has director, genre, cast, or
+  poster info. Signup steps below.
 - **Left panel initial sort:** alphabetical, until the user has ranked movies.
 - **Build:** React + Vite, Tailwind for styling. Movie metadata lives in local
   JSON files (no database for metadata). Ranking state (Elo ratings) is persisted
   via a small backend API — see **Online deployment** below.
 - **Source control:** GitHub, with GitHub Issues for work items. Branching
   strategy and PR workflow are documented below in **Branching & PR workflow**.
-- **Multiple ranking pools:** in addition to the user's personal Letterboxd list,
-  the app supports ranking curated static lists (e.g. "Top 100 Movies of the 80s",
-  "Top 100 Comedies", "Top 80s Action Movies"). See **Curated lists** below.
+- **One evolving pool, many sources:** there is a single ranking pool, not
+  multiple switchable lists. It starts from the owner's personal Letterboxd
+  ratings and grows over time as more published lists (AFI Top 100, other
+  best-of lists, genre/decade lists, etc.) are merged in. See **Building the
+  list** below.
 
 ## TMDb signup steps
 1. Create a free account at themoviedb.org.
@@ -27,98 +37,135 @@ using an Elo-style rating system.
 3. Copy the "API Read Access Token" (v4 auth) or the API key (v3) — either works.
 4. Store it in a local `.env` file as `TMDB_API_KEY=...` — **never commit this file**.
 
-## Data pipeline
-1. User exports their Letterboxd data as a zip (produces `ratings.csv`, `diary.csv`,
-   `reviews.csv`, `likes/films.csv`, `watched.csv`).
-2. User drops the extracted CSVs into `/data/letterboxd-export/`.
-3. Run `scripts/enrich.js` (one-time Node script):
-   - Parses the CSVs, merges into one list of unique movies with: title, year,
-     letterboxd rating (if rated), liked (bool), reviewed (bool), review text.
-   - For each movie, calls TMDb `/search/movie?query={title}&year={year}` to get
-     `tmdb_id`, then `/movie/{id}?append_to_response=credits` for director, genres,
-     top-billed cast, and poster path.
-   - Writes the merged, enriched result to `/data/movies.json`.
-   - Re-run any time the user re-exports fresh Letterboxd data.
+## Building the list
+There is one output file, `/data/movies.json`, built by merging multiple
+sources. Movies are deduped by TMDb ID — a title appearing in more than one
+source (e.g. on both the Letterboxd export and AFI Top 100) is a single entry
+with a `sources[]` field listing every source it came from.
+
+- **Personal Letterboxd source** (`scripts/enrich.js`):
+  1. Export Letterboxd data as a zip (Settings → Import & Export) — produces
+     `ratings.csv`, `diary.csv`, `reviews.csv`, `likes/films.csv`, `watched.csv`.
+  2. Drop the extracted CSVs into `/data/letterboxd-export/`.
+  3. Run `scripts/enrich.js`: parses the CSVs, merges into unique movies with
+     `letterboxdRating` (if rated), `liked` (bool), `reviewed` (bool); calls
+     TMDb `/search/movie?query={title}&year={year}` for `tmdb_id`, then
+     `/movie/{id}?append_to_response=credits` for director, genres, top-billed
+     cast, and poster path; upserts each into `/data/movies.json` tagged with
+     `sources: ["personal"]`.
+  4. Re-run any time the user re-exports fresh Letterboxd data.
+- **Published-list sources** (`scripts/enrich-sources.js`):
+  - Each source is a hand-maintained `title, year` JSON file under
+    `/data/sources/` (e.g. `afi-top-100.source.json`), added as needed — no
+    user-facing list management, just files in the repo.
+  - `scripts/enrich-sources.js` runs every `/data/sources/*.source.json`
+    through the same TMDb enrichment as `scripts/enrich.js` and upserts each
+    into `/data/movies.json`, tagging with that source's id (e.g.
+    `sources: ["afi-top-100"]`). A movie already present from another source
+    gets the new source id appended to its `sources[]` rather than being
+    duplicated.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-letterboxdRating, liked, reviewed`. Static metadata only — `eloRating` and
-`timesRanked` live in the backend's ranking-state store instead (see **Online
-deployment**), scoped per list.
-
-## Curated lists
-- Alongside the user's personal Letterboxd pool, the app offers curated static
-  lists to rank instead — e.g. "Top 100 Movies of the 60s/70s/80s/90s", "Top 100
-  Comedies/Thrillers/Sci-Fi/Fantasy", "Top 80s Action Movies", "Top 90s Comedies".
-- Each curated list is a hand-maintained `title, year` JSON file under
-  `/data/curated-lists/` (e.g. `top-100-80s.json`), added to or edited as needed
-  during development — no user-facing list management, just files in the repo.
-- `/data/curated-lists/manifest.json` lists `{id, label}` for every available
-  list; this is what populates the "choose what to rank" picker in the UI and
-  what the backend's `GET /api/lists` serves.
-- `scripts/enrich-curated.js` runs each curated list's `title, year` pairs through
-  the same TMDb enrichment logic as `scripts/enrich.js`, producing the enriched
-  JSON for that list.
-- The personal Letterboxd pool is just another list in this system (e.g.
-  `list_id = "personal"`), so it shares the same picker, API, and per-list Elo
-  scoping as curated lists.
+letterboxdRating, liked, reviewed, sources[]`. Static metadata only —
+`eloRating` and `timesRanked` live in the backend's ranking-state store instead
+(see **Online deployment**).
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the 5 tiles in their current drag order
   (rank 1–5) and treats it as 10 pairwise outcomes (1 beats 2,3,4,5 / 2 beats 3,4,5 / etc).
 - Each pairwise outcome does a standard Elo update on both movies' `eloRating`.
-- **Elo ratings are scoped per list, not global.** A movie appearing in two
-  different 5-packs *within the same list* is how that list becomes transitively
-  linked — approximate (Elo doesn't guarantee strict transitivity) but converges
-  toward a consistent full ranking as more of that list gets ranked. Ranking
-  progress on "Top 80s Action Movies" must not affect that movie's rating in the
-  personal Letterboxd list or any other curated list — each list keeps its own
-  independent Elo state, keyed by `(list_id, movie_id)`.
-- Left panel re-sorts by `eloRating` descending (within the current list) after
-  every "Rank →" click. Movies never yet included in a ranked 5-pack for that
-  list stay at their default 1000, sorted alphabetically among themselves.
+- A movie appearing in two different 5-packs is how the pool becomes
+  transitively linked — approximate (Elo doesn't guarantee strict
+  transitivity) but converges toward a consistent full ranking as more of the
+  pool gets ranked.
+- Left panel re-sorts by `eloRating` descending after every "Rank →" click.
+  Movies never yet included in a ranked 5-pack stay at their default 1000,
+  sorted alphabetically among themselves.
+- See **Saved rankings** below for what happens once every movie has been
+  ranked at least once.
 
-## Category generation (right panel)
+## Category generation & queue (right panel)
 - Categories are built from single or paired attributes: director, genre, release
   year, decade, or cast member.
 - Pick either one attribute or a random pair (e.g. decade + genre, genre + actor).
-- Filter the *current list's* movies for matches; if fewer than 5 movies match,
-  discard and try another category (don't show the user a category with < 5
-  eligible movies).
-- **Overlap requirement:** once the list has enough ranked movies to draw from,
-  each new 5-pack must include 1–2 movies that have already appeared in a
-  previous pack for this list, with the rest being movies not yet ranked (or, if
-  the category doesn't have enough not-yet-ranked matches, whatever's available).
-  This overlap is what transitively links separate 5-packs into one converging
-  ranking — no explicit connectivity/island tracking, just this steady overlap
-  rule is expected to merge things in practice. Before there are enough ranked
-  movies to satisfy it (e.g. very first few packs for a list), fall back to 0
-  required overlap and just pick 5 at random from the matching set.
+- Filter the pool's movies for matches; if fewer than 5 movies match, discard
+  and try another category (don't show the user a category with < 5 eligible
+  movies).
+- **Random packs (#22):** some packs skip the attribute filter entirely and
+  sample 5 movies at random from the whole pool (label e.g. "Random Five").
+  This both adds variety and acts as the fallback when no attribute-based
+  category can find 5 matches (which becomes more likely as the pool grows
+  and gets more thoroughly ranked) — a random pick from the full pool always
+  has enough candidates as long as the pool itself does.
+- **Overlap requirement:** once the pool has enough ranked movies to draw
+  from, each new 5-pack (attribute-based or random) must include 1–2 movies
+  that have already appeared in a previous pack, with the rest being movies
+  not yet ranked (or, if the category doesn't have enough not-yet-ranked
+  matches, whatever's available). This overlap is what transitively links
+  separate 5-packs into one converging ranking — no explicit
+  connectivity/island tracking, just this steady overlap rule is expected to
+  merge things in practice. Before there are enough ranked movies to satisfy
+  it (e.g. very first few packs), fall back to 0 required overlap and just
+  pick 5 at random from the matching set.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
-  "90s Comedies", "80s movies starring Harrison Ford".
-- After "Rank →" is clicked, generate a fresh random category (from the same
-  list) to replace the 5-pack.
+  "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
+- **Upcoming queue (#21):** rather than a single "next category" generated on
+  demand, the app keeps a small queue of pre-generated upcoming packs (e.g. 3)
+  displayed alongside the active pack, replacing the old multi-list picker
+  chips (there's only one pool now, so there's nothing to switch between).
+  - **"Rank →"** submits the active pack's Elo update, promotes the first
+    queued pack to active, and generates one fresh pack to refill the queue.
+  - **Clicking a queued pack** discards the current active pack without
+    submitting it, promotes the clicked pack to active, and generates one
+    fresh pack to refill the queue.
+  - Queued packs are generated independently and may overlap each other in
+    which movies they include — that's expected, not a bug, since only one of
+    them will ever actually get submitted.
+
+## Progress tracking (#26)
+- A label (near the standings header) shows `n/nnn ranked` — `n` is the count
+  of movies with `timesRanked ≥ 1`, `nnn` is the total pool size.
+
+## Saved rankings (#27)
+- **Completion:** once every movie in the pool has `timesRanked ≥ 1`, show a
+  modal prompting the user to name and save the ranking.
+- **Save:** copies the current per-movie `eloRating`/`timesRanked` into a
+  named, timestamped snapshot, then resets live ranking state back to
+  defaults (`eloRating = 1000`, `timesRanked = 0`) so a fresh ranking run
+  starts from scratch. This lets the pool be ranked repeatedly over time (e.g.
+  "2026 Draft", "2027 Redo") without the runs interfering with each other.
+- **Load:** a "Load Ranking" entry point lists saved snapshots by name/date;
+  opening one shows its full standings list, read-only — it does not affect
+  or restore live ranking state.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
   at runtime — enrichment is a build-time/offline step (`enrich.js` /
-  `enrich-curated.js`), so the deployed site only ever serves already-enriched
+  `enrich-sources.js`), so the deployed site only ever serves already-enriched
   JSON.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting ranking state (Elo ratings/`timesRanked`)
-  across sessions and devices — everything else stays static.
-  - Storage: SQLite (`better-sqlite3`) is enough at this scale — one table
-    `movie_state(list_id, movie_id, elo_rating, times_ranked)`, seeded from each
-    list's enriched JSON on first load. No separate DB server needed.
+  and saved-ranking snapshots across sessions and devices — everything else
+  stays static.
+  - Storage: SQLite (`better-sqlite3`) is enough at this scale:
+    - `movie_state(movie_id, elo_rating, times_ranked)` — live ranking state,
+      seeded from `movies.json` on first load.
+    - `saved_rankings(id, name, created_at, data)` — completed snapshots;
+      `data` is the JSON-serialized `{movieId, eloRating, timesRanked}[]` at
+      save time.
   - Endpoints:
-    - `GET /api/lists` — available ranking pools (personal + curated), from
-      `manifest.json`
-    - `GET /api/lists/:listId/movies` — that list's movies + current
-      `eloRating`/`timesRanked`
-    - `POST /api/lists/:listId/rank` — body: ordered array of 5 movie IDs; server
-      performs the 10 pairwise Elo updates, persists, returns updated ratings
-    - `GET /api/lists/:listId/category` — server picks a random valid category
-      (≥5 matches) for that list, reusing `categoryGenerator.js` logic
+    - `GET /api/movies` — the pool's movies + current `eloRating`/`timesRanked`
+    - `POST /api/rank` — body: ordered array of 5 movie IDs; server performs
+      the 10 pairwise Elo updates, persists, returns updated ratings
+    - `GET /api/category` — server picks a random valid category (≥5
+      matches, applying the overlap rule), reusing `categoryGenerator.js`
+      logic; stateless — safe to call repeatedly to fill the upcoming queue
+    - `POST /api/rankings` — body: `{name}`; snapshots current `movie_state`
+      into `saved_rankings`, then resets `movie_state` to defaults
+    - `GET /api/rankings` — list of saved snapshots (`id`, `name`, `createdAt`)
+    - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
+      snapshot-time `eloRating`), sorted descending, for read-only display
   - Auth: single-user app, so a shared bearer token in an env var, checked on
     every request, is sufficient — no user accounts needed yet.
   - CORS: restrict to the GitHub Pages origin.
@@ -127,46 +174,37 @@ deployment**), scoped per list.
 
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
-  sorted by eloRating.
-- **Right panel:** 5 draggable movie tiles under the category label, reorderable via
-  drag-and-drop (use `@dnd-kit` — actively maintained, unlike react-beautiful-dnd).
+  sorted by eloRating. Progress label (`n/nnn ranked`) near the header.
+- **Right panel:** the active pack — 5 draggable movie tiles under the category
+  label, reorderable via drag-and-drop (`@dnd-kit`) — plus the upcoming-packs
+  queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel resort,
-  and new category generation.
+  and queue advance.
+- **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**). No more list-picker chips
+  — there's only one pool.
 
 ## Suggested project structure
 ```
-/data/letterboxd-export/          <- user drops raw CSVs here
-/data/movies.json                 <- enriched personal Letterboxd dataset
-/data/curated-lists/manifest.json <- {id, label} for each curated list
-/data/curated-lists/*.json        <- enriched curated list datasets
-/scripts/enrich.js                <- CSV parse + TMDb enrichment script (personal)
-/scripts/enrich-curated.js        <- title/year + TMDb enrichment (curated lists)
-/server/                          <- DigitalOcean backend (Express/Fastify + SQLite)
+/data/letterboxd-export/     <- user drops raw Letterboxd CSVs here
+/data/sources/*.source.json  <- hand-maintained title/year lists (AFI Top 100, etc.)
+/data/movies.json            <- the one merged, enriched pool
+/scripts/enrich.js           <- Letterboxd CSV parse + TMDb enrichment (personal source)
+/scripts/enrich-sources.js   <- title/year + TMDb enrichment (published-list sources)
+/server/                     <- DigitalOcean backend (Express/Fastify + SQLite)
 /server/index.js
 /server/db.js
 /src/components/LeftPanel.jsx
 /src/components/RightPanel.jsx
 /src/components/MovieTile.jsx
 /src/components/RankButton.jsx
-/src/components/ListPicker.jsx
+/src/components/PackQueue.jsx        <- upcoming-packs queue (#21)
+/src/components/SaveRankingModal.jsx <- name/save prompt on completion (#27)
+/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer (#27)
 /src/lib/elo.js
 /src/lib/categoryGenerator.js
-.env                               <- TMDB_API_KEY (gitignored)
+.env                          <- TMDB_API_KEY (gitignored)
 ```
-
-## First steps for Claude Code
-1. Scaffold Vite + React + Tailwind project.
-2. Set up `.env` handling and `scripts/enrich.js` for the Letterboxd CSV → TMDb
-   enrichment pipeline.
-3. Build `elo.js` and `categoryGenerator.js` as pure functions first (easy to test
-   in isolation before wiring up UI).
-4. Build LeftPanel and RightPanel components, wire up dnd-kit for drag reordering.
-5. Wire the "Rank →" button to run the Elo update, resort, and regenerate category.
-6. Add curated lists: `enrich-curated.js`, `manifest.json`, and a `ListPicker`
-   component to choose between the personal list and curated lists.
-7. Build the backend (`/server`) with the endpoints in **Online deployment**, and
-   point the frontend at it for ranking state instead of local JSON writes.
-8. Deploy: frontend to GitHub Pages, backend to the DigitalOcean droplet.
 
 ## Branching & PR workflow
 - **`main`** is the deployed branch — pushing to `main` triggers
