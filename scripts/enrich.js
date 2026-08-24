@@ -33,9 +33,6 @@ async function enrichMovie(apiKey, movie) {
     genres: fields.genres,
     cast: fields.cast,
     posterUrl: fields.posterUrl,
-    letterboxdRating: movie.letterboxdRating,
-    liked: movie.liked,
-    reviewed: movie.reviewed,
   }
 }
 
