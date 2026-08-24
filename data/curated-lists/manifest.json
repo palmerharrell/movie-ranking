@@ -1,5 +1,0 @@
-[
-  { "id": "personal", "label": "My Letterboxd Ratings", "source": "personal" },
-  { "id": "top-80s-action", "label": "Top 80s Action Movies", "source": "curated" },
-  { "id": "top-90s-comedies", "label": "Top 90s Comedies", "source": "curated" }
-]
