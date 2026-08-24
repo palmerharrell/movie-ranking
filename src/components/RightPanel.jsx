@@ -25,8 +25,11 @@ export function RightPanel({ category, onReorder }) {
   }
 
   return (
-    <div>
-      <h2 className="mb-3 text-center text-lg font-medium">{category.label}</h2>
+    <div className="pack-card">
+      <div className="mb-3">
+        <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
+        <h2 className="pack-category-label mt-1">{category.label}</h2>
+      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

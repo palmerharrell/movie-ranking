@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&amp;family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&amp;family=Archivo+Black&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #0d0b0c; }
+  a { color: #e0b25a; }
+  a:hover { color: #f5d68c; }
+  @keyframes bulbGlow { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:48px; font-family:'DM Sans', sans-serif;">
+  <div style="display:flex; align-items:baseline; gap:14px; color:#8b8184; font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:.08em; text-transform:uppercase;">
+    <span>Turn 1</span>
+    <span style="color:#4d4649;">Two theater-themed directions for the ranking screen</span>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start;">
+
+    <div id="1a" style="display:{{ classicDisplay }}; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:999px; background:#e0b25a; color:#2a1216; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:500;">1a</span>
+        <span style="color:#cfc5c8; font-size:15px; font-weight:500;">Velvet &amp; Gold — the picture palace</span>
+      </div>
+
+      <div style="width:1120px; height:1010px; overflow:hidden; border-radius:14px; background:#2a1216; background-image:radial-gradient(120% 90% at 50% -20%, rgba(224,178,90,.16), transparent 60%); box-shadow:0 30px 70px rgba(0,0,0,.55); display:flex; flex-direction:column;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; height:78px; box-sizing:border-box; flex-shrink:0; padding:0 32px; border-bottom:1px solid rgba(224,178,90,.22);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="display:flex; gap:5px;">
+              <span style="width:9px; height:9px; border-radius:999px; background:#e0b25a; box-shadow:0 0 10px rgba(224,178,90,.9);"></span>
+              <span style="width:9px; height:9px; border-radius:999px; background:#e0b25a; box-shadow:0 0 10px rgba(224,178,90,.9); animation:bulbGlow 2.4s ease-in-out infinite .3s;"></span>
+              <span style="width:9px; height:9px; border-radius:999px; background:#e0b25a; box-shadow:0 0 10px rgba(224,178,90,.9); animation:bulbGlow 2.4s ease-in-out infinite .6s;"></span>
+            </div>
+            <h1 style="margin:0; font-family:'Playfair Display', serif; font-size:30px; font-weight:800; letter-spacing:.01em; color:#f6ead6;">Movie Ranking</h1>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button style="border:1px solid #e0b25a; background:#e0b25a; color:#2a1216; border-radius:999px; padding:8px 18px; font-family:'DM Sans', sans-serif; font-size:13px; font-weight:700; cursor:pointer;" style-hover="background:#f0c771; border-color:#f0c771;">Top 80s Action</button>
+            <button style="border:1px solid rgba(246,234,214,.28); background:transparent; color:#d6c8b8; border-radius:999px; padding:8px 18px; font-family:'DM Sans', sans-serif; font-size:13px; font-weight:500; cursor:pointer;" style-hover="border-color:#e0b25a; color:#f6ead6;">Top 90s Comedies</button>
+            <div style="display:flex; align-items:center; height:37px; box-sizing:border-box; margin-left:14px; padding:3px; border-radius:999px; border:1px solid rgba(224,178,90,.35); background:rgba(0,0,0,.25);">
+              <button onClick="{{ pickClassic }}" style="border:none; border-radius:999px; padding:6px 14px; background:#e0b25a; color:#2a1216; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;">Classic</button>
+              <button onClick="{{ pickNeon }}" style="border:none; border-radius:999px; padding:6px 14px; background:transparent; color:#b9a08a; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;" style-hover="color:#f6ead6;">Neon</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:340px 1px 1fr; flex:1; min-height:0;">
+
+          <div style="display:flex; flex-direction:column; min-height:0; padding:22px 8px 22px 22px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+              <h2 style="margin:0; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#e0b25a;">The Standings</h2>
+              <span style="font-family:'IBM Plex Mono', monospace; font-size:12px; color:#9c8a80;">15 titles</span>
+            </div>
+            <ol style="margin:0; padding:0 15px 0 0; list-style:none; display:flex; flex-direction:column; gap:2px; overflow-y:auto; min-height:0;">
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px; background:linear-gradient(90deg, rgba(224,178,90,.16), rgba(224,178,90,0));">
+                <span style="width:26px; font-family:'Playfair Display', serif; font-size:22px; font-weight:800; color:#e0b25a; text-align:right;">1</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:700; color:#f6ead6;">Die Hard</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1988</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px; background:linear-gradient(90deg, rgba(224,178,90,.11), rgba(224,178,90,0));">
+                <span style="width:26px; font-family:'Playfair Display', serif; font-size:22px; font-weight:800; color:#e0b25a; text-align:right;">2</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:700; color:#f6ead6;">Aliens</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1986</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px; background:linear-gradient(90deg, rgba(224,178,90,.07), rgba(224,178,90,0));">
+                <span style="width:26px; font-family:'Playfair Display', serif; font-size:22px; font-weight:800; color:#e0b25a; text-align:right;">3</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:700; color:#f6ead6;">The Terminator</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1984</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">4</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Raiders of the Lost Ark</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1981</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">5</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Predator</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">6</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">RoboCop</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">7</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Lethal Weapon</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">8</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Big Trouble in Little China</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1986</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">9</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Commando</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1985</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">10</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">First Blood</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1982</p>
+                </div>
+              </li>
+                          <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">11</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Rambo: First Blood Part II</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1985</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">12</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Beverly Hills Cop</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1984</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">13</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Mad Max 2: The Road Warrior</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1981</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">14</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Cobra</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1986</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:9px 12px; border-radius:8px;">
+                <span style="width:26px; font-family:'DM Sans', sans-serif; font-size:15px; font-weight:500; color:#8a7770; text-align:right;">15</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #3b1a21, #3b1a21 5px, #452027 5px, #452027 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#e8dccd;">Top Gun</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">1986</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div style="background:linear-gradient(180deg, transparent, rgba(224,178,90,.3), transparent);"></div>
+
+          <div style="display:flex; flex-direction:column; min-height:0; padding:24px 32px 24px 26px;">
+            <div style="text-align:center; margin-bottom:18px;">
+              <p style="margin:0; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#b9906a;">Now Showing</p>
+              <h2 style="margin:6px 0 0; font-family:'Playfair Display', serif; font-style:italic; font-size:26px; font-weight:600; color:#f6ead6;">Best 80s Sci-Fi</h2>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:10px; background:#3a1a21; border:1px solid rgba(224,178,90,.35); box-shadow:0 6px 18px rgba(0,0,0,.35); cursor:grab;">
+                <span style="width:22px; text-align:center; font-family:'Playfair Display', serif; font-size:20px; font-weight:800; color:#e0b25a;">1</span>
+                <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="flex:1; min-width:0;">
+                  <p style="margin:0; font-size:16px; font-weight:700; color:#f6ead6;">Aliens</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1986</p>
+                  <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Starring: Sigourney Weaver, Michael Biehn, Carrie Henn</p>
+                  <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Directed by: James Cameron</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:10px; background:#3a1a21; border:1px solid rgba(224,178,90,.35); box-shadow:0 6px 18px rgba(0,0,0,.35); cursor:grab;">
+                <span style="width:22px; text-align:center; font-family:'Playfair Display', serif; font-size:20px; font-weight:800; color:#e0b25a;">2</span>
+                <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="flex:1; min-width:0;">
+                  <p style="margin:0; font-size:16px; font-weight:700; color:#f6ead6;">The Terminator</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1984</p>
+                  <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Starring: Arnold Schwarzenegger, Linda Hamilton, Michael Biehn</p>
+                  <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Directed by: James Cameron</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:10px; background:#3a1a21; border:1px solid rgba(224,178,90,.35); box-shadow:0 6px 18px rgba(0,0,0,.35); cursor:grab;">
+                <span style="width:22px; text-align:center; font-family:'Playfair Display', serif; font-size:20px; font-weight:800; color:#e0b25a;">3</span>
+                <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="flex:1; min-width:0;">
+                  <p style="margin:0; font-size:16px; font-weight:700; color:#f6ead6;">RoboCop</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1987</p>
+                  <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Starring: Peter Weller, Nancy Allen, Ronny Cox</p>
+                  <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Directed by: Paul Verhoeven</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:10px; background:#3a1a21; border:1px solid rgba(224,178,90,.35); box-shadow:0 6px 18px rgba(0,0,0,.35); cursor:grab;">
+                <span style="width:22px; text-align:center; font-family:'Playfair Display', serif; font-size:20px; font-weight:800; color:#e0b25a;">4</span>
+                <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="flex:1; min-width:0;">
+                  <p style="margin:0; font-size:16px; font-weight:700; color:#f6ead6;">Predator</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1987</p>
+                  <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Starring: Arnold Schwarzenegger, Carl Weathers, Elpidia Carrillo</p>
+                  <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Directed by: John McTiernan</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px; padding:10px 14px; border-radius:10px; background:#3a1a21; border:1px solid rgba(224,178,90,.35); box-shadow:0 6px 18px rgba(0,0,0,.35); cursor:grab;">
+                <span style="width:22px; text-align:center; font-family:'Playfair Display', serif; font-size:20px; font-weight:800; color:#e0b25a;">5</span>
+                <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #4a2028, #4a2028 5px, #56262f 5px, #56262f 10px);"></div>
+                <div style="flex:1; min-width:0;">
+                  <p style="margin:0; font-size:16px; font-weight:700; color:#f6ead6;">Mad Max 2: The Road Warrior</p>
+                  <p style="margin:2px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#a4928a;">1981</p>
+                  <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Starring: Mel Gibson, Bruce Spence, Vernon Wells</p>
+                  <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#c7b6a8;">Directed by: George Miller</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                  <span style="width:16px; height:2px; background:rgba(224,178,90,.5);"></span>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:auto; padding-top:22px; display:flex; flex-direction:column; align-items:center; gap:10px;">
+              <button style="border:none; border-radius:999px; padding:15px 46px; background:linear-gradient(180deg, #f0c771, #d9a746); color:#2a1216; font-family:'DM Sans', sans-serif; font-size:16px; font-weight:700; letter-spacing:.02em; cursor:pointer; box-shadow:0 8px 24px rgba(224,178,90,.3);" style-hover="background:linear-gradient(180deg, #f8d68d, #e5b65a);">Rank →</button>
+              <p style="margin:0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8a7770;">Drag to reorder, click Rank to set order and go to next list</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:{{ neonDisplay }}; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:999px; background:#3fd2c7; color:#0b1224; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:500;">1b</span>
+        <span style="color:#cfc5c8; font-size:15px; font-weight:500;">Neon Marquee — the multiplex at night</span>
+      </div>
+
+      <div style="width:1120px; height:1010px; overflow:hidden; border-radius:14px; background:#0b1224; background-image:radial-gradient(90% 70% at 15% 0%, rgba(63,210,199,.14), transparent 55%), radial-gradient(80% 70% at 95% 100%, rgba(240,79,140,.16), transparent 55%); box-shadow:0 30px 70px rgba(0,0,0,.55); display:flex; flex-direction:column; font-family:'IBM Plex Sans', sans-serif;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; height:78px; box-sizing:border-box; flex-shrink:0; padding:0 32px; background:rgba(255,255,255,.03); border-bottom:1px solid rgba(255,255,255,.08);">
+          <h1 style="margin:0; font-family:'Archivo Black', sans-serif; font-size:26px; letter-spacing:-.01em; color:#f2f5ff; text-transform:uppercase;">Movie <span style="color:#f04f8c;">Ranking</span></h1>
+          <div style="display:flex; gap:8px;">
+            <button style="border:none; background:#3fd2c7; color:#08202a; border-radius:6px; padding:9px 18px; font-family:'IBM Plex Sans', sans-serif; font-size:13px; font-weight:600; cursor:pointer;" style-hover="background:#5fe3d9;">Top 80s Action</button>
+            <button style="border:1px solid rgba(242,245,255,.18); background:transparent; color:#9fa8c4; border-radius:6px; padding:9px 18px; font-family:'IBM Plex Sans', sans-serif; font-size:13px; font-weight:500; cursor:pointer;" style-hover="color:#f2f5ff; border-color:#3fd2c7;">Top 90s Comedies</button>
+            <div style="display:flex; align-items:center; height:37px; box-sizing:border-box; margin-left:14px; padding:3px; border-radius:6px; border:1px solid rgba(242,245,255,.14); background:rgba(0,0,0,.25);">
+              <button onClick="{{ pickClassic }}" style="border:none; border-radius:4px; padding:6px 14px; background:transparent; color:#9fa8c4; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;" style-hover="color:#f2f5ff;">Classic</button>
+              <button onClick="{{ pickNeon }}" style="border:none; border-radius:4px; padding:6px 14px; background:#f04f8c; color:#2a0a18; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;">Neon</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:340px 1fr; flex:1; min-height:0;">
+
+          <div style="display:flex; flex-direction:column; min-height:0; border-right:1px solid rgba(255,255,255,.12); padding:22px 8px 22px 22px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+              <h2 style="margin:0; font-family:'Archivo Black', sans-serif; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:#3fd2c7;">The Standings</h2>
+              <span style="font-family:'IBM Plex Mono', monospace; font-size:12px; color:#6f7a9c;">15 titles</span>
+            </div>
+            <ol style="margin:0; padding:0 15px 0 0; list-style:none; display:flex; flex-direction:column; gap:6px; overflow-y:auto; min-height:0;">
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:linear-gradient(90deg, rgba(240,79,140,.22), rgba(240,79,140,.02)); border:1px solid rgba(240,79,140,.35);">
+                <span style="width:24px; font-family:'Archivo Black', sans-serif; font-size:18px; color:#f04f8c; text-align:center;">1</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">Die Hard</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1988</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'Archivo Black', sans-serif; font-size:18px; color:#3fd2c7; text-align:center;">2</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">Aliens</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1986</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'Archivo Black', sans-serif; font-size:18px; color:#3fd2c7; text-align:center;">3</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">The Terminator</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1984</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">4</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Raiders of the Lost Ark</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1981</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">5</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Predator</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">6</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">RoboCop</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">7</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Lethal Weapon</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1987</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">8</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Big Trouble in Little China</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1986</p>
+                </div>
+              </li>
+                          <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">9</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Commando</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1985</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">10</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">First Blood</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1982</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">11</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Rambo: First Blood Part II</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1985</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">12</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Beverly Hills Cop</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1984</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">13</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Mad Max 2: The Road Warrior</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1981</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">14</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Cobra</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1986</p>
+                </div>
+              </li>
+              <li style="display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:9px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);">
+                <span style="width:24px; font-family:'IBM Plex Mono', monospace; font-size:14px; color:#7c87a8; text-align:center;">15</span>
+                <div style="width:38px; height:56px; border-radius:4px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                <div style="min-width:0; flex:1;">
+                  <p style="margin:0; font-size:15px; font-weight:500; color:#dfe4f5;">Top Gun</p>
+                  <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1986</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div style="display:flex; flex-direction:column; min-height:0; padding:26px 32px;">
+            <div style="border:1px solid rgba(63,210,199,.3); border-radius:12px; padding:18px 20px 20px; background:rgba(63,210,199,.05);">
+              <p style="margin:0; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#3fd2c7;">Now Showing</p>
+              <h2 style="margin:8px 0 16px; font-family:'Archivo Black', sans-serif; font-size:24px; color:#f2f5ff; letter-spacing:-.01em;">Best 80s Sci-Fi</h2>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:#141d34; border:1px solid rgba(255,255,255,.09); cursor:grab;">
+                  <span style="width:22px; text-align:center; font-family:'Archivo Black', sans-serif; font-size:16px; color:#f04f8c;">1</span>
+                  <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">Aliens</p>
+                    <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1986</p>
+                    <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Starring: Sigourney Weaver, Michael Biehn, Carrie Henn</p>
+                    <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Directed by: James Cameron</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:#141d34; border:1px solid rgba(255,255,255,.09); cursor:grab;">
+                  <span style="width:22px; text-align:center; font-family:'Archivo Black', sans-serif; font-size:16px; color:#f04f8c;">2</span>
+                  <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">The Terminator</p>
+                    <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1984</p>
+                    <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Starring: Arnold Schwarzenegger, Linda Hamilton, Michael Biehn</p>
+                    <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Directed by: James Cameron</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:#141d34; border:1px solid rgba(255,255,255,.09); cursor:grab;">
+                  <span style="width:22px; text-align:center; font-family:'Archivo Black', sans-serif; font-size:16px; color:#f04f8c;">3</span>
+                  <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">RoboCop</p>
+                    <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1987</p>
+                    <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Starring: Peter Weller, Nancy Allen, Ronny Cox</p>
+                    <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Directed by: Paul Verhoeven</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:#141d34; border:1px solid rgba(255,255,255,.09); cursor:grab;">
+                  <span style="width:22px; text-align:center; font-family:'Archivo Black', sans-serif; font-size:16px; color:#f04f8c;">4</span>
+                  <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">Predator</p>
+                    <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1987</p>
+                    <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Starring: Arnold Schwarzenegger, Carl Weathers, Elpidia Carrillo</p>
+                    <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Directed by: John McTiernan</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:#141d34; border:1px solid rgba(255,255,255,.09); cursor:grab;">
+                  <span style="width:22px; text-align:center; font-family:'Archivo Black', sans-serif; font-size:16px; color:#f04f8c;">5</span>
+                  <div style="width:72px; height:108px; border-radius:5px; flex-shrink:0; background:repeating-linear-gradient(135deg, #1b2540, #1b2540 5px, #212c4c 5px, #212c4c 10px);"></div>
+                  <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-size:15px; font-weight:600; color:#f2f5ff;">Mad Max 2: The Road Warrior</p>
+                    <p style="margin:3px 0 0; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8b95b5;">1981</p>
+                    <p style="margin:6px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Starring: Mel Gibson, Bruce Spence, Vernon Wells</p>
+                    <p style="margin:2px 0 0; font-size:12px; line-height:1.35; color:#aab3cc;">Directed by: George Miller</p>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                    <span style="width:14px; height:2px; background:#4d5878;"></span>
+                  </div>
+                </div>
+              </div>
+              <button style="margin-top:18px; width:100%; border:none; border-radius:8px; padding:15px; background:#f04f8c; color:#2a0a18; font-family:'IBM Plex Sans', sans-serif; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 8px 24px rgba(240,79,140,.28);" style-hover="background:#ff6ba1;">Rank →</button>
+            </div>
+            <p style="margin:14px 0 0; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:11px; color:#6f7a9c;">Drag to reorder, click Rank to set order and go to next list</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { theme: 'classic' };
+  renderVals() {
+    const set = (theme) => () => this.setState({ theme });
+    return {
+      classicDisplay: this.state.theme === 'classic' ? 'flex' : 'none',
+      neonDisplay: this.state.theme === 'neon' ? 'flex' : 'none',
+      pickClassic: set('classic'),
+      pickNeon: set('neon'),
+    };
+  }
+}
+</script>
+</body>
+</html>
