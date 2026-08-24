@@ -45,14 +45,15 @@ with a `sources[]` field listing every source it came from.
 
 - **Personal Letterboxd source** (`scripts/enrich.js`):
   1. Export Letterboxd data as a zip (Settings → Import & Export) — produces
-     `ratings.csv`, `diary.csv`, `reviews.csv`, `likes/films.csv`, `watched.csv`.
+     `films.csv`, the full watched list.
   2. Drop the extracted CSVs into `/data/letterboxd-export/`.
-  3. Run `scripts/enrich.js`: parses the CSVs, merges into unique movies with
-     `letterboxdRating` (if rated), `liked` (bool), `reviewed` (bool); calls
-     TMDb `/search/movie?query={title}&year={year}` for `tmdb_id`, then
+  3. Run `scripts/enrich.js`: parses `films.csv` into unique movies (deduped —
+     a rewatch can produce multiple rows for the same title); calls TMDb
+     `/search/movie?query={title}&year={year}` for `tmdb_id`, then
      `/movie/{id}?append_to_response=credits` for director, genres, top-billed
      cast, and poster path; upserts each into `/data/movies.json` tagged with
-     `sources: ["personal"]`.
+     `sources: ["personal"]`. An entry with no TMDb movie match (e.g. a TV
+     series) is skipped rather than written in as a bare placeholder.
   4. Re-run any time the user re-exports fresh Letterboxd data.
 - **Published-list sources** (`scripts/enrich-sources.js`):
   - Each source is a hand-maintained `title, year` JSON file under
@@ -67,9 +68,8 @@ with a `sources[]` field listing every source it came from.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-letterboxdRating, liked, reviewed, sources[]`. Static metadata only —
-`eloRating` and `timesRanked` live in the backend's ranking-state store instead
-(see **Online deployment**).
+sources[]`. Static metadata only — `eloRating` and `timesRanked` live in the
+backend's ranking-state store instead (see **Online deployment**).
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the 5 tiles in their current drag order
