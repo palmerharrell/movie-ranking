@@ -4,8 +4,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { createDb } from './db.js'
-import { loadManifest } from './movieStore.js'
-import { getMoviesWithState, applyRank, pickCategoryForList } from './rankingService.js'
+import { getMoviesWithState, applyRank, pickCategory } from './rankingService.js'
 
 dotenv.config({ quiet: true })
 
@@ -34,31 +33,27 @@ app.use((req, res, next) => {
   next()
 })
 
-app.get('/api/lists', (req, res) => {
-  res.json(loadManifest(DATA_DIR))
-})
-
-app.get('/api/lists/:listId/movies', (req, res) => {
-  const movies = getMoviesWithState(db, DATA_DIR, req.params.listId)
-  if (!movies) return res.status(404).json({ error: 'List not found' })
+app.get('/api/movies', (req, res) => {
+  const movies = getMoviesWithState(db, DATA_DIR)
+  if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
 })
 
-app.post('/api/lists/:listId/rank', (req, res) => {
+app.post('/api/rank', (req, res) => {
   const { movieIds } = req.body
   if (!Array.isArray(movieIds) || movieIds.length !== 5) {
     return res.status(400).json({ error: 'movieIds must be an array of 5 ids' })
   }
   try {
-    res.json(applyRank(db, DATA_DIR, req.params.listId, movieIds))
+    res.json(applyRank(db, DATA_DIR, movieIds))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
 })
 
-app.get('/api/lists/:listId/category', (req, res) => {
-  const category = pickCategoryForList(db, DATA_DIR, req.params.listId)
-  if (!category) return res.status(404).json({ error: 'List not found or not enough movies' })
+app.get('/api/category', (req, res) => {
+  const category = pickCategory(db, DATA_DIR)
+  if (!category) return res.status(404).json({ error: 'Movie pool not found or not enough movies' })
   res.json(category)
 })
 

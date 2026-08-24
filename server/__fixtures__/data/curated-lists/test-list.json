@@ -1,7 +1,0 @@
-[
-  { "id": "c1", "title": "C1", "year": 1995, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor Q"] },
-  { "id": "c2", "title": "C2", "year": 1996, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor Q"] },
-  { "id": "c3", "title": "C3", "year": 1997, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor R"] },
-  { "id": "c4", "title": "C4", "year": 1998, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor R"] },
-  { "id": "c5", "title": "C5", "year": 1999, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor S"] }
-]
