@@ -193,6 +193,15 @@ body {
   border: 1px solid transparent;
 }
 
+[data-theme='classic'] .standings-row.ranked {
+  background-color: rgba(224, 178, 90, 0.05);
+}
+
+[data-theme='neon'] .standings-row.ranked {
+  background: rgba(63, 210, 199, 0.07);
+  border-color: rgba(63, 210, 199, 0.25);
+}
+
 [data-theme='classic'] .standings-row.top-1 {
   background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.16), transparent);
 }
