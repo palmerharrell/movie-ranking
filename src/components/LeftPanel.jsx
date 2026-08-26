@@ -9,9 +9,10 @@ function sortMovies(movies) {
 
 function StandingsRow({ movie, rank }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
+  const rankedClass = movie.timesRanked >= 1 ? 'ranked' : ''
 
   return (
-    <li className={`standings-row flex items-center gap-3 px-2 py-1.5 ${topClass}`}>
+    <li className={`standings-row flex items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass}`}>
       <span className="standings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
       <div className="poster-placeholder h-[56px] w-[38px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
         {movie.posterUrl && (
@@ -32,13 +33,14 @@ function StandingsRow({ movie, rank }) {
 
 export function LeftPanel({ movies }) {
   const sorted = sortMovies(movies)
+  const rankedCount = movies.filter((m) => m.timesRanked >= 1).length
 
   return (
     <div className="flex h-full flex-col">
       <div className="mb-3 flex shrink-0 items-baseline justify-between">
         <span className="standings-label text-xs font-medium uppercase">The Standings</span>
         <span className="font-mono text-xs" style={{ color: 'var(--text-low)' }}>
-          {sorted.length} titles
+          {rankedCount}/{sorted.length} ranked
         </span>
       </div>
       <ol className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
