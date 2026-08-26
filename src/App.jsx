@@ -34,6 +34,7 @@ function App() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const wasFullyRanked = useRef(false)
+  const pendingSkipDiscard = useRef(false)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -96,30 +97,40 @@ function App() {
     }
   }
 
-  async function handleSkipMovie(movieId) {
-    // Derive `remaining` from `prev` (not the render-time `category` closure)
-    // so two near-simultaneous skip clicks can't have the second overwrite
-    // the first's result.
-    let remaining
+  // Derive `remaining` from `prev` (not the render-time `category` closure)
+  // so two near-simultaneous skip clicks can't have the second overwrite
+  // the first's result. Since the setState updater runs during React's
+  // update processing (not synchronously here), the decision to discard the
+  // pack is recorded in a ref and acted on from an effect once the state
+  // update has actually committed.
+  function handleSkipMovie(movieId) {
     setPacks((prev) => {
-      remaining = prev[0].movies.filter((m) => m.id !== movieId)
-      if (remaining.length <= 1) return prev
+      const remaining = prev[0].movies.filter((m) => m.id !== movieId)
+      if (remaining.length <= 1) {
+        pendingSkipDiscard.current = true
+        return [...prev]
+      }
       return [{ ...prev[0], movies: remaining }, ...prev.slice(1)]
     })
+  }
 
-    if (remaining.length > 1) return
+  useEffect(() => {
+    if (!pendingSkipDiscard.current) return
+    pendingSkipDiscard.current = false
 
     // Fewer than 2 movies left to rank — move on without collecting ranking data.
-    setBusy(true)
-    try {
-      const freshPack = await api.getCategory()
-      setPacks((prev) => [...prev.slice(1), freshPack])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
+    ;(async () => {
+      setBusy(true)
+      try {
+        const freshPack = await api.getCategory()
+        setPacks((prev) => [...prev.slice(1), freshPack])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setBusy(false)
+      }
+    })()
+  })
 
   async function handleSaveRanking(name) {
     // Let a failure here propagate to the modal, which shows it inline.
