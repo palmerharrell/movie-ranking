@@ -139,10 +139,10 @@ backend's ranking-state store instead (see **Online deployment**).
     which movies they include — that's expected, not a bug, since only one of
     them will ever actually get submitted.
 
-## Progress tracking (#26) — NOT YET IMPLEMENTED
-- No progress label exists yet in `LeftPanel.jsx` or `App.jsx`. Target design:
-  a label (near the standings header) shows `n/nnn ranked` — `n` is the count
-  of movies with `timesRanked ≥ 1`, `nnn` is the total pool size.
+## Progress tracking
+- `LeftPanel.jsx` shows a label near the standings header: `n/nnn ranked` —
+  `n` is the count of movies with `timesRanked ≥ 1`, `nnn` is the total pool
+  size.
 
 ## Saved rankings (#27) — NOT YET IMPLEMENTED
 - None of this exists yet: no `SaveRankingModal`/`LoadRankingView` components,
@@ -194,8 +194,8 @@ backend's ranking-state store instead (see **Online deployment**).
 
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
-  sorted by eloRating. Progress label (`n/nnn ranked`) near the header — not
-  yet implemented, see **Progress tracking (#26)**.
+  sorted by eloRating. Progress label (`n/nnn ranked`) near the header — see
+  **Progress tracking**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
   label, reorderable via drag-and-drop (`@dnd-kit`) — plus the upcoming-packs
   queue described in **Category generation & queue**; the queue itself is not
