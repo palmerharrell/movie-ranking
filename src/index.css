@@ -283,6 +283,33 @@ body {
   padding: 12px 18px 16px;
 }
 
+.queue-eyebrow {
+  font-family: var(--font-mono);
+  color: var(--text-low);
+  letter-spacing: 0.17em;
+}
+
+.queue-pack-card {
+  background: var(--surface);
+  border-color: var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  color: var(--text-high);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.queue-pack-card:hover {
+  border-color: var(--accent);
+}
+
+[data-theme='neon'] .queue-pack-card:hover {
+  background: rgba(63, 210, 199, 0.08);
+}
+
+.queue-poster {
+  border: 2px solid var(--surface);
+}
+
 /* Movie tile (pack) */
 
 .movie-tile {
