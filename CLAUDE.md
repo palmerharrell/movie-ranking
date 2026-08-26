@@ -13,6 +13,12 @@ of every movie in that pool, using an Elo-style rating system.
 > personal Letterboxd import is just the first source merged into the one list,
 > not a separate ranking pool.
 
+> **Status:** this file is the target spec, not a changelog — it describes
+> design that may still be open work. Sections referencing an open GitHub
+> issue number (e.g. "(#26)") are marked **NOT YET IMPLEMENTED** below if the
+> feature doesn't exist on `dev` yet; check the linked issue for current
+> status rather than assuming the spec text means it's built.
+
 ## Confirmed decisions
 - **Data source:** Letterboxd's own CSV export (Settings → Import & Export) for
   the personal-ratings source. No scraping — avoids ToS issues.
@@ -92,12 +98,18 @@ backend's ranking-state store instead (see **Online deployment**).
 - Filter the pool's movies for matches; if fewer than 5 movies match, discard
   and try another category (don't show the user a category with < 5 eligible
   movies).
-- **Random packs (#22):** some packs skip the attribute filter entirely and
-  sample 5 movies at random from the whole pool (label e.g. "Random Five").
-  This both adds variety and acts as the fallback when no attribute-based
-  category can find 5 matches (which becomes more likely as the pool grows
-  and gets more thoroughly ranked) — a random pick from the full pool always
-  has enough candidates as long as the pool itself does.
+- **Random packs (#22) — NOT YET IMPLEMENTED:** today, `categoryGenerator.js`
+  only falls back to a random sample early on (before enough movies are
+  ranked to satisfy the overlap requirement below). The design in #22 calls
+  for something more: dedicated "Random Five" packs that skip the attribute
+  filter entirely and get thrown in occasionally as their own labeled pack
+  type (not just an overlap-bootstrap fallback), sampling 5 movies at random
+  from the whole pool. This adds variety and also acts as the fallback when
+  no attribute-based category can find 5 matches (which becomes more likely
+  as the pool grows and gets more thoroughly ranked) — a random pick from the
+  full pool always has enough candidates as long as the pool itself does.
+  There is currently no `"Random Five"` label and no code path that inserts
+  one of these packs outside the bootstrap case.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
@@ -110,8 +122,12 @@ backend's ranking-state store instead (see **Online deployment**).
   pick 5 at random from the matching set.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
-- **Upcoming queue (#21):** rather than a single "next category" generated on
-  demand, the app keeps a small queue of pre-generated upcoming packs (e.g. 3)
+- **Upcoming queue (#21) — NOT YET IMPLEMENTED:** the app currently fetches
+  and shows exactly one category at a time (`App.jsx` calls `api.getCategory()`
+  once per "Rank →" click); there is no `PackQueue` component and no queue
+  state. The target design, below, is: rather than a single "next category"
+  generated on demand, the app keeps a small queue of pre-generated upcoming
+  packs (e.g. 3)
   displayed alongside the active pack, replacing the old multi-list picker
   chips (there's only one pool now, so there's nothing to switch between).
   - **"Rank →"** submits the active pack's Elo update, promotes the first
@@ -123,11 +139,15 @@ backend's ranking-state store instead (see **Online deployment**).
     which movies they include — that's expected, not a bug, since only one of
     them will ever actually get submitted.
 
-## Progress tracking (#26)
-- A label (near the standings header) shows `n/nnn ranked` — `n` is the count
+## Progress tracking (#26) — NOT YET IMPLEMENTED
+- No progress label exists yet in `LeftPanel.jsx` or `App.jsx`. Target design:
+  a label (near the standings header) shows `n/nnn ranked` — `n` is the count
   of movies with `timesRanked ≥ 1`, `nnn` is the total pool size.
 
-## Saved rankings (#27)
+## Saved rankings (#27) — NOT YET IMPLEMENTED
+- None of this exists yet: no `SaveRankingModal`/`LoadRankingView` components,
+  and no `/api/rankings` endpoints on the server (only live ranking-state
+  persistence exists today). Target design:
 - **Completion:** once every movie in the pool has `timesRanked ≥ 1`, show a
   modal prompting the user to name and save the ranking.
 - **Save:** copies the current per-movie `eloRating`/`timesRanked` into a
@@ -174,15 +194,17 @@ backend's ranking-state store instead (see **Online deployment**).
 
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
-  sorted by eloRating. Progress label (`n/nnn ranked`) near the header.
+  sorted by eloRating. Progress label (`n/nnn ranked`) near the header — not
+  yet implemented, see **Progress tracking (#26)**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
   label, reorderable via drag-and-drop (`@dnd-kit`) — plus the upcoming-packs
-  queue described in **Category generation & queue**.
-- **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel resort,
-  and queue advance.
-- **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**). No more list-picker chips
-  — there's only one pool.
+  queue described in **Category generation & queue**; the queue itself is not
+  yet implemented, see **Upcoming queue (#21)**.
+- **Center-bottom button:** "Rank →" — triggers the Elo update and left-panel
+  resort today; queue advance is not yet implemented (#21).
+- **Banner:** app title, theme toggle, and (not yet implemented, #27) a
+  "Load Ranking" entry point for browsing saved snapshots (see **Saved
+  rankings**). No more list-picker chips — there's only one pool.
 
 ## Suggested project structure
 ```
@@ -198,13 +220,22 @@ backend's ranking-state store instead (see **Online deployment**).
 /src/components/RightPanel.jsx
 /src/components/MovieTile.jsx
 /src/components/RankButton.jsx
-/src/components/PackQueue.jsx        <- upcoming-packs queue (#21)
-/src/components/SaveRankingModal.jsx <- name/save prompt on completion (#27)
-/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer (#27)
+/src/components/PackQueue.jsx        <- upcoming-packs queue (#21, not yet created)
+/src/components/SaveRankingModal.jsx <- name/save prompt on completion (#27, not yet created)
+/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer (#27, not yet created)
 /src/lib/elo.js
 /src/lib/categoryGenerator.js
 .env                          <- TMDB_API_KEY (gitignored)
 ```
+
+## Maintaining this spec
+- When a PR implements a feature marked **NOT YET IMPLEMENTED** above (or
+  closes the GitHub issue tied to one of those sections), that same PR must
+  remove the marker and the "not yet implemented" caveat text from the
+  affected section(s) of this file.
+- Conversely, if new spec text is added for planned-but-unbuilt work, mark it
+  **NOT YET IMPLEMENTED** with the issue number, per the pattern above, so the
+  spec doesn't silently drift ahead of the code again.
 
 ## Branching & PR workflow
 - **`main`** is the deployed branch — pushing to `main` triggers
