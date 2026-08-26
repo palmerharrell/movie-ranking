@@ -107,6 +107,10 @@ function App() {
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
     } catch (err) {
+      // The save already committed server-side (including the state reset),
+      // so drop the now-stale board rather than silently leaving it displayed.
+      setMovies(null)
+      setPacks(null)
       setError(err.message)
     }
   }

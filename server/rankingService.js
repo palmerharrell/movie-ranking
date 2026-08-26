@@ -10,17 +10,22 @@ import {
 } from './db.js'
 import { loadMovies } from './movieStore.js'
 
-// Merges the pool's static metadata with its persisted Elo state.
-// Returns null if the enriched JSON doesn't exist yet.
-export function getMoviesWithState(db, dataDir) {
-  const staticMovies = loadMovies(dataDir)
-  if (!staticMovies) return null
-  const state = getAllState(db)
+// Merges static movie metadata with a movieId -> { eloRating, timesRanked }
+// state map, defaulting entries missing from the map to 1000/0.
+function mergeWithState(staticMovies, state) {
   return staticMovies.map((m) => ({
     ...m,
     eloRating: state.get(m.id)?.eloRating ?? 1000,
     timesRanked: state.get(m.id)?.timesRanked ?? 0,
   }))
+}
+
+// Merges the pool's static metadata with its persisted Elo state.
+// Returns null if the enriched JSON doesn't exist yet.
+export function getMoviesWithState(db, dataDir) {
+  const staticMovies = loadMovies(dataDir)
+  if (!staticMovies) return null
+  return mergeWithState(staticMovies, getAllState(db))
 }
 
 // Applies a ranked 5-pack (movieIds in rank order) to the pool's Elo state.
@@ -59,7 +64,7 @@ export function pickCategory(db, dataDir) {
 export function saveRanking(db, dataDir, name) {
   const movies = getMoviesWithState(db, dataDir)
   if (!movies) throw new Error('Movie pool not found')
-  if (movies.some((m) => m.timesRanked < 1)) {
+  if (movies.length === 0 || movies.some((m) => m.timesRanked < 1)) {
     throw new Error('Every movie in the pool must be ranked at least once before saving')
   }
 
@@ -89,13 +94,9 @@ export function getSavedRankingMovies(db, dataDir, id) {
   if (!saved) return null
 
   const entryMap = new Map(saved.entries.map((e) => [e.movieId, e]))
-  const movies = staticMovies
-    .map((m) => ({
-      ...m,
-      eloRating: entryMap.get(m.id)?.eloRating ?? 1000,
-      timesRanked: entryMap.get(m.id)?.timesRanked ?? 0,
-    }))
-    .sort((a, b) => b.eloRating - a.eloRating)
+  const movies = mergeWithState(staticMovies, entryMap).sort(
+    (a, b) => b.eloRating - a.eloRating,
+  )
 
   return { id: saved.id, name: saved.name, createdAt: saved.createdAt, movies }
 }

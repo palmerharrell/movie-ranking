@@ -15,6 +15,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
+const EMPTY_POOL_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty-pool')
 
 function freshDb() {
   return createDb(':memory:')
@@ -72,6 +73,11 @@ function rankAllOnce(db) {
 test('saveRanking throws if any movie is unranked', () => {
   const db = freshDb()
   assert.throws(() => saveRanking(db, FIXTURES_DIR, 'Incomplete'))
+})
+
+test('saveRanking throws on an empty pool instead of saving vacuously', () => {
+  const db = freshDb()
+  assert.throws(() => saveRanking(db, EMPTY_POOL_FIXTURES_DIR, 'Empty'))
 })
 
 test('saveRanking snapshots state and resets live state to defaults', () => {
