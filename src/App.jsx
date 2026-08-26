@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
+import { SaveRankingModal } from './components/SaveRankingModal.jsx'
+import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
@@ -14,6 +16,14 @@ function initialTheme() {
   return stored === 'classic' || stored === 'neon' ? stored : 'classic'
 }
 
+function fetchPacks() {
+  return Promise.all(Array.from({ length: QUEUE_SIZE + 1 }, () => api.getCategory()))
+}
+
+function isFullyRanked(movies) {
+  return movies.length > 0 && movies.every((m) => m.timesRanked >= 1)
+}
+
 function App() {
   const [theme, setTheme] = useState(initialTheme)
   const [movies, setMovies] = useState(null)
@@ -21,19 +31,31 @@ function App() {
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showLoadView, setShowLoadView] = useState(false)
+  const wasFullyRanked = useRef(false)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
+
+  // Prompts to save once the pool transitions into "every movie ranked at
+  // least once" — not on every subsequent Rank click while it stays there.
+  function noteMoviesUpdate(updatedMovies) {
+    setMovies(updatedMovies)
+    const fullyRanked = isFullyRanked(updatedMovies)
+    if (fullyRanked && !wasFullyRanked.current) {
+      setShowSaveModal(true)
+    }
+    wasFullyRanked.current = fullyRanked
+  }
 
   useEffect(() => {
     localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
   useEffect(() => {
-    api.getMovies().then(setMovies).catch((err) => setError(err.message))
-    Promise.all(Array.from({ length: QUEUE_SIZE + 1 }, () => api.getCategory()))
-      .then(setPacks)
-      .catch((err) => setError(err.message))
+    api.getMovies().then(noteMoviesUpdate).catch((err) => setError(err.message))
+    fetchPacks().then(setPacks).catch((err) => setError(err.message))
   }, [])
 
   function handleReorder(reorderedMovies) {
@@ -48,7 +70,7 @@ function App() {
       // from the DB, so it must run after the rank submission commits.
       const updatedMovies = await api.rankFivePack(movieIds)
       const freshPack = await api.getCategory()
-      setMovies(updatedMovies)
+      noteMoviesUpdate(updatedMovies)
       setPacks((prev) => [...prev.slice(1), freshPack])
     } catch (err) {
       setError(err.message)
@@ -71,6 +93,25 @@ function App() {
       setError(err.message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleSaveRanking(name) {
+    // Let a failure here propagate to the modal, which shows it inline.
+    await api.saveRanking(name)
+    setShowSaveModal(false)
+    wasFullyRanked.current = false
+
+    try {
+      const [updatedMovies, freshPacks] = await Promise.all([api.getMovies(), fetchPacks()])
+      noteMoviesUpdate(updatedMovies)
+      setPacks(freshPacks)
+    } catch (err) {
+      // The save already committed server-side (including the state reset),
+      // so drop the now-stale board rather than silently leaving it displayed.
+      setMovies(null)
+      setPacks(null)
+      setError(err.message)
     }
   }
 
@@ -97,6 +138,9 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center">
+            <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
+              Load Ranking
+            </button>
             <ThemeToggle theme={theme} onChange={setTheme} />
           </div>
         </header>
@@ -152,6 +196,14 @@ function App() {
           </main>
         </div>
       </div>
+
+      {showSaveModal && (
+        <SaveRankingModal
+          onSave={handleSaveRanking}
+          onDismiss={() => setShowSaveModal(false)}
+        />
+      )}
+      {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}
     </div>
   )
 }

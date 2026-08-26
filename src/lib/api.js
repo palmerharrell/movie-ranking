@@ -33,3 +33,18 @@ export function rankFivePack(movieIds) {
     body: JSON.stringify({ movieIds }),
   })
 }
+
+export function saveRanking(name) {
+  return request('/api/rankings', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function getSavedRankings() {
+  return request('/api/rankings')
+}
+
+export function getSavedRanking(id) {
+  return request(`/api/rankings/${id}`)
+}

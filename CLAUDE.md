@@ -136,10 +136,7 @@ backend's ranking-state store instead (see **Online deployment**).
   `n` is the count of movies with `timesRanked ≥ 1`, `nnn` is the total pool
   size.
 
-## Saved rankings (#27) — NOT YET IMPLEMENTED
-- None of this exists yet: no `SaveRankingModal`/`LoadRankingView` components,
-  and no `/api/rankings` endpoints on the server (only live ranking-state
-  persistence exists today). Target design:
+## Saved rankings
 - **Completion:** once every movie in the pool has `timesRanked ≥ 1`, show a
   modal prompting the user to name and save the ranking.
 - **Save:** copies the current per-movie `eloRating`/`timesRanked` into a
@@ -193,9 +190,9 @@ backend's ranking-state store instead (see **Online deployment**).
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, theme toggle, and (not yet implemented, #27) a
-  "Load Ranking" entry point for browsing saved snapshots (see **Saved
-  rankings**). No more list-picker chips — there's only one pool.
+- **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**). No more list-picker
+  chips — there's only one pool.
 
 ## Suggested project structure
 ```
@@ -212,8 +209,8 @@ backend's ranking-state store instead (see **Online deployment**).
 /src/components/MovieTile.jsx
 /src/components/RankButton.jsx
 /src/components/PackQueue.jsx        <- upcoming-packs queue
-/src/components/SaveRankingModal.jsx <- name/save prompt on completion (#27, not yet created)
-/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer (#27, not yet created)
+/src/components/SaveRankingModal.jsx <- name/save prompt on completion
+/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer
 /src/lib/elo.js
 /src/lib/categoryGenerator.js
 .env                          <- TMDB_API_KEY (gitignored)
