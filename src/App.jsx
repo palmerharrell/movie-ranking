@@ -103,7 +103,7 @@ function App() {
           >
             <div className="w-full max-w-xl">
               {category ? (
-                <RightPanel category={category} onReorder={handleReorder} />
+                <RightPanel category={category} onReorder={handleReorder} theme={theme} />
               ) : error ? (
                 <p className="text-sm text-red-400">{error}</p>
               ) : movies ? (
