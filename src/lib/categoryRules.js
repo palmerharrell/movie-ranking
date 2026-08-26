@@ -26,5 +26,7 @@ export function pairLabel(picks) {
     [picks[0].type]: picks[0].value,
     [picks[1].type]: picks[1].value,
   }
-  return PAIR_LABELS[key](values)
+  const format = PAIR_LABELS[key]
+  if (!format) return `${picks[0].value} + ${picks[1].value} Movies`
+  return format(values)
 }
