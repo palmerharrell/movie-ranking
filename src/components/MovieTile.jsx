@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-export function MovieTile({ movie, rank }) {
+export function MovieTile({ movie, rank, onSkip, disabled }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: movie.id })
 
@@ -43,6 +43,19 @@ export function MovieTile({ movie, rank }) {
           </div>
         )}
       </div>
+      <button
+        type="button"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation()
+          onSkip(movie.id)
+        }}
+        disabled={disabled}
+        className="skip-button shrink-0 text-[11px] font-medium uppercase disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={`Haven't seen ${movie.title} — remove from this pack`}
+      >
+        Haven&apos;t Seen
+      </button>
       <div className="flex shrink-0 flex-col gap-[3px]">
         <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
         <span className="drag-handle-bar h-[2px] w-4 rounded-full" />

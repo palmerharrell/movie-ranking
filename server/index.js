@@ -4,7 +4,14 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { createDb } from './db.js'
-import { getMoviesWithState, applyRank, pickCategory } from './rankingService.js'
+import {
+  getMoviesWithState,
+  applyRank,
+  pickCategory,
+  saveRanking,
+  listSavedRankings,
+  getSavedRankingMovies,
+} from './rankingService.js'
 
 dotenv.config({ quiet: true })
 
@@ -41,8 +48,8 @@ app.get('/api/movies', (req, res) => {
 
 app.post('/api/rank', (req, res) => {
   const { movieIds } = req.body
-  if (!Array.isArray(movieIds) || movieIds.length !== 5) {
-    return res.status(400).json({ error: 'movieIds must be an array of 5 ids' })
+  if (!Array.isArray(movieIds) || movieIds.length < 2 || movieIds.length > 5) {
+    return res.status(400).json({ error: 'movieIds must be an array of 2 to 5 ids' })
   }
   try {
     res.json(applyRank(db, DATA_DIR, movieIds))
@@ -55,6 +62,28 @@ app.get('/api/category', (req, res) => {
   const category = pickCategory(db, DATA_DIR)
   if (!category) return res.status(404).json({ error: 'Movie pool not found or not enough movies' })
   res.json(category)
+})
+
+app.post('/api/rankings', (req, res) => {
+  const { name } = req.body
+  if (typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ error: 'name is required' })
+  }
+  try {
+    res.json(saveRanking(db, DATA_DIR, name.trim()))
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+app.get('/api/rankings', (req, res) => {
+  res.json(listSavedRankings(db))
+})
+
+app.get('/api/rankings/:id', (req, res) => {
+  const saved = getSavedRankingMovies(db, DATA_DIR, req.params.id)
+  if (!saved) return res.status(404).json({ error: 'Saved ranking not found' })
+  res.json(saved)
 })
 
 app.listen(PORT, () => {

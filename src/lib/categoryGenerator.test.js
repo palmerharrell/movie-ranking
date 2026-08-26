@@ -1,6 +1,35 @@
 import { describe, it, expect } from 'vitest'
 import { generateCategory, tryBuildCategory } from './categoryGenerator.js'
 
+// Forces the first random() draw below RANDOM_FIVE_CHANCE, then delegates to
+// a seeded PRNG for everything after — so the Random Five branch triggers
+// deterministically while the rest of the draw sequence stays reproducible.
+function forceRandomFiveThenSeeded(seed) {
+  let first = true
+  const seeded = seededRandom(seed)
+  return () => {
+    if (first) {
+      first = false
+      return 0
+    }
+    return seeded()
+  }
+}
+
+// Forces the first random() draw at/above RANDOM_FIVE_CHANCE so the direct
+// Random Five branch is skipped, then delegates to a seeded PRNG.
+function skipRandomFiveThenSeeded(seed) {
+  let first = true
+  const seeded = seededRandom(seed)
+  return () => {
+    if (first) {
+      first = false
+      return 0.99
+    }
+    return seeded()
+  }
+}
+
 // Deterministic seeded PRNG (mulberry32) so tests aren't flaky.
 function seededRandom(seed) {
   let a = seed
@@ -140,5 +169,33 @@ describe('generateCategory', () => {
     }
 
     expect(seenPairs.size).toBe(Object.keys(expectedByPair).length)
+  })
+
+  it('builds a "Random Five" pack when the random-five chance hits', () => {
+    const movies = makeMovies()
+    const result = generateCategory(movies, { random: forceRandomFiveThenSeeded(1) })
+    expect(result).not.toBeNull()
+    expect(result.label).toBe('Random Five')
+    expect(result.movies).toHaveLength(5)
+  })
+
+  it('falls back to "Random Five" when no attribute has 5+ matches but the pool does', () => {
+    // Every movie has a unique director/genre/decade/year/cast — no
+    // attribute-based category can ever find 5 matches — but the pool has 5
+    // movies total, so the fallback should still produce a pack.
+    const movies = Array.from({ length: 5 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + i,
+      decade: `${1980 + i}s`,
+      director: `director-${i}`,
+      genres: [`genre-${i}`],
+      cast: [`actor-${i}`],
+    }))
+
+    const result = generateCategory(movies, { random: skipRandomFiveThenSeeded(3) })
+    expect(result).not.toBeNull()
+    expect(result.label).toBe('Random Five')
+    expect(result.movies).toHaveLength(5)
   })
 })
