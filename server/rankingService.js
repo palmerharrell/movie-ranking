@@ -1,4 +1,4 @@
-import { rankFivePack } from '../src/lib/elo.js'
+import { rankPack } from '../src/lib/elo.js'
 import { generateCategory } from '../src/lib/categoryGenerator.js'
 import {
   getAllState,
@@ -28,8 +28,9 @@ export function getMoviesWithState(db, dataDir) {
   return mergeWithState(staticMovies, getAllState(db))
 }
 
-// Applies a ranked 5-pack (movieIds in rank order) to the pool's Elo state.
-// Throws if the pool or any movie id is unknown.
+// Applies a ranked pack (2-5 movieIds in rank order — fewer than 5 when
+// movies were skipped via "Haven't Seen") to the pool's Elo state. Throws if
+// the pool or any movie id is unknown.
 export function applyRank(db, dataDir, orderedMovieIds) {
   const movies = getMoviesWithState(db, dataDir)
   if (!movies) throw new Error('Movie pool not found')
@@ -38,7 +39,7 @@ export function applyRank(db, dataDir, orderedMovieIds) {
   const pack = orderedMovieIds.map((id) => movieMap.get(id))
   if (pack.some((m) => !m)) throw new Error('Invalid movie id in rank request')
 
-  const updatedRatings = rankFivePack(pack)
+  const updatedRatings = rankPack(pack)
   for (const id of orderedMovieIds) {
     const timesRanked = movieMap.get(id).timesRanked + 1
     upsertState(db, id, updatedRatings[id], timesRanked)

@@ -27,7 +27,7 @@ export function getCategory() {
   return request('/api/category')
 }
 
-export function rankFivePack(movieIds) {
+export function rankPack(movieIds) {
   return request('/api/rank', {
     method: 'POST',
     body: JSON.stringify({ movieIds }),

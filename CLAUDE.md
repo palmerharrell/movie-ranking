@@ -78,9 +78,17 @@ sources[]`. Static metadata only — `eloRating` and `timesRanked` live in the
 backend's ranking-state store instead (see **Online deployment**).
 
 ## Ranking mechanic (Elo)
-- Each right-panel "Rank →" click takes the 5 tiles in their current drag order
-  (rank 1–5) and treats it as 10 pairwise outcomes (1 beats 2,3,4,5 / 2 beats 3,4,5 / etc).
+- Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
+  were skipped — see below) in their current drag order and treats it as
+  every pairwise outcome (rank 1 beats everyone below it, rank 2 beats
+  everyone below it, etc).
 - Each pairwise outcome does a standard Elo update on both movies' `eloRating`.
+- **Skip ("Haven't Seen"):** each tile has a button to remove that movie from
+  the active pack without ranking it (its `eloRating`/`timesRanked` are
+  untouched). Ranking proceeds normally as long as 2+ movies remain. If a
+  skip would drop the pack to 1 movie, the app discards the pack (without
+  submitting any ranking data) and advances to the next pack instead —
+  mirroring "Rank →"'s queue-advance behavior, just without the Elo update.
 - A movie appearing in two different 5-packs is how the pool becomes
   transitively linked — approximate (Elo doesn't guarantee strict
   transitivity) but converges toward a consistent full ranking as more of the

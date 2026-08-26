@@ -13,7 +13,7 @@ import {
 import { MovieTile } from './MovieTile.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
-export function RightPanel({ category, onReorder, theme }) {
+export function RightPanel({ category, onReorder, onSkip, disabled, theme }) {
   const sensors = useSensors(useSensor(PointerSensor))
 
   function handleDragEnd(event) {
@@ -42,7 +42,13 @@ export function RightPanel({ category, onReorder, theme }) {
         >
           <div className="flex flex-col gap-2">
             {category.movies.map((movie, index) => (
-              <MovieTile key={movie.id} movie={movie} rank={index + 1} />
+              <MovieTile
+                key={movie.id}
+                movie={movie}
+                rank={index + 1}
+                onSkip={onSkip}
+                disabled={disabled}
+              />
             ))}
           </div>
         </SortableContext>
