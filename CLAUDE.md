@@ -117,14 +117,11 @@ backend's ranking-state store instead (see **Online deployment**).
   pick 5 at random from the matching set.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
-- **Upcoming queue (#21) — NOT YET IMPLEMENTED:** the app currently fetches
-  and shows exactly one category at a time (`App.jsx` calls `api.getCategory()`
-  once per "Rank →" click); there is no `PackQueue` component and no queue
-  state. The target design, below, is: rather than a single "next category"
-  generated on demand, the app keeps a small queue of pre-generated upcoming
-  packs (e.g. 3)
-  displayed alongside the active pack, replacing the old multi-list picker
-  chips (there's only one pool now, so there's nothing to switch between).
+- **Upcoming queue:** rather than a single "next category" generated on
+  demand, the app keeps a small queue of pre-generated upcoming packs (3,
+  via `PackQueue.jsx`) displayed alongside the active pack, replacing the old
+  multi-list picker chips (there's only one pool now, so there's nothing to
+  switch between).
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
   - **Clicking a queued pack** discards the current active pack without
@@ -193,10 +190,9 @@ backend's ranking-state store instead (see **Online deployment**).
   **Progress tracking**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
   label, reorderable via drag-and-drop (`@dnd-kit`) — plus the upcoming-packs
-  queue described in **Category generation & queue**; the queue itself is not
-  yet implemented, see **Upcoming queue (#21)**.
-- **Center-bottom button:** "Rank →" — triggers the Elo update and left-panel
-  resort today; queue advance is not yet implemented (#21).
+  queue described in **Category generation & queue**.
+- **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
+  resort, and queue advance.
 - **Banner:** app title, theme toggle, and (not yet implemented, #27) a
   "Load Ranking" entry point for browsing saved snapshots (see **Saved
   rankings**). No more list-picker chips — there's only one pool.
@@ -215,7 +211,7 @@ backend's ranking-state store instead (see **Online deployment**).
 /src/components/RightPanel.jsx
 /src/components/MovieTile.jsx
 /src/components/RankButton.jsx
-/src/components/PackQueue.jsx        <- upcoming-packs queue (#21, not yet created)
+/src/components/PackQueue.jsx        <- upcoming-packs queue
 /src/components/SaveRankingModal.jsx <- name/save prompt on completion (#27, not yet created)
 /src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer (#27, not yet created)
 /src/lib/elo.js
