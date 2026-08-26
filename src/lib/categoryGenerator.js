@@ -2,6 +2,8 @@ import { isForbiddenPair, pairLabel } from './categoryRules.js'
 
 const MIN_RANKED_FOR_OVERLAP = 5
 const MAX_CATEGORY_ATTEMPTS = 50
+const RANDOM_FIVE_CHANCE = 0.15
+const RANDOM_FIVE_LABEL = 'Random Five'
 
 const ATTRIBUTE_TYPES = ['director', 'genre', 'decade', 'year', 'cast']
 
@@ -116,26 +118,44 @@ function selectFivePack(matches, { isRanked, random, totalRankedCount }) {
   return shuffle([...unrankedPicks, ...rankedPicks], random)
 }
 
+// A "Random Five" pack skips the attribute filter and draws from the whole
+// pool, still subject to the same overlap rule as attribute-based packs.
+// Returns null if the pool itself is smaller than 5.
+function randomFivePack(movies, selectOptions) {
+  const pack = selectFivePack(movies, selectOptions)
+  if (pack.length !== 5) return null
+  return { label: RANDOM_FIVE_LABEL, movies: pack }
+}
+
 // Generates a category + 5-pack for the given list of movies.
 // `isRanked(movie)` should return whether the movie has appeared in a
 // previous pack for this list. `totalRankedCount` is the number of such
 // movies in the whole list (used for the overlap-eligibility threshold).
 // `random` defaults to Math.random but can be injected for deterministic tests.
+//
+// Most packs are attribute-based, but a "Random Five" pack — sampled from
+// the whole pool with no attribute filter — gets thrown in occasionally
+// (RANDOM_FIVE_CHANCE), and also serves as the fallback when no
+// attribute-based category can find 5 matches.
 export function generateCategory(
   movies,
   { isRanked = () => false, totalRankedCount = 0, random = Math.random } = {},
 ) {
+  const selectOptions = { isRanked, random, totalRankedCount }
+
+  if (random() < RANDOM_FIVE_CHANCE) {
+    const randomPack = randomFivePack(movies, selectOptions)
+    if (randomPack) return randomPack
+  }
+
   for (let attempt = 0; attempt < MAX_CATEGORY_ATTEMPTS; attempt++) {
     const category = tryBuildCategory(movies, random)
     if (!category) continue
-    const pack = selectFivePack(category.movies, {
-      isRanked,
-      random,
-      totalRankedCount,
-    })
+    const pack = selectFivePack(category.movies, selectOptions)
     if (pack.length === 5) {
       return { label: category.label, movies: pack }
     }
   }
-  return null
+
+  return randomFivePack(movies, selectOptions)
 }
