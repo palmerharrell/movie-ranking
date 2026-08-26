@@ -20,7 +20,7 @@ function App() {
   // packs[0] is the active pack; packs[1..] is the upcoming queue.
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
-  const [ranking, setRanking] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -41,23 +41,24 @@ function App() {
   }
 
   async function handleRank() {
-    setRanking(true)
+    setBusy(true)
     try {
       const movieIds = category.movies.map((m) => m.id)
-      const [updatedMovies, freshPack] = await Promise.all([
-        api.rankFivePack(movieIds),
-        api.getCategory(),
-      ])
+      // Sequential: the fresh pack's overlap calculation reads timesRanked
+      // from the DB, so it must run after the rank submission commits.
+      const updatedMovies = await api.rankFivePack(movieIds)
+      const freshPack = await api.getCategory()
       setMovies(updatedMovies)
       setPacks((prev) => [...prev.slice(1), freshPack])
     } catch (err) {
       setError(err.message)
     } finally {
-      setRanking(false)
+      setBusy(false)
     }
   }
 
   async function handleSelectQueued(queueIndex) {
+    setBusy(true)
     try {
       const freshPack = await api.getCategory()
       setPacks((prev) => {
@@ -68,6 +69,8 @@ function App() {
       })
     } catch (err) {
       setError(err.message)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -139,9 +142,11 @@ function App() {
                   Loading…
                 </p>
               )}
-              {category && <PackQueue queue={queue} theme={theme} onSelect={handleSelectQueued} />}
+              {category && (
+                <PackQueue queue={queue} theme={theme} disabled={busy} onSelect={handleSelectQueued} />
+              )}
               <div className="mt-4">
-                <RankButton onClick={handleRank} disabled={!category || ranking} />
+                <RankButton onClick={handleRank} disabled={!category || busy} />
               </div>
             </div>
           </main>

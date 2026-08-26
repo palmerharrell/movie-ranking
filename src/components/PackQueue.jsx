@@ -1,11 +1,12 @@
 import { applyThemeWording } from '../lib/labelWording.js'
 
-function QueuedPackCard({ pack, theme, onSelect }) {
+function QueuedPackCard({ pack, theme, disabled, onSelect }) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="queue-pack-card flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left"
+      disabled={disabled}
+      className="queue-pack-card flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
     >
       <div className="flex shrink-0 -space-x-2.5">
         {pack.movies.map((movie) => (
@@ -26,7 +27,7 @@ function QueuedPackCard({ pack, theme, onSelect }) {
   )
 }
 
-export function PackQueue({ queue, theme, onSelect }) {
+export function PackQueue({ queue, theme, disabled, onSelect }) {
   if (queue.length === 0) return null
 
   return (
@@ -35,9 +36,10 @@ export function PackQueue({ queue, theme, onSelect }) {
       <div className="flex flex-col gap-2">
         {queue.map((pack, index) => (
           <QueuedPackCard
-            key={index}
+            key={pack.movies.map((m) => m.id).join('-')}
             pack={pack}
             theme={theme}
+            disabled={disabled}
             onSelect={() => onSelect(index)}
           />
         ))}
