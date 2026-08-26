@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyPairwiseResult, rankFivePack } from './elo.js'
+import { applyPairwiseResult, rankPack } from './elo.js'
 
 describe('applyPairwiseResult', () => {
   it('raises the winner and lowers the loser when ratings are equal', () => {
@@ -29,7 +29,7 @@ describe('applyPairwiseResult', () => {
   })
 })
 
-describe('rankFivePack', () => {
+describe('rankPack', () => {
   const movies = [
     { id: '1', eloRating: 1000 },
     { id: '2', eloRating: 1000 },
@@ -38,12 +38,16 @@ describe('rankFivePack', () => {
     { id: '5', eloRating: 1000 },
   ]
 
-  it('throws if not given exactly 5 movies', () => {
-    expect(() => rankFivePack(movies.slice(0, 4))).toThrow()
+  it('throws if given fewer than 2 movies', () => {
+    expect(() => rankPack(movies.slice(0, 1))).toThrow()
+  })
+
+  it('throws if given more than 5 movies', () => {
+    expect(() => rankPack([...movies, { id: '6', eloRating: 1000 }])).toThrow()
   })
 
   it('produces a strictly descending rating order matching the input order', () => {
-    const result = rankFivePack(movies)
+    const result = rankPack(movies)
     const ratings = movies.map((m) => result[m.id])
     for (let i = 0; i < ratings.length - 1; i++) {
       expect(ratings[i]).toBeGreaterThan(ratings[i + 1])
@@ -51,7 +55,19 @@ describe('rankFivePack', () => {
   })
 
   it('returns an entry for every movie', () => {
-    const result = rankFivePack(movies)
+    const result = rankPack(movies)
     expect(Object.keys(result).sort()).toEqual(['1', '2', '3', '4', '5'])
+  })
+
+  it('handles a shrunk pack (2-4 movies) after skips', () => {
+    for (const size of [2, 3, 4]) {
+      const pack = movies.slice(0, size)
+      const result = rankPack(pack)
+      expect(Object.keys(result).sort()).toEqual(pack.map((m) => m.id).sort())
+      const ratings = pack.map((m) => result[m.id])
+      for (let i = 0; i < ratings.length - 1; i++) {
+        expect(ratings[i]).toBeGreaterThan(ratings[i + 1])
+      }
+    }
   })
 })

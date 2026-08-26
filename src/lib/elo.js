@@ -15,13 +15,14 @@ export function applyPairwiseResult(winner, loser) {
   }
 }
 
-// Takes 5 movies in ranked order (index 0 = rank 1, best) and produces the
-// 10 pairwise outcomes (1 beats 2,3,4,5 / 2 beats 3,4,5 / 3 beats 4,5 / 4 beats 5),
+// Takes 2-5 movies in ranked order (index 0 = rank 1, best) — a pack can
+// shrink below 5 when movies are skipped via "Haven't Seen" — and produces
+// every pairwise outcome (each movie beats every movie ranked below it),
 // applying a standard Elo update sequentially for each. Returns a map of
-// { [movieId]: newEloRating } for all 5 movies.
-export function rankFivePack(orderedMovies) {
-  if (orderedMovies.length !== 5) {
-    throw new Error('rankFivePack requires exactly 5 movies')
+// { [movieId]: newEloRating } for every movie in the pack.
+export function rankPack(orderedMovies) {
+  if (orderedMovies.length < 2 || orderedMovies.length > 5) {
+    throw new Error('rankPack requires between 2 and 5 movies')
   }
 
   const ratings = new Map(

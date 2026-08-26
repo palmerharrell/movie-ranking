@@ -59,6 +59,22 @@ test('applyRank throws on an unknown movie id', () => {
   assert.throws(() => applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', 'nope']))
 })
 
+test('applyRank accepts a shrunk pack (fewer than 5 ids, e.g. after skips)', () => {
+  const db = freshDb()
+  const updated = applyRank(db, FIXTURES_DIR, ['1', '2'])
+  const byId = new Map(updated.map((m) => [m.id, m]))
+  assert.equal(byId.get('1').timesRanked, 1)
+  assert.equal(byId.get('2').timesRanked, 1)
+  assert.equal(byId.get('3').timesRanked, 0)
+  assert.ok(byId.get('1').eloRating > 1000)
+  assert.ok(byId.get('2').eloRating < 1000)
+})
+
+test('applyRank throws on a single-movie pack', () => {
+  const db = freshDb()
+  assert.throws(() => applyRank(db, FIXTURES_DIR, ['1']))
+})
+
 test('pickCategory returns a 5-movie category', () => {
   const db = freshDb()
   const category = pickCategory(db, FIXTURES_DIR)

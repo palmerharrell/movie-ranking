@@ -48,8 +48,8 @@ app.get('/api/movies', (req, res) => {
 
 app.post('/api/rank', (req, res) => {
   const { movieIds } = req.body
-  if (!Array.isArray(movieIds) || movieIds.length !== 5) {
-    return res.status(400).json({ error: 'movieIds must be an array of 5 ids' })
+  if (!Array.isArray(movieIds) || movieIds.length < 2 || movieIds.length > 5) {
+    return res.status(400).json({ error: 'movieIds must be an array of 2 to 5 ids' })
   }
   try {
     res.json(applyRank(db, DATA_DIR, movieIds))

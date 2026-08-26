@@ -337,6 +337,21 @@ body {
   background: var(--text-low);
 }
 
+.skip-button {
+  font-family: var(--font-mono);
+  color: var(--text-low);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  white-space: nowrap;
+}
+
+.skip-button:hover:not(:disabled) {
+  color: var(--text-high);
+  border-color: var(--accent);
+}
+
 /* Rank button */
 
 .rank-button {
