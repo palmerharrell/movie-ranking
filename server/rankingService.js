@@ -1,6 +1,13 @@
 import { rankFivePack } from '../src/lib/elo.js'
 import { generateCategory } from '../src/lib/categoryGenerator.js'
-import { getAllState, upsertState } from './db.js'
+import {
+  getAllState,
+  upsertState,
+  resetAllState,
+  createSavedRanking,
+  listSavedRankings as listSavedRankingsFromDb,
+  getSavedRanking,
+} from './db.js'
 import { loadMovies } from './movieStore.js'
 
 // Merges the pool's static metadata with its persisted Elo state.
@@ -44,4 +51,51 @@ export function pickCategory(db, dataDir) {
     isRanked: (m) => m.timesRanked > 0,
     totalRankedCount: rankedCount,
   })
+}
+
+// Snapshots the pool's current ranking state under `name`, then resets live
+// state back to defaults so a fresh ranking run can start from scratch.
+// Throws if the pool isn't found or isn't fully ranked yet.
+export function saveRanking(db, dataDir, name) {
+  const movies = getMoviesWithState(db, dataDir)
+  if (!movies) throw new Error('Movie pool not found')
+  if (movies.some((m) => m.timesRanked < 1)) {
+    throw new Error('Every movie in the pool must be ranked at least once before saving')
+  }
+
+  const entries = movies.map((m) => ({
+    movieId: m.id,
+    eloRating: m.eloRating,
+    timesRanked: m.timesRanked,
+  }))
+  const id = createSavedRanking(db, name, entries)
+  resetAllState(db)
+  return { id, name }
+}
+
+// { id, name, createdAt }[] for every saved snapshot, newest first.
+export function listSavedRankings(db) {
+  return listSavedRankingsFromDb(db)
+}
+
+// A saved snapshot's static metadata + snapshot-time eloRating/timesRanked,
+// sorted descending by eloRating. Returns null if the snapshot or the pool's
+// static metadata isn't found.
+export function getSavedRankingMovies(db, dataDir, id) {
+  const staticMovies = loadMovies(dataDir)
+  if (!staticMovies) return null
+
+  const saved = getSavedRanking(db, id)
+  if (!saved) return null
+
+  const entryMap = new Map(saved.entries.map((e) => [e.movieId, e]))
+  const movies = staticMovies
+    .map((m) => ({
+      ...m,
+      eloRating: entryMap.get(m.id)?.eloRating ?? 1000,
+      timesRanked: entryMap.get(m.id)?.timesRanked ?? 0,
+    }))
+    .sort((a, b) => b.eloRating - a.eloRating)
+
+  return { id: saved.id, name: saved.name, createdAt: saved.createdAt, movies }
 }
