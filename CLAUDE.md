@@ -98,18 +98,13 @@ backend's ranking-state store instead (see **Online deployment**).
 - Filter the pool's movies for matches; if fewer than 5 movies match, discard
   and try another category (don't show the user a category with < 5 eligible
   movies).
-- **Random packs (#22) — NOT YET IMPLEMENTED:** today, `categoryGenerator.js`
-  only falls back to a random sample early on (before enough movies are
-  ranked to satisfy the overlap requirement below). The design in #22 calls
-  for something more: dedicated "Random Five" packs that skip the attribute
-  filter entirely and get thrown in occasionally as their own labeled pack
-  type (not just an overlap-bootstrap fallback), sampling 5 movies at random
-  from the whole pool. This adds variety and also acts as the fallback when
-  no attribute-based category can find 5 matches (which becomes more likely
-  as the pool grows and gets more thoroughly ranked) — a random pick from the
-  full pool always has enough candidates as long as the pool itself does.
-  There is currently no `"Random Five"` label and no code path that inserts
-  one of these packs outside the bootstrap case.
+- **Random packs:** `categoryGenerator.js` throws in a dedicated "Random Five"
+  pack — skipping the attribute filter entirely and sampling 5 movies at
+  random from the whole pool — with a 15% chance on each pack generated
+  (`RANDOM_FIVE_CHANCE`), and also as the fallback when no attribute-based
+  category can find 5 matches (which becomes more likely as the pool grows
+  and gets more thoroughly ranked). A Random Five pack still applies the
+  overlap requirement below, same as attribute-based packs.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
