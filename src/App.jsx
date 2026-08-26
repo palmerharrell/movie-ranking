@@ -97,12 +97,17 @@ function App() {
   }
 
   async function handleSkipMovie(movieId) {
-    const remaining = category.movies.filter((m) => m.id !== movieId)
+    // Derive `remaining` from `prev` (not the render-time `category` closure)
+    // so two near-simultaneous skip clicks can't have the second overwrite
+    // the first's result.
+    let remaining
+    setPacks((prev) => {
+      remaining = prev[0].movies.filter((m) => m.id !== movieId)
+      if (remaining.length <= 1) return prev
+      return [{ ...prev[0], movies: remaining }, ...prev.slice(1)]
+    })
 
-    if (remaining.length > 1) {
-      setPacks((prev) => [{ ...prev[0], movies: remaining }, ...prev.slice(1)])
-      return
-    }
+    if (remaining.length > 1) return
 
     // Fewer than 2 movies left to rank — move on without collecting ranking data.
     setBusy(true)
