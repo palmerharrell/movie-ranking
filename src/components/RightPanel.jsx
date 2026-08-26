@@ -11,8 +11,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { MovieTile } from './MovieTile.jsx'
+import { applyThemeWording } from '../lib/labelWording.js'
 
-export function RightPanel({ category, onReorder }) {
+export function RightPanel({ category, onReorder, theme }) {
   const sensors = useSensors(useSensor(PointerSensor))
 
   function handleDragEnd(event) {
@@ -28,7 +29,7 @@ export function RightPanel({ category, onReorder }) {
     <div className="pack-card">
       <div className="mb-3">
         <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
-        <h2 className="pack-category-label mt-1">{category.label}</h2>
+        <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
       </div>
       <DndContext
         sensors={sensors}

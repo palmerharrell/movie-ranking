@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateCategory } from './categoryGenerator.js'
+import { generateCategory, tryBuildCategory } from './categoryGenerator.js'
 
 // Deterministic seeded PRNG (mulberry32) so tests aren't flaky.
 function seededRandom(seed) {
@@ -96,5 +96,49 @@ describe('generateCategory', () => {
     })
     expect(result).not.toBeNull()
     expect(result.movies).toHaveLength(5)
+  })
+
+  it('never pairs decade with year', () => {
+    const movies = makeMovies()
+    for (let seed = 0; seed < 300; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed))
+      if (!result || result.picks.length < 2) continue
+      const types = result.picks.map((p) => p.type).sort()
+      expect(types).not.toEqual(['decade', 'year'])
+    }
+  })
+
+  it('formats each allowed pair type as specified', () => {
+    const movies = [
+      { id: '1', title: 'M1', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
+      { id: '2', title: 'M2', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
+      { id: '3', title: 'M3', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
+      { id: '4', title: 'M4', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
+      { id: '5', title: 'M5', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
+    ]
+
+    const expectedByPair = {
+      'decade,genre': '90s Adventure Movies',
+      'genre,year': '1999 Adventure Movies',
+      'director,genre': 'Wes Anderson Adventure Movies',
+      'cast,genre': 'Adventure Movies starring Harrison Ford',
+      'decade,director': '90s Movies Directed by Wes Anderson',
+      'cast,decade': '90s Movies starring Harrison Ford',
+      'director,year': '1999 Wes Anderson Movies',
+      'cast,year': '1999 Movies starring Harrison Ford',
+      'cast,director': 'Wes Anderson Movies starring Harrison Ford',
+    }
+
+    const seenPairs = new Set()
+    for (let seed = 0; seed < 500 && seenPairs.size < Object.keys(expectedByPair).length; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed))
+      if (!result || result.picks.length < 2) continue
+      const key = result.picks.map((p) => p.type).sort().join(',')
+      if (seenPairs.has(key)) continue
+      seenPairs.add(key)
+      expect(result.label).toBe(expectedByPair[key])
+    }
+
+    expect(seenPairs.size).toBe(Object.keys(expectedByPair).length)
   })
 })

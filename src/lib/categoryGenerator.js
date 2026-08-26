@@ -1,3 +1,5 @@
+import { isForbiddenPair, pairLabel } from './categoryRules.js'
+
 const MIN_RANKED_FOR_OVERLAP = 5
 const MAX_CATEGORY_ATTEMPTS = 50
 
@@ -51,13 +53,13 @@ function sample(array, n, random) {
 
 function labelFor(picks) {
   if (picks.length === 1) return LABELS[picks[0].type](picks[0].value)
-  return `${picks[0].value} + ${LABELS[picks[1].type](picks[1].value)}`
+  return pairLabel(picks)
 }
 
 // Picks a random single attribute, or a random pair of two different
 // attribute types, and returns the movies matching all picked values —
 // or null if fewer than 5 movies match.
-function tryBuildCategory(movies, random) {
+export function tryBuildCategory(movies, random) {
   const usePair = random() < 0.5
   const types = shuffle(ATTRIBUTE_TYPES, random)
   const picks = []
@@ -68,7 +70,7 @@ function tryBuildCategory(movies, random) {
   picks.push({ type: firstType, value: randomItem(firstPool, random) })
 
   if (usePair) {
-    const secondType = types.find((t) => t !== firstType)
+    const secondType = types.find((t) => t !== firstType && !isForbiddenPair(firstType, t))
     const remaining = movies.filter((m) =>
       matchesAttribute(m, picks[0].type, picks[0].value),
     )
@@ -84,7 +86,7 @@ function tryBuildCategory(movies, random) {
 
   if (matches.length < 5) return null
 
-  return { label: labelFor(picks), movies: matches }
+  return { label: labelFor(picks), movies: matches, picks }
 }
 
 // Selects 5 movies from `matches` for the pack, applying the overlap rule:
