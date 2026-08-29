@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export function SaveRankingModal({ onSave, onDismiss }) {
+export function SaveRankingModal({ onSave, onDismiss, isFamily = false }) {
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -24,10 +24,13 @@ export function SaveRankingModal({ onSave, onDismiss }) {
     <div className="modal-overlay">
       <div className="modal-card">
         <p className="modal-eyebrow text-[11px] font-medium uppercase">Ranking Complete</p>
-        <h2 className="modal-title mt-1 text-xl font-semibold">Every movie has been ranked</h2>
+        <h2 className="modal-title mt-1 text-xl font-semibold">
+          {isFamily ? 'Every family-friendly movie has been ranked' : 'Every movie has been ranked'}
+        </h2>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-mid)' }}>
-          Give this ranking a name to save it. Saving resets the board so you can start a fresh
-          ranking run.
+          {isFamily
+            ? 'Give this ranking a name to save it. Saving resets just the family-friendly movies so you can start a fresh family ranking run — the rest of your pool is untouched.'
+            : 'Give this ranking a name to save it. Saving resets the board so you can start a fresh ranking run.'}
         </p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
           <input

@@ -41,7 +41,8 @@ app.use((req, res, next) => {
 })
 
 app.get('/api/movies', (req, res) => {
-  const movies = getMoviesWithState(db, DATA_DIR)
+  const family = req.query.family === 'true'
+  const movies = getMoviesWithState(db, DATA_DIR, { family })
   if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
 })
@@ -59,18 +60,19 @@ app.post('/api/rank', (req, res) => {
 })
 
 app.get('/api/category', (req, res) => {
-  const category = pickCategory(db, DATA_DIR)
+  const family = req.query.family === 'true'
+  const category = pickCategory(db, DATA_DIR, { family })
   if (!category) return res.status(404).json({ error: 'Movie pool not found or not enough movies' })
   res.json(category)
 })
 
 app.post('/api/rankings', (req, res) => {
-  const { name } = req.body
+  const { name, family } = req.body
   if (typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'name is required' })
   }
   try {
-    res.json(saveRanking(db, DATA_DIR, name.trim()))
+    res.json(saveRanking(db, DATA_DIR, name.trim(), { family: family === true }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

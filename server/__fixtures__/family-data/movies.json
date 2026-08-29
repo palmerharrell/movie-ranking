@@ -1,0 +1,9 @@
+[
+  { "id": "1", "title": "M1", "year": 1985, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"], "mpaaRating": "G" },
+  { "id": "2", "title": "M2", "year": 1986, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"], "mpaaRating": "PG" },
+  { "id": "3", "title": "M3", "year": 1987, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"], "mpaaRating": "PG-13" },
+  { "id": "4", "title": "M4", "year": 1988, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"], "mpaaRating": "PG" },
+  { "id": "5", "title": "M5", "year": 1989, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor Z"], "mpaaRating": "G" },
+  { "id": "6", "title": "M6", "year": 1990, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor W"], "mpaaRating": "R" },
+  { "id": "7", "title": "M7", "year": 1991, "decade": "90s", "director": "Director B", "genres": ["Action"], "cast": ["Actor W"], "mpaaRating": null }
+]

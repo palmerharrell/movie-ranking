@@ -1,9 +1,10 @@
 import { rankPack } from '../src/lib/elo.js'
 import { generateCategory } from '../src/lib/categoryGenerator.js'
+import { isFamilySafe } from '../src/lib/familyMode.js'
 import {
   getAllState,
   upsertState,
-  resetAllState,
+  resetState,
   createSavedRanking,
   listSavedRankings as listSavedRankingsFromDb,
   getSavedRanking,
@@ -20,12 +21,14 @@ function mergeWithState(staticMovies, state) {
   }))
 }
 
-// Merges the pool's static metadata with its persisted Elo state.
+// Merges the pool's static metadata with its persisted Elo state, optionally
+// restricted to family-safe (G/PG/PG-13, confirmed-rating) movies.
 // Returns null if the enriched JSON doesn't exist yet.
-export function getMoviesWithState(db, dataDir) {
+export function getMoviesWithState(db, dataDir, { family = false } = {}) {
   const staticMovies = loadMovies(dataDir)
   if (!staticMovies) return null
-  return mergeWithState(staticMovies, getAllState(db))
+  const movies = mergeWithState(staticMovies, getAllState(db))
+  return family ? movies.filter(isFamilySafe) : movies
 }
 
 // Applies a ranked pack (2-5 movieIds in rank order — fewer than 5 when
@@ -49,8 +52,9 @@ export function applyRank(db, dataDir, orderedMovieIds) {
 }
 
 // Generates a fresh category + 5-pack for the pool, respecting the overlap rule.
-export function pickCategory(db, dataDir) {
-  const movies = getMoviesWithState(db, dataDir)
+// Pass { family: true } to build the category from family-safe movies only.
+export function pickCategory(db, dataDir, { family = false } = {}) {
+  const movies = getMoviesWithState(db, dataDir, { family })
   if (!movies) return null
   const rankedCount = movies.filter((m) => m.timesRanked > 0).length
   return generateCategory(movies, {
@@ -59,11 +63,14 @@ export function pickCategory(db, dataDir) {
   })
 }
 
-// Snapshots the pool's current ranking state under `name`, then resets live
+// Snapshots the current ranking state under `name`, then resets that live
 // state back to defaults so a fresh ranking run can start from scratch.
-// Throws if the pool isn't found or isn't fully ranked yet.
-export function saveRanking(db, dataDir, name) {
-  const movies = getMoviesWithState(db, dataDir)
+// Throws if the pool isn't found or isn't fully ranked yet. Pass
+// { family: true } to scope both the completeness check and the snapshot to
+// just the family-safe subset — Elo state for the rest of the pool (e.g.
+// R-rated movies never seen in Family mode) is left untouched by the reset.
+export function saveRanking(db, dataDir, name, { family = false } = {}) {
+  const movies = getMoviesWithState(db, dataDir, { family })
   if (!movies) throw new Error('Movie pool not found')
   if (movies.length === 0 || movies.some((m) => m.timesRanked < 1)) {
     throw new Error('Every movie in the pool must be ranked at least once before saving')
@@ -75,18 +82,21 @@ export function saveRanking(db, dataDir, name) {
     timesRanked: m.timesRanked,
   }))
   const id = createSavedRanking(db, name, entries)
-  resetAllState(db)
+  resetState(db, movies.map((m) => m.id))
   return { id, name }
 }
 
-// { id, name, createdAt }[] for every saved snapshot, newest first.
+// { id, name, createdAt, movieCount }[] for every saved snapshot, newest first.
 export function listSavedRankings(db) {
   return listSavedRankingsFromDb(db)
 }
 
 // A saved snapshot's static metadata + snapshot-time eloRating/timesRanked,
-// sorted descending by eloRating. Returns null if the snapshot or the pool's
-// static metadata isn't found.
+// sorted descending by eloRating. Only includes movies that were actually
+// part of the saved ranking (its `entries`) — not every movie in the
+// current pool — so a partial (e.g. Family-scoped) snapshot doesn't get
+// padded out with movies that were never part of that run. Returns null if
+// the snapshot or the pool's static metadata isn't found.
 export function getSavedRankingMovies(db, dataDir, id) {
   const staticMovies = loadMovies(dataDir)
   if (!staticMovies) return null
@@ -95,7 +105,8 @@ export function getSavedRankingMovies(db, dataDir, id) {
   if (!saved) return null
 
   const entryMap = new Map(saved.entries.map((e) => [e.movieId, e]))
-  const movies = mergeWithState(staticMovies, entryMap).sort(
+  const scopedStaticMovies = staticMovies.filter((m) => entryMap.has(m.id))
+  const movies = mergeWithState(scopedStaticMovies, entryMap).sort(
     (a, b) => b.eloRating - a.eloRating,
   )
 

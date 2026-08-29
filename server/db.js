@@ -38,9 +38,12 @@ export function upsertState(db, movieId, eloRating, timesRanked) {
   ).run(movieId, eloRating, timesRanked)
 }
 
-// Clears all live ranking state back to defaults (eloRating 1000, timesRanked 0).
-export function resetAllState(db) {
-  db.prepare('DELETE FROM movie_state').run()
+// Clears live ranking state for `movieIds` back to defaults (eloRating 1000,
+// timesRanked 0). A no-op for an empty list.
+export function resetState(db, movieIds) {
+  if (movieIds.length === 0) return
+  const placeholders = movieIds.map(() => '?').join(', ')
+  db.prepare(`DELETE FROM movie_state WHERE movie_id IN (${placeholders})`).run(...movieIds)
 }
 
 // Snapshots `entries` ({movieId, eloRating, timesRanked}[]) as a named,
@@ -52,12 +55,19 @@ export function createSavedRanking(db, name, entries) {
   return result.lastInsertRowid
 }
 
-// { id, name, createdAt }[] for every saved snapshot, newest first.
+// { id, name, createdAt, movieCount }[] for every saved snapshot, newest
+// first. movieCount surfaces whether a snapshot is a full-pool or a
+// partial (e.g. Family-scoped) ranking.
 export function listSavedRankings(db) {
   const rows = db
-    .prepare('SELECT id, name, created_at FROM saved_rankings ORDER BY created_at DESC, id DESC')
+    .prepare('SELECT id, name, created_at, data FROM saved_rankings ORDER BY created_at DESC, id DESC')
     .all()
-  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at }))
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    createdAt: r.created_at,
+    movieCount: JSON.parse(r.data).length,
+  }))
 }
 
 // A saved snapshot's { id, name, createdAt, entries } — entries is the

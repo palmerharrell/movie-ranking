@@ -3,7 +3,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { parseLetterboxdExport } from './parseLetterboxdExport.js'
-import { searchMovie, getMovieDetails, toEnrichedFields } from './tmdb.js'
+import {
+  searchMovie,
+  getMovieDetails,
+  getReleaseDates,
+  extractUSCertification,
+  toEnrichedFields,
+} from './tmdb.js'
 
 dotenv.config({ quiet: true })
 
@@ -24,6 +30,7 @@ async function enrichMovie(apiKey, movie) {
   }
   const details = await getMovieDetails(apiKey, match.id)
   const fields = toEnrichedFields(details)
+  const releaseDates = await getReleaseDates(apiKey, match.id)
   return {
     id: movie.key,
     title: movie.title,
@@ -33,6 +40,7 @@ async function enrichMovie(apiKey, movie) {
     genres: fields.genres,
     cast: fields.cast,
     posterUrl: fields.posterUrl,
+    mpaaRating: extractUSCertification(releaseDates),
   }
 }
 

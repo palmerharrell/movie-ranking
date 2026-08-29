@@ -25,6 +25,21 @@ export async function getMovieDetails(apiKey, tmdbId) {
   })
 }
 
+export async function getReleaseDates(apiKey, tmdbId) {
+  return tmdbFetch(apiKey, `/movie/${tmdbId}/release_dates`)
+}
+
+// US MPAA certification (e.g. "PG-13") from a /release_dates response, or
+// null if TMDb has no US certification data for this movie. Prefers a
+// theatrical release (release_type 3) when multiple US entries have one.
+export function extractUSCertification(releaseDatesResponse) {
+  const us = releaseDatesResponse.results?.find((r) => r.iso_3166_1 === 'US')
+  const entries = (us?.release_dates || []).filter((r) => r.certification)
+  if (entries.length === 0) return null
+  const theatrical = entries.find((r) => r.release_type === 3)
+  return (theatrical || entries[0]).certification
+}
+
 export function toEnrichedFields(details) {
   const director = details.credits?.crew?.find((c) => c.job === 'Director')
   const cast = (details.credits?.cast || [])
