@@ -43,17 +43,19 @@ function App() {
   const queue = packs?.slice(1) ?? []
   const isFamily = theme === 'family'
 
-  // Prompts to save once the pool transitions into "every movie ranked at
-  // least once" — not on every subsequent Rank click while it stays there.
-  // Family mode only ever sees a filtered subset of the pool, so its
-  // "fully ranked" state isn't real pool completion — never prompt there.
+  // Prompts to save once the currently-visible pool transitions into "every
+  // movie ranked at least once" — not on every subsequent Rank click while
+  // it stays there. In Family mode "the pool" means the family-safe subset
+  // (the save itself is scoped the same way — see handleSaveRanking), so
+  // this fires on family-subset completion too, independent of the rest of
+  // the pool.
   // POST /api/rank returns the full pool's state (unfiltered), so re-apply
   // the family filter client-side to keep the displayed pool consistent
   // with what's currently shown while family mode is active.
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = isFamily ? updatedMovies.filter(isFamilySafe) : updatedMovies
     setMovies(visibleMovies)
-    const fullyRanked = !isFamily && isFullyRanked(visibleMovies)
+    const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
       setShowSaveModal(true)
     }
@@ -147,7 +149,10 @@ function App() {
 
   async function handleSaveRanking(name) {
     // Let a failure here propagate to the modal, which shows it inline.
-    await api.saveRanking(name)
+    // { family: isFamily } scopes the snapshot + reset to the family-safe
+    // subset when saving from Family mode, leaving the rest of the pool's
+    // progress untouched.
+    await api.saveRanking(name, { family: isFamily })
     setShowSaveModal(false)
     wasFullyRanked.current = false
 
@@ -259,6 +264,7 @@ function App() {
         <SaveRankingModal
           onSave={handleSaveRanking}
           onDismiss={() => setShowSaveModal(false)}
+          isFamily={isFamily}
         />
       )}
       {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}

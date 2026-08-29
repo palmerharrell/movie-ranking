@@ -73,6 +73,9 @@ export function LoadRankingView({ onClose }) {
                     >
                       <span className="text-sm font-medium" style={{ color: 'var(--text-high)' }}>
                         {ranking.name}
+                        <span className="ml-2 font-mono text-[11px]" style={{ color: 'var(--text-low)' }}>
+                          {ranking.movieCount} movies
+                        </span>
                       </span>
                       <span className="font-mono text-[11px]" style={{ color: 'var(--text-low)' }}>
                         {new Date(ranking.createdAt).toLocaleDateString()}

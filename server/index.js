@@ -67,12 +67,12 @@ app.get('/api/category', (req, res) => {
 })
 
 app.post('/api/rankings', (req, res) => {
-  const { name } = req.body
+  const { name, family } = req.body
   if (typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'name is required' })
   }
   try {
-    res.json(saveRanking(db, DATA_DIR, name.trim()))
+    res.json(saveRanking(db, DATA_DIR, name.trim(), { family: family === true }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

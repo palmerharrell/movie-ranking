@@ -34,10 +34,10 @@ export function rankPack(movieIds) {
   })
 }
 
-export function saveRanking(name) {
+export function saveRanking(name, { family } = {}) {
   return request('/api/rankings', {
     method: 'POST',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, family: !!family }),
   })
 }
 
