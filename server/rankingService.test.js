@@ -16,6 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
 const EMPTY_POOL_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty-pool')
+const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
 
 function freshDb() {
   return createDb(':memory:')
@@ -80,6 +81,27 @@ test('pickCategory returns a 5-movie category', () => {
   const category = pickCategory(db, FIXTURES_DIR)
   assert.ok(category)
   assert.equal(category.movies.length, 5)
+})
+
+test('getMoviesWithState({ family: true }) excludes non-family-safe and unrated movies', () => {
+  const db = freshDb()
+  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR, { family: true })
+  assert.equal(movies.length, 5)
+  assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
+test('getMoviesWithState() without family returns the full pool', () => {
+  const db = freshDb()
+  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
+  assert.equal(movies.length, 7)
+})
+
+test('pickCategory({ family: true }) only draws from family-safe movies', () => {
+  const db = freshDb()
+  const category = pickCategory(db, FAMILY_FIXTURES_DIR, { family: true })
+  assert.ok(category)
+  assert.equal(category.movies.length, 5)
+  assert.ok(category.movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
 })
 
 function rankAllOnce(db) {

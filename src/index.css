@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=Baloo+2:wght@600;800&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -53,6 +53,30 @@ body {
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
+[data-theme='family'] {
+  color-scheme: light;
+  --bg-page: #fff8e8;
+  --bg-overlay:
+    radial-gradient(45% 40% at 10% 0%, rgba(255, 176, 59, 0.25), transparent 60%),
+    radial-gradient(45% 40% at 95% 15%, rgba(58, 168, 255, 0.2), transparent 60%),
+    radial-gradient(50% 45% at 50% 110%, rgba(46, 196, 182, 0.18), transparent 60%);
+  --surface: #ffffff;
+  --surface-border: rgba(255, 122, 61, 0.3);
+  --surface-shadow: 0 6px 18px rgba(255, 122, 61, 0.12);
+  --accent: #ff7a3d;
+  --accent-hover: #ff9257;
+  --accent-deep: #e85e2d;
+  --accent2: #3aa8ff;
+  --text-high: #2b2118;
+  --text-mid: #4a3f33;
+  --text-low: #a3927d;
+  --text-credit: #6b5d4d;
+  --poster-placeholder: repeating-linear-gradient(135deg, #fff1d6 0 5px, #ffe6bd 5px 10px);
+  --font-display: 'Baloo 2', sans-serif;
+  --font-ui: 'DM Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
 /* ===================== App shell ===================== */
 
 .app-shell {
@@ -88,6 +112,10 @@ body {
 
 [data-theme='neon'] .app-title .accent {
   color: var(--accent2);
+}
+
+[data-theme='family'] .app-title {
+  font-weight: 800;
 }
 
 @keyframes bulbGlow {
@@ -131,6 +159,12 @@ body {
   border-radius: 6px;
 }
 
+[data-theme='family'] .theme-toggle {
+  border-radius: 999px;
+  border-color: var(--surface-border);
+  background: rgba(255, 122, 61, 0.08);
+}
+
 .theme-toggle-segment {
   font-family: var(--font-mono);
   color: var(--text-mid);
@@ -146,6 +180,10 @@ body {
   border-radius: 4px;
 }
 
+[data-theme='family'] .theme-toggle-segment {
+  border-radius: 999px;
+}
+
 [data-theme='classic'] .theme-toggle-segment.active {
   background: var(--accent);
   color: #2a1216;
@@ -154,6 +192,11 @@ body {
 [data-theme='neon'] .theme-toggle-segment.active {
   background: var(--accent2);
   color: #2a0a18;
+}
+
+[data-theme='family'] .theme-toggle-segment.active {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 /* Body / standings column */
@@ -219,6 +262,18 @@ body {
   border-color: rgba(240, 79, 140, 0.4);
 }
 
+[data-theme='family'] .standings-row.top-1 {
+  background-image: linear-gradient(90deg, rgba(255, 122, 61, 0.18), transparent);
+}
+
+[data-theme='family'] .standings-row.top-2 {
+  background-image: linear-gradient(90deg, rgba(255, 122, 61, 0.12), transparent);
+}
+
+[data-theme='family'] .standings-row.top-3 {
+  background-image: linear-gradient(90deg, rgba(255, 122, 61, 0.07), transparent);
+}
+
 .standings-rank {
   color: var(--text-low);
   font-family: var(--font-ui);
@@ -242,6 +297,14 @@ body {
 [data-theme='neon'] .standings-row.top-3 .standings-rank {
   color: var(--accent);
   font-weight: 700;
+}
+
+[data-theme='family'] .standings-row.top-1 .standings-rank,
+[data-theme='family'] .standings-row.top-2 .standings-rank,
+[data-theme='family'] .standings-row.top-3 .standings-rank {
+  color: var(--accent-deep);
+  font-family: var(--font-display);
+  font-weight: 800;
 }
 
 .poster-placeholder {
@@ -270,6 +333,11 @@ body {
 [data-theme='neon'] .pack-category-label {
   font-weight: 400;
   font-size: 24px;
+}
+
+[data-theme='family'] .pack-category-label {
+  font-weight: 800;
+  font-size: 26px;
 }
 
 .pack-card {
@@ -381,6 +449,17 @@ body {
   background: #ff6ba1;
 }
 
+[data-theme='family'] .rank-button {
+  border-radius: 999px;
+  background-image: linear-gradient(180deg, var(--accent-hover), var(--accent-deep));
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(255, 122, 61, 0.35);
+}
+
+[data-theme='family'] .rank-button:hover:not(:disabled) {
+  background-image: linear-gradient(180deg, #ffa06b, var(--accent));
+}
+
 .rank-caption {
   font-family: var(--font-mono);
   color: var(--text-low);
@@ -456,6 +535,14 @@ body {
 }
 
 [data-theme='neon'] .modal-button-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+[data-theme='family'] .modal-button-primary {
+  color: #ffffff;
+}
+
+[data-theme='family'] .modal-button-primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 

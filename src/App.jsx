@@ -7,17 +7,20 @@ import { ThemeToggle } from './components/ThemeToggle.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
+import { isFamilySafe } from './lib/familyMode.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
 const QUEUE_SIZE = 3
 
 function initialTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  return stored === 'classic' || stored === 'neon' ? stored : 'classic'
+  return ['classic', 'neon', 'family'].includes(stored) ? stored : 'classic'
 }
 
-function fetchPacks() {
-  return Promise.all(Array.from({ length: QUEUE_SIZE + 1 }, () => api.getCategory()))
+function fetchPacks(family) {
+  return Promise.all(
+    Array.from({ length: QUEUE_SIZE + 1 }, () => api.getCategory({ family })),
+  )
 }
 
 function isFullyRanked(movies) {
@@ -38,12 +41,19 @@ function App() {
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
+  const isFamily = theme === 'family'
 
   // Prompts to save once the pool transitions into "every movie ranked at
   // least once" — not on every subsequent Rank click while it stays there.
+  // Family mode only ever sees a filtered subset of the pool, so its
+  // "fully ranked" state isn't real pool completion — never prompt there.
+  // POST /api/rank returns the full pool's state (unfiltered), so re-apply
+  // the family filter client-side to keep the displayed pool consistent
+  // with what's currently shown while family mode is active.
   function noteMoviesUpdate(updatedMovies) {
-    setMovies(updatedMovies)
-    const fullyRanked = isFullyRanked(updatedMovies)
+    const visibleMovies = isFamily ? updatedMovies.filter(isFamilySafe) : updatedMovies
+    setMovies(visibleMovies)
+    const fullyRanked = !isFamily && isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
       setShowSaveModal(true)
     }
@@ -54,10 +64,13 @@ function App() {
     localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
+  // Re-fetch when family-mode-ness flips (different pool), not on every
+  // Classic <-> Neon swap (same pool, cosmetic only).
   useEffect(() => {
-    api.getMovies().then(noteMoviesUpdate).catch((err) => setError(err.message))
-    fetchPacks().then(setPacks).catch((err) => setError(err.message))
-  }, [])
+    api.getMovies({ family: isFamily }).then(noteMoviesUpdate).catch((err) => setError(err.message))
+    fetchPacks(isFamily).then(setPacks).catch((err) => setError(err.message))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFamily])
 
   function handleReorder(reorderedMovies) {
     setPacks((prev) => [{ ...prev[0], movies: reorderedMovies }, ...prev.slice(1)])
@@ -70,7 +83,7 @@ function App() {
       // Sequential: the fresh pack's overlap calculation reads timesRanked
       // from the DB, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
-      const freshPack = await api.getCategory()
+      const freshPack = await api.getCategory({ family: isFamily })
       noteMoviesUpdate(updatedMovies)
       setPacks((prev) => [...prev.slice(1), freshPack])
     } catch (err) {
@@ -83,7 +96,7 @@ function App() {
   async function handleSelectQueued(queueIndex) {
     setBusy(true)
     try {
-      const freshPack = await api.getCategory()
+      const freshPack = await api.getCategory({ family: isFamily })
       setPacks((prev) => {
         const packIndex = queueIndex + 1
         const selected = prev[packIndex]
@@ -122,7 +135,7 @@ function App() {
     ;(async () => {
       setBusy(true)
       try {
-        const freshPack = await api.getCategory()
+        const freshPack = await api.getCategory({ family: isFamily })
         setPacks((prev) => [...prev.slice(1), freshPack])
       } catch (err) {
         setError(err.message)
@@ -139,7 +152,10 @@ function App() {
     wasFullyRanked.current = false
 
     try {
-      const [updatedMovies, freshPacks] = await Promise.all([api.getMovies(), fetchPacks()])
+      const [updatedMovies, freshPacks] = await Promise.all([
+        api.getMovies({ family: isFamily }),
+        fetchPacks(isFamily),
+      ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
     } catch (err) {

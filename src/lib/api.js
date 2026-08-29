@@ -19,12 +19,12 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-export function getMovies() {
-  return request('/api/movies')
+export function getMovies({ family } = {}) {
+  return request(family ? '/api/movies?family=true' : '/api/movies')
 }
 
-export function getCategory() {
-  return request('/api/category')
+export function getCategory({ family } = {}) {
+  return request(family ? '/api/category?family=true' : '/api/category')
 }
 
 export function rankPack(movieIds) {

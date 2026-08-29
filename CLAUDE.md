@@ -74,8 +74,12 @@ with a `sources[]` field listing every source it came from.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-sources[]`. Static metadata only — `eloRating` and `timesRanked` live in the
-backend's ranking-state store instead (see **Online deployment**).
+mpaaRating, sources[]`. Static metadata only — `eloRating` and `timesRanked`
+live in the backend's ranking-state store instead (see **Online
+deployment**). `mpaaRating` is the movie's US MPAA certification (e.g.
+`"PG-13"`), fetched from TMDb's `/movie/{id}/release_dates` during
+enrichment, or `null` if TMDb has no US certification for it — see **Family
+mode**.
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
@@ -201,6 +205,27 @@ backend's ranking-state store instead (see **Online deployment**).
 - **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
   browsing saved snapshots (see **Saved rankings**). No more list-picker
   chips — there's only one pool.
+
+## Family mode
+- **Themes:** the theme toggle has three entries — Classic, Neon, and
+  Family — each a `data-theme` value with its own CSS custom-property
+  palette in `src/index.css`. Family uses a light, warm, kid-friendly
+  palette to visually contrast with Classic/Neon's dark themes.
+- **Filtering:** selecting Family also restricts the pool everywhere (left
+  panel, active pack, upcoming queue) to movies whose `mpaaRating` is `G`,
+  `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
+  with no confirmed US certification (`mpaaRating: null`) is excluded, not
+  assumed safe.
+- Filtering happens server-side: `GET /api/movies` and `GET /api/category`
+  accept `?family=true` and filter before merging Elo state / generating a
+  category, so category generation (overlap rule, attribute matching) only
+  ever draws from the family-safe subset.
+- Switching Classic ⇄ Neon does not re-fetch (same pool, cosmetic only);
+  switching Family mode on/off does, since the pool itself differs.
+- **Save/completion stays whole-pool:** the "every movie ranked" completion
+  check (see **Saved rankings**) is not family-aware — Family mode only ever
+  sees a subset of the pool, so its save-ranking prompt is suppressed while
+  Family mode is active rather than firing on partial completion.
 
 ## Suggested project structure
 ```

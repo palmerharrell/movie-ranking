@@ -1,5 +1,6 @@
 import { rankPack } from '../src/lib/elo.js'
 import { generateCategory } from '../src/lib/categoryGenerator.js'
+import { isFamilySafe } from '../src/lib/familyMode.js'
 import {
   getAllState,
   upsertState,
@@ -20,12 +21,14 @@ function mergeWithState(staticMovies, state) {
   }))
 }
 
-// Merges the pool's static metadata with its persisted Elo state.
+// Merges the pool's static metadata with its persisted Elo state, optionally
+// restricted to family-safe (G/PG/PG-13, confirmed-rating) movies.
 // Returns null if the enriched JSON doesn't exist yet.
-export function getMoviesWithState(db, dataDir) {
+export function getMoviesWithState(db, dataDir, { family = false } = {}) {
   const staticMovies = loadMovies(dataDir)
   if (!staticMovies) return null
-  return mergeWithState(staticMovies, getAllState(db))
+  const movies = mergeWithState(staticMovies, getAllState(db))
+  return family ? movies.filter(isFamilySafe) : movies
 }
 
 // Applies a ranked pack (2-5 movieIds in rank order — fewer than 5 when
@@ -49,8 +52,9 @@ export function applyRank(db, dataDir, orderedMovieIds) {
 }
 
 // Generates a fresh category + 5-pack for the pool, respecting the overlap rule.
-export function pickCategory(db, dataDir) {
-  const movies = getMoviesWithState(db, dataDir)
+// Pass { family: true } to build the category from family-safe movies only.
+export function pickCategory(db, dataDir, { family = false } = {}) {
+  const movies = getMoviesWithState(db, dataDir, { family })
   if (!movies) return null
   const rankedCount = movies.filter((m) => m.timesRanked > 0).length
   return generateCategory(movies, {
