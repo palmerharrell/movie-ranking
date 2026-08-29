@@ -16,6 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
 const EMPTY_POOL_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty-pool')
+const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
 
 function freshDb() {
   return createDb(':memory:')
@@ -82,9 +83,68 @@ test('pickCategory returns a 5-movie category', () => {
   assert.equal(category.movies.length, 5)
 })
 
+test('getMoviesWithState({ family: true }) excludes non-family-safe and unrated movies', () => {
+  const db = freshDb()
+  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR, { family: true })
+  assert.equal(movies.length, 5)
+  assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
+test('getMoviesWithState() without family returns the full pool', () => {
+  const db = freshDb()
+  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
+  assert.equal(movies.length, 7)
+})
+
+test('pickCategory({ family: true }) only draws from family-safe movies', () => {
+  const db = freshDb()
+  const category = pickCategory(db, FAMILY_FIXTURES_DIR, { family: true })
+  assert.ok(category)
+  assert.equal(category.movies.length, 5)
+  assert.ok(category.movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
 function rankAllOnce(db) {
   applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', '5'])
 }
+
+function rankFamilyMoviesOnce(db) {
+  applyRank(db, FAMILY_FIXTURES_DIR, ['1', '2', '3', '4', '5'])
+}
+
+test('saveRanking({ family: true }) only requires the family-safe subset to be ranked', () => {
+  const db = freshDb()
+  rankFamilyMoviesOnce(db)
+  // Non-family movies (6, 7) are left unranked — should not block a
+  // family-scoped save.
+  assert.doesNotThrow(() => saveRanking(db, FAMILY_FIXTURES_DIR, 'Family Draft', { family: true }))
+})
+
+test('saveRanking({ family: true }) throws if the family-safe subset is incomplete', () => {
+  const db = freshDb()
+  applyRank(db, FAMILY_FIXTURES_DIR, ['1', '2', '3', '4']) // 5 left unranked
+  assert.throws(() => saveRanking(db, FAMILY_FIXTURES_DIR, 'Incomplete', { family: true }))
+})
+
+test('saveRanking({ family: true }) snapshots and resets only the family-safe subset', () => {
+  const db = freshDb()
+  rankFamilyMoviesOnce(db)
+  applyRank(db, FAMILY_FIXTURES_DIR, ['6', '7']) // non-family progress, should survive the save
+
+  const { id } = saveRanking(db, FAMILY_FIXTURES_DIR, 'Family Draft', { family: true })
+
+  const saved = getSavedRankingMovies(db, FAMILY_FIXTURES_DIR, id)
+  assert.equal(saved.movies.length, 5)
+  assert.ok(saved.movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+
+  const liveMovies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
+  const byId = new Map(liveMovies.map((m) => [m.id, m]))
+  for (const id of ['1', '2', '3', '4', '5']) {
+    assert.equal(byId.get(id).timesRanked, 0, `family movie ${id} should reset`)
+  }
+  assert.equal(byId.get('6').timesRanked, 1, 'non-family progress should not be reset')
+  assert.equal(byId.get('7').timesRanked, 1, 'non-family progress should not be reset')
+})
 
 test('saveRanking throws if any movie is unranked', () => {
   const db = freshDb()
@@ -122,6 +182,15 @@ test('listSavedRankings lists snapshots newest first', () => {
   assert.equal(list.length, 2)
   assert.equal(list[0].name, 'Second')
   assert.equal(list[1].name, 'First')
+})
+
+test('listSavedRankings reports movieCount so partial saves are distinguishable', () => {
+  const db = freshDb()
+  rankAllOnce(db)
+  saveRanking(db, FIXTURES_DIR, 'Full Pool')
+
+  const list = listSavedRankings(db)
+  assert.equal(list[0].movieCount, 5)
 })
 
 test('getSavedRankingMovies returns snapshot-time state sorted by eloRating descending', () => {
