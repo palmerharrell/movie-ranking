@@ -60,10 +60,14 @@ One-time setup on the droplet, then a repeatable `deploy.sh` for updates.
    ```
    Caddy issues/renews the TLS cert automatically via Let's Encrypt.
 
-8. **Allow the deploy user to restart the service without a password**, so
-   `deploy.sh` doesn't need an interactive sudo prompt:
+8. **Allow the deploy user to restart the service and fix ownership without a
+   password**, so `deploy.sh` doesn't need an interactive sudo prompt. The
+   chown grant matters because rsync preserves the *deploying machine's*
+   local file owner, not the `movie-ranking` service account — without a way
+   to fix that up, the service loses write access to its own working
+   directory (needed for SQLite's journal/WAL files) after every deploy:
    ```
-   echo "your-ssh-user ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart movie-ranking-api" | sudo tee /etc/sudoers.d/movie-ranking-deploy
+   echo "your-ssh-user ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart movie-ranking-api, /usr/bin/chown -R movie-ranking\:movie-ranking /opt/movie-ranking/*" | sudo tee /etc/sudoers.d/movie-ranking-deploy
    ```
 
 ## Point the frontend at the deployed backend
@@ -81,5 +85,7 @@ From the repo root, after merging changes to `server/`:
 ```
 DROPLET_HOST=user@droplet ./server/deploy/deploy.sh
 ```
-This rsyncs `server/` and `data/`, reinstalls dependencies, and restarts the
+This rsyncs `server/`, `data/`, and `src/lib/`, fixes ownership back to the
+`movie-ranking` service account (rsync otherwise preserves the deploying
+machine's local file owner), reinstalls dependencies, and restarts the
 systemd service. It does not touch `.env` or `data.db` on the droplet.
