@@ -147,11 +147,11 @@ describe('generateCategory', () => {
     ]
 
     const expectedByPair = {
-      'decade,genre': '90s Adventure Movies',
+      'decade,genre': '90s Adventure',
       'genre,year': '1999 Adventure Movies',
-      'director,genre': 'Wes Anderson Adventure Movies',
-      'cast,genre': 'Adventure Movies starring Harrison Ford',
-      'decade,director': '90s Movies Directed by Wes Anderson',
+      'director,genre': 'Wes Anderson Adventure',
+      'cast,genre': 'Adventure starring Harrison Ford',
+      'decade,director': '90s Wes Anderson Movies',
       'cast,decade': '90s Movies starring Harrison Ford',
       'director,year': '1999 Wes Anderson Movies',
       'cast,year': '1999 Movies starring Harrison Ford',
@@ -169,6 +169,36 @@ describe('generateCategory', () => {
     }
 
     expect(seenPairs.size).toBe(Object.keys(expectedByPair).length)
+  })
+
+  it('formats each single-attribute type as specified', () => {
+    const movies = [
+      { id: '1', title: 'M1', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
+      { id: '2', title: 'M2', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
+      { id: '3', title: 'M3', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
+      { id: '4', title: 'M4', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
+      { id: '5', title: 'M5', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
+    ]
+
+    const expectedByType = {
+      director: 'Directed by Wes Anderson',
+      genre: 'Horror',
+      decade: '90s Movies',
+      year: 'Movies from 1999',
+      cast: 'Movies starring Harrison Ford',
+    }
+
+    const seenTypes = new Set()
+    for (let seed = 0; seed < 500 && seenTypes.size < Object.keys(expectedByType).length; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed))
+      if (!result || result.picks.length !== 1) continue
+      const type = result.picks[0].type
+      if (seenTypes.has(type)) continue
+      seenTypes.add(type)
+      expect(result.label).toBe(expectedByType[type])
+    }
+
+    expect(seenTypes.size).toBe(Object.keys(expectedByType).length)
   })
 
   it('builds a "Random Five" pack when the random-five chance hits', () => {
