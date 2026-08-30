@@ -1,11 +1,29 @@
-import { isForbiddenPair, pairLabel, shortDecade } from './categoryRules.js'
+import {
+  isForbiddenPair,
+  pairLabel,
+  shortDecade,
+  stripCollectionSuffix,
+  languageName,
+} from './categoryRules.js'
+import { KEYWORD_LABELS } from './curatedAttributes.js'
 
 const MIN_RANKED_FOR_OVERLAP = 5
 const MAX_CATEGORY_ATTEMPTS = 50
 const RANDOM_FIVE_CHANCE = 0.15
 const RANDOM_FIVE_LABEL = 'Random Five'
+const ENGLISH_LANGUAGE_CODE = 'en'
 
-const ATTRIBUTE_TYPES = ['director', 'genre', 'decade', 'year', 'cast']
+const ATTRIBUTE_TYPES = [
+  'director',
+  'genre',
+  'decade',
+  'year',
+  'cast',
+  'studio',
+  'collection',
+  'language',
+  'keyword',
+]
 
 const LABELS = {
   director: (v) => `Directed by ${v}`,
@@ -13,6 +31,10 @@ const LABELS = {
   decade: (v) => `${shortDecade(v)} Movies`,
   year: (v) => `Movies from ${v}`,
   cast: (v) => `Movies starring ${v}`,
+  studio: (v) => `${v} Movies`,
+  collection: (v) => `${stripCollectionSuffix(v)} Movies`,
+  language: (v) => `${languageName(v)} Movies`,
+  keyword: (v) => KEYWORD_LABELS[v],
 }
 
 function attributeValues(movie, type) {
@@ -27,6 +49,16 @@ function attributeValues(movie, type) {
       return movie.year ? [movie.year] : []
     case 'cast':
       return movie.cast || []
+    case 'studio':
+      return movie.studio ? [movie.studio] : []
+    case 'collection':
+      return movie.collection ? [movie.collection] : []
+    case 'language':
+      return movie.originalLanguage && movie.originalLanguage !== ENGLISH_LANGUAGE_CODE
+        ? [movie.originalLanguage]
+        : []
+    case 'keyword':
+      return movie.keywords || []
     default:
       return []
   }

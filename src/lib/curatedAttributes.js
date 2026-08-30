@@ -1,0 +1,68 @@
+// Curated allowlists shared between offline TMDb enrichment
+// (scripts/tmdb.js) and category label formatting (src/lib/categoryRules.js).
+// TMDb's raw production-company and keyword data is noisy/high-cardinality,
+// so both are filtered down to a hand-picked set worth surfacing as
+// categories — same spirit as categoryRules.js's PLURALIZE_GENRES list.
+
+export const NOTABLE_STUDIOS = [
+  'A24',
+  'Pixar',
+  'Walt Disney Pictures',
+  'Walt Disney Animation Studios',
+  'Marvel Studios',
+  'Warner Bros. Pictures',
+  'Universal Pictures',
+  'Paramount Pictures',
+  'Columbia Pictures',
+  '20th Century Fox',
+  '20th Century Studios',
+  'Lionsgate',
+  'DreamWorks Animation',
+  'DreamWorks Pictures',
+  'Studio Ghibli',
+  'Focus Features',
+  'Blumhouse Productions',
+  'New Line Cinema',
+  'Miramax',
+  'Legendary Pictures',
+  'Amblin Entertainment',
+  'Working Title Films',
+  'Neon',
+  'Searchlight Pictures',
+  'Metro-Goldwyn-Mayer',
+  'United Artists',
+  'Sony Pictures',
+  'Screen Gems',
+  'Touchstone Pictures',
+  'Illumination',
+]
+
+// Raw TMDb keyword -> display label. Only keywords present here ever surface
+// as a category — everything else gets filtered out during enrichment.
+export const KEYWORD_LABELS = {
+  heist: 'Heist Movies',
+  'time travel': 'Time Travel Movies',
+  'based on a true story': 'Based on a True Story',
+  'coming of age': 'Coming-of-Age Movies',
+  revenge: 'Revenge Movies',
+  dystopia: 'Dystopian Movies',
+  'artificial intelligence': 'AI Movies',
+  superhero: 'Superhero Movies',
+  zombie: 'Zombie Movies',
+  'serial killer': 'Serial Killer Movies',
+  'road trip': 'Road Trip Movies',
+  'high school': 'High School Movies',
+  wedding: 'Wedding Movies',
+  kidnapping: 'Kidnapping Movies',
+  'world war ii': 'WWII Movies',
+  'post-apocalyptic future': 'Post-Apocalyptic Movies',
+  'alien invasion': 'Alien Invasion Movies',
+  undercover: 'Undercover Movies',
+  'small town': 'Small Town Movies',
+  'love triangle': 'Love Triangle Movies',
+  prison: 'Prison Movies',
+  boxing: 'Boxing Movies',
+  'nonlinear timeline': 'Nonlinear Movies',
+  dream: 'Dream Movies',
+  musician: 'Musician Movies',
+}

@@ -1,3 +1,5 @@
+import { NOTABLE_STUDIOS, KEYWORD_LABELS } from '../src/lib/curatedAttributes.js'
+
 const BASE_URL = 'https://api.themoviedb.org/3'
 
 async function tmdbFetch(apiKey, endpoint, params = {}) {
@@ -21,7 +23,7 @@ export async function searchMovie(apiKey, title, year) {
 
 export async function getMovieDetails(apiKey, tmdbId) {
   return tmdbFetch(apiKey, `/movie/${tmdbId}`, {
-    append_to_response: 'credits',
+    append_to_response: 'credits,keywords',
   })
 }
 
@@ -45,6 +47,12 @@ export function toEnrichedFields(details) {
   const cast = (details.credits?.cast || [])
     .slice(0, 5)
     .map((c) => c.name)
+  const studio = (details.production_companies || [])
+    .map((c) => c.name)
+    .find((name) => NOTABLE_STUDIOS.includes(name))
+  const keywords = (details.keywords?.keywords || [])
+    .map((k) => k.name)
+    .filter((k) => KEYWORD_LABELS[k])
   return {
     tmdbId: details.id,
     director: director?.name || null,
@@ -53,5 +61,9 @@ export function toEnrichedFields(details) {
     posterUrl: details.poster_path
       ? `https://image.tmdb.org/t/p/w342${details.poster_path}`
       : null,
+    studio: studio || null,
+    collection: details.belongs_to_collection?.name || null,
+    originalLanguage: details.original_language || null,
+    keywords,
   }
 }
