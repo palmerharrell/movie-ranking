@@ -16,4 +16,13 @@ describe('applyThemeWording', () => {
       'Films starring Moviestar Jones',
     )
   })
+
+  it('keeps "Random Five" under the classic theme', () => {
+    expect(applyThemeWording('Random Five', 'classic')).toBe('Random Five')
+  })
+
+  it('shortens "Random Five" to "Random 5" under neon and family themes', () => {
+    expect(applyThemeWording('Random Five', 'neon')).toBe('Random 5')
+    expect(applyThemeWording('Random Five', 'family')).toBe('Random 5')
+  })
 })

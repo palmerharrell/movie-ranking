@@ -1,4 +1,4 @@
-import { isForbiddenPair, pairLabel } from './categoryRules.js'
+import { isForbiddenPair, pairLabel, shortDecade } from './categoryRules.js'
 
 const MIN_RANKED_FOR_OVERLAP = 5
 const MAX_CATEGORY_ATTEMPTS = 50
@@ -9,8 +9,8 @@ const ATTRIBUTE_TYPES = ['director', 'genre', 'decade', 'year', 'cast']
 
 const LABELS = {
   director: (v) => `Directed by ${v}`,
-  genre: (v) => `${v} Movies`,
-  decade: (v) => `${v} Movies`,
+  genre: (v) => v,
+  decade: (v) => `${shortDecade(v)} Movies`,
   year: (v) => `Movies from ${v}`,
   cast: (v) => `Movies starring ${v}`,
 }
