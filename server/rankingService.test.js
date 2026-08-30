@@ -17,6 +17,7 @@ const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
 const EMPTY_POOL_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty-pool')
 const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
+const GROWN_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'grown-data')
 
 function freshDb() {
   return createDb(':memory:')
@@ -209,4 +210,17 @@ test('getSavedRankingMovies returns snapshot-time state sorted by eloRating desc
 test('getSavedRankingMovies returns null for an unknown id', () => {
   const db = freshDb()
   assert.equal(getSavedRankingMovies(db, FIXTURES_DIR, 999), null)
+})
+
+test('getSavedRankingMovies stays frozen when the pool grows after save (#51)', () => {
+  const db = freshDb()
+  rankAllOnce(db)
+  const { id } = saveRanking(db, FIXTURES_DIR, 'Snapshot')
+
+  // Simulate the pool having grown (e.g. via enrich-sources.js) since the
+  // snapshot was taken, by reading the saved snapshot back against a data
+  // dir with an extra movie the snapshot never saw.
+  const saved = getSavedRankingMovies(db, GROWN_FIXTURES_DIR, id)
+  assert.equal(saved.movies.length, 5, 'movie added to the pool after save must not appear')
+  assert.ok(!saved.movies.some((m) => m.id === '6'))
 })
