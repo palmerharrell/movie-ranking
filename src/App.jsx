@@ -36,6 +36,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
+  const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   const pendingSkipDiscard = useRef(false)
 
@@ -175,16 +176,16 @@ function App() {
   return (
     <div data-theme={theme} className="app-shell flex h-screen flex-col overflow-hidden">
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col">
-        <header className="banner flex shrink-0 items-center justify-between px-8">
+        <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
           <div className="flex items-center gap-3">
             {theme === 'classic' && (
-              <div className="flex items-center gap-1.5">
+              <div className="hidden items-center gap-1.5 sm:flex">
                 <span className="marquee-bulb" />
                 <span className="marquee-bulb pulsing" />
                 <span className="marquee-bulb pulsing" style={{ animationDelay: '1.2s' }} />
               </div>
             )}
-            <h1 className="app-title">
+            <h1 className="app-title text-[22px] md:text-[30px]">
               {theme === 'neon' ? (
                 <>
                   Movie <span className="accent">Ranking</span>
@@ -195,6 +196,13 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setShowStandingsDrawer(true)}
+              className="banner-button mr-2 md:hidden"
+            >
+              Standings
+            </button>
             <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
               Load Ranking
             </button>
@@ -202,15 +210,30 @@ function App() {
           </div>
         </header>
 
-        <div
-          className={`grid min-h-0 flex-1 ${
-            theme === 'classic' ? 'grid-cols-[340px_1px_1fr]' : 'grid-cols-[340px_1fr]'
-          }`}
-        >
+        <div className="relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[340px_1fr]">
+          {showStandingsDrawer && (
+            <div
+              className="fixed inset-0 z-30 bg-black/55 md:hidden"
+              onClick={() => setShowStandingsDrawer(false)}
+            />
+          )}
+
           <aside
-            className="standings-col min-h-0"
+            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${
+              theme === 'classic' ? 'md:border-r md:border-[var(--surface-border)]' : ''
+            } ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
+            <div className="mb-2 flex justify-end md:hidden">
+              <button
+                type="button"
+                onClick={() => setShowStandingsDrawer(false)}
+                className="modal-close"
+                aria-label="Close standings"
+              >
+                ×
+              </button>
+            </div>
             {movies ? (
               <LeftPanel movies={movies} />
             ) : error ? (
@@ -222,10 +245,8 @@ function App() {
             )}
           </aside>
 
-          {theme === 'classic' && <div className="standings-divider" />}
-
           <main
-            className={`flex min-h-0 flex-col items-center overflow-y-auto px-8 ${
+            className={`flex min-h-0 flex-col items-center overflow-y-auto px-4 md:px-8 ${
               theme === 'neon' ? 'py-4' : 'py-[26px]'
             }`}
           >
