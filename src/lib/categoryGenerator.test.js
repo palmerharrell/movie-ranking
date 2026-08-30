@@ -138,13 +138,16 @@ describe('generateCategory', () => {
   })
 
   it('formats each allowed pair type as specified', () => {
-    const movies = [
-      { id: '1', title: 'M1', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
-      { id: '2', title: 'M2', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
-      { id: '3', title: 'M3', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
-      { id: '4', title: 'M4', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
-      { id: '5', title: 'M5', year: 1999, decade: '90s', director: 'Wes Anderson', genres: ['Adventure'], cast: ['Harrison Ford'] },
-    ]
+    const movie = {
+      year: 1999,
+      decade: '90s',
+      director: 'Wes Anderson',
+      genres: ['Adventure'],
+      cast: ['Harrison Ford'],
+      studio: 'A24',
+      originalLanguage: 'fr',
+    }
+    const movies = Array.from({ length: 5 }, (_, i) => ({ id: String(i + 1), title: `M${i + 1}`, ...movie }))
 
     const expectedByPair = {
       'decade,genre': '90s Adventure',
@@ -156,10 +159,21 @@ describe('generateCategory', () => {
       'director,year': '1999 Wes Anderson Movies',
       'cast,year': '1999 Movies starring Harrison Ford',
       'cast,director': 'Wes Anderson Movies starring Harrison Ford',
+      'cast,studio': 'A24 Movies starring Harrison Ford',
+      'decade,studio': '90s A24 Movies',
+      'director,studio': 'A24 Wes Anderson Movies',
+      'genre,studio': 'A24 Adventure',
+      'studio,year': '1999 A24 Movies',
+      'cast,language': 'French Movies starring Harrison Ford',
+      'decade,language': '90s French Movies',
+      'director,language': 'French Wes Anderson Movies',
+      'genre,language': 'French Adventure',
+      'language,year': '1999 French Movies',
+      'language,studio': 'French A24 Movies',
     }
 
     const seenPairs = new Set()
-    for (let seed = 0; seed < 500 && seenPairs.size < Object.keys(expectedByPair).length; seed++) {
+    for (let seed = 0; seed < 5000 && seenPairs.size < Object.keys(expectedByPair).length; seed++) {
       const result = tryBuildCategory(movies, seededRandom(seed))
       if (!result || result.picks.length < 2) continue
       const key = result.picks.map((p) => p.type).sort().join(',')
@@ -172,13 +186,18 @@ describe('generateCategory', () => {
   })
 
   it('formats each single-attribute type as specified', () => {
-    const movies = [
-      { id: '1', title: 'M1', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
-      { id: '2', title: 'M2', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
-      { id: '3', title: 'M3', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
-      { id: '4', title: 'M4', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
-      { id: '5', title: 'M5', year: 1999, decade: '1990s', director: 'Wes Anderson', genres: ['Horror'], cast: ['Harrison Ford'] },
-    ]
+    const movie = {
+      year: 1999,
+      decade: '1990s',
+      director: 'Wes Anderson',
+      genres: ['Horror'],
+      cast: ['Harrison Ford'],
+      studio: 'A24',
+      collection: 'Knives Out Collection',
+      originalLanguage: 'ja',
+      keywords: ['heist'],
+    }
+    const movies = Array.from({ length: 5 }, (_, i) => ({ id: String(i + 1), title: `M${i + 1}`, ...movie }))
 
     const expectedByType = {
       director: 'Directed by Wes Anderson',
@@ -186,10 +205,14 @@ describe('generateCategory', () => {
       decade: '90s Movies',
       year: 'Movies from 1999',
       cast: 'Movies starring Harrison Ford',
+      studio: 'A24 Movies',
+      collection: 'Knives Out Movies',
+      language: 'Japanese Movies',
+      keyword: 'Heist Movies',
     }
 
     const seenTypes = new Set()
-    for (let seed = 0; seed < 500 && seenTypes.size < Object.keys(expectedByType).length; seed++) {
+    for (let seed = 0; seed < 2000 && seenTypes.size < Object.keys(expectedByType).length; seed++) {
       const result = tryBuildCategory(movies, seededRandom(seed))
       if (!result || result.picks.length !== 1) continue
       const type = result.picks[0].type
@@ -199,6 +222,29 @@ describe('generateCategory', () => {
     }
 
     expect(seenTypes.size).toBe(Object.keys(expectedByType).length)
+  })
+
+  it('never pairs collection or keyword with another attribute', () => {
+    const movie = {
+      year: 1999,
+      decade: '90s',
+      director: 'Wes Anderson',
+      genres: ['Adventure'],
+      cast: ['Harrison Ford'],
+      studio: 'A24',
+      collection: 'Knives Out Collection',
+      originalLanguage: 'fr',
+      keywords: ['heist'],
+    }
+    const movies = Array.from({ length: 5 }, (_, i) => ({ id: String(i + 1), title: `M${i + 1}`, ...movie }))
+
+    for (let seed = 0; seed < 500; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed))
+      if (!result || result.picks.length < 2) continue
+      const types = result.picks.map((p) => p.type)
+      expect(types).not.toContain('collection')
+      expect(types).not.toContain('keyword')
+    }
   })
 
   it('builds a "Random Five" pack when the random-five chance hits', () => {

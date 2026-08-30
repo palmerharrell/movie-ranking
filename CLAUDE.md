@@ -74,12 +74,22 @@ with a `sources[]` field listing every source it came from.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-mpaaRating, sources[]`. Static metadata only — `eloRating` and `timesRanked`
-live in the backend's ranking-state store instead (see **Online
-deployment**). `mpaaRating` is the movie's US MPAA certification (e.g.
-`"PG-13"`), fetched from TMDb's `/movie/{id}/release_dates` during
-enrichment, or `null` if TMDb has no US certification for it — see **Family
-mode**.
+mpaaRating, studio, collection, originalLanguage, keywords[], sources[]`.
+Static metadata only — `eloRating` and `timesRanked` live in the backend's
+ranking-state store instead (see **Online deployment**). `mpaaRating` is the
+movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
+`/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
+certification for it — see **Family mode**. `studio` is the movie's
+production company if it matches a curated allowlist of notable studios
+(`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
+TMDb lists several production companies per movie, most too obscure to be a
+useful category, so only allowlisted matches are kept. `collection` is
+TMDb's franchise/collection name (e.g. `"Knives Out Collection"`), or `null`
+if the movie isn't part of one. `originalLanguage` is TMDb's ISO 639-1
+original-language code (e.g. `"fr"`). `keywords[]` is the subset of TMDb's
+keyword tags that match a curated allowlist (`KEYWORD_LABELS` in
+`src/lib/curatedAttributes.js`) — TMDb keyword data is high-cardinality and
+mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
@@ -105,8 +115,16 @@ mode**.
 
 ## Category generation & queue (right panel)
 - Categories are built from single or paired attributes: director, genre, release
-  year, decade, or cast member.
+  year, decade, cast member, studio, franchise/collection, original language, or
+  keyword/tag.
 - Pick either one attribute or a random pair (e.g. decade + genre, genre + actor).
+  `collection` and `keyword` are single-attribute only — never paired with
+  another attribute (`isForbiddenPair` in `src/lib/categoryRules.js`), since
+  collections rarely have 5+ pool entries to begin with and keyword labels
+  ("Based on a True Story") don't compose grammatically the way decade/genre/
+  director/studio/language modifiers do. `language` excludes English — the
+  pool skews heavily English, so an "English Movies" category would be
+  near-universal and low-signal.
 - Filter the pool's movies for matches; if fewer than 5 movies match, discard
   and try another category (don't show the user a category with < 5 eligible
   movies).
