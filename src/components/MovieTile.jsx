@@ -17,12 +17,12 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="movie-tile flex select-none items-center gap-3 rounded-lg border px-3.5 py-2.5"
+      className="movie-tile flex select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 sm:gap-3 sm:px-3.5"
     >
       <span className={`movie-tile-rank w-6 shrink-0 text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
         {rank}
       </span>
-      <div className="poster-placeholder h-16 w-11 shrink-0 overflow-hidden rounded-[5px] bg-cover">
+      <div className="poster-placeholder h-14 w-9 shrink-0 overflow-hidden rounded-[5px] bg-cover sm:h-16 sm:w-11">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}
@@ -52,7 +52,8 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
         className="skip-button shrink-0 text-[11px] font-medium uppercase disabled:cursor-not-allowed disabled:opacity-50"
         aria-label={`Haven't seen ${movie.title} — remove from this pack`}
       >
-        Haven&apos;t Seen
+        <span className="hidden sm:inline">Haven&apos;t Seen</span>
+        <span className="sm:hidden text-sm leading-none" aria-hidden="true">✕</span>
       </button>
       <div
         {...attributes}
