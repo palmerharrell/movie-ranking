@@ -17,9 +17,7 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="movie-tile flex cursor-grab select-none items-center gap-3 rounded-lg border px-3.5 py-2.5 active:cursor-grabbing"
+      className="movie-tile flex select-none items-center gap-3 rounded-lg border px-3.5 py-2.5"
     >
       <span className={`movie-tile-rank w-6 shrink-0 text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
         {rank}
@@ -56,7 +54,12 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
       >
         Haven&apos;t Seen
       </button>
-      <div className="flex shrink-0 flex-col gap-[3px]">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex shrink-0 cursor-grab touch-none flex-col gap-[3px] px-1.5 py-3 active:cursor-grabbing"
+        aria-label={`Drag to reorder ${movie.title}`}
+      >
         <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
         <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
         <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
