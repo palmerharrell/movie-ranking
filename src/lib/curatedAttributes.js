@@ -63,6 +63,6 @@ export const KEYWORD_LABELS = {
   prison: 'Prison Movies',
   boxing: 'Boxing Movies',
   'nonlinear timeline': 'Nonlinear Movies',
-  dream: 'Dream Movies',
-  musician: 'Musician Movies',
+  dream: 'Movies About Dreams',
+  musician: 'Movies About Musicians',
 }
