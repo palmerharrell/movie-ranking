@@ -21,14 +21,26 @@ export function shortDecade(decade) {
   return decade.replace(/^\d{2}(\d{2}s)$/, '$1')
 }
 
-// "Knives Out Collection" -> "Knives Out" for display.
+// "Knives Out Collection" -> "Knives Out" for display. TMDb collection names
+// aren't all suffixed with "Collection" — some real examples in the pool use
+// "Series" or "Trilogy" instead, or misspell it as "Colletion" — so strip any
+// of those trailing generic words rather than just the exact "Collection".
 export function stripCollectionSuffix(name) {
-  return name.replace(/ Collection$/, '')
+  return name.replace(/ (Collection|Colletion|Series|Trilogy)$/, '')
+}
+
+// TMDb uses a few non-standard codes for original_language that aren't real
+// ISO 639-1 codes Intl.DisplayNames can resolve — e.g. "cn" for Cantonese
+// (vs. the standard "zh" for Chinese), which otherwise renders as the raw
+// code ("Cn Movies").
+const LANGUAGE_NAME_OVERRIDES = {
+  cn: 'Cantonese',
 }
 
 // ISO 639-1 code -> English display name ("fr" -> "French"), via the
 // built-in Intl API so no hand-maintained language-name map is needed.
 export function languageName(code) {
+  if (LANGUAGE_NAME_OVERRIDES[code]) return LANGUAGE_NAME_OVERRIDES[code]
   return new Intl.DisplayNames(['en'], { type: 'language' }).of(code)
 }
 
