@@ -41,6 +41,10 @@ async function enrichMovie(apiKey, movie) {
     cast: fields.cast,
     posterUrl: fields.posterUrl,
     mpaaRating: extractUSCertification(releaseDates),
+    studio: fields.studio,
+    collection: fields.collection,
+    originalLanguage: fields.originalLanguage,
+    keywords: fields.keywords,
   }
 }
 
