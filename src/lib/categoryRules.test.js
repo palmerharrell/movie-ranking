@@ -135,6 +135,15 @@ describe('stripCollectionSuffix', () => {
   it('leaves a name with no "Collection" suffix unchanged', () => {
     expect(stripCollectionSuffix('The Matrix')).toBe('The Matrix')
   })
+
+  it('strips a trailing " Series" or " Trilogy"', () => {
+    expect(stripCollectionSuffix('The Space Odyssey Series')).toBe('The Space Odyssey')
+    expect(stripCollectionSuffix("John Singleton's Hood Trilogy")).toBe("John Singleton's Hood")
+  })
+
+  it('strips a misspelled trailing " Colletion" (real TMDb data)', () => {
+    expect(stripCollectionSuffix('Days of Thunder Colletion')).toBe('Days of Thunder')
+  })
 })
 
 describe('languageName', () => {
@@ -142,6 +151,10 @@ describe('languageName', () => {
     expect(languageName('fr')).toBe('French')
     expect(languageName('ja')).toBe('Japanese')
     expect(languageName('ko')).toBe('Korean')
+  })
+
+  it('overrides "cn", a non-ISO code TMDb uses for Cantonese', () => {
+    expect(languageName('cn')).toBe('Cantonese')
   })
 })
 
