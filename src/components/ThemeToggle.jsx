@@ -1,7 +1,7 @@
 const THEMES = [
   { id: 'classic', label: 'Classic' },
   { id: 'neon', label: 'Neon' },
-  { id: 'family', label: 'Family' },
+  { id: 'family', label: 'Family (PG-13)' },
 ]
 
 export function ThemeToggle({ theme, onChange }) {
