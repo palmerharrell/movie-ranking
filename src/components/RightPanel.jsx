@@ -28,7 +28,12 @@ export function RightPanel({ category, onReorder, onSkip, disabled, theme }) {
   return (
     <div className="pack-card">
       <div className="mb-3">
-        <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
+          <p className="rank-caption text-[11px] text-right">
+            Drag to reorder, click Rank to set order and go to next list
+          </p>
+        </div>
         <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
       </div>
       <DndContext

@@ -273,12 +273,12 @@ function App() {
                   Loading…
                 </p>
               )}
-              {category && (
-                <PackQueue queue={queue} theme={theme} disabled={busy} onSelect={handleSelectQueued} />
-              )}
               <div className="mt-4">
                 <RankButton onClick={handleRank} disabled={!category || busy} />
               </div>
+              {category && (
+                <PackQueue queue={queue} theme={theme} disabled={busy} onSelect={handleSelectQueued} />
+              )}
             </div>
           </main>
         </div>
