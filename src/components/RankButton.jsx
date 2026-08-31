@@ -1,6 +1,6 @@
 export function RankButton({ onClick, disabled = false }) {
   return (
-    <div className="flex flex-col items-center gap-2.5">
+    <div className="flex flex-col items-center">
       <button
         type="button"
         onClick={onClick}
@@ -9,9 +9,6 @@ export function RankButton({ onClick, disabled = false }) {
       >
         Rank →
       </button>
-      <p className="rank-caption text-[11px]">
-        Drag to reorder, click Rank to set order and go to next list
-      </p>
     </div>
   )
 }
