@@ -3,13 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { parseLetterboxdExport } from './parseLetterboxdExport.js'
-import {
-  searchMovie,
-  getMovieDetails,
-  getReleaseDates,
-  extractUSCertification,
-  toEnrichedFields,
-} from './tmdb.js'
+import { enrichMovieByTitleYear } from './enrichMovie.js'
 
 dotenv.config({ quiet: true })
 
@@ -18,33 +12,16 @@ const ROOT = path.join(__dirname, '..')
 const EXPORT_DIR = path.join(ROOT, 'data', 'letterboxd-export')
 const OUTPUT_FILE = path.join(ROOT, 'data', 'movies.json')
 
-function decadeOf(year) {
-  return year ? `${Math.floor(year / 10) * 10}s` : null
-}
-
 async function enrichMovie(apiKey, movie) {
-  const match = await searchMovie(apiKey, movie.title, movie.year)
-  if (!match) {
+  const fields = await enrichMovieByTitleYear(apiKey, movie.title, movie.year)
+  if (!fields) {
     console.warn(`No TMDb match for "${movie.title}" (${movie.year}) — skipping (likely a TV series or other non-movie entry)`)
     return null
   }
-  const details = await getMovieDetails(apiKey, match.id)
-  const fields = toEnrichedFields(details)
-  const releaseDates = await getReleaseDates(apiKey, match.id)
   return {
     id: movie.key,
-    title: movie.title,
-    year: movie.year,
-    decade: decadeOf(movie.year),
-    director: fields.director,
-    genres: fields.genres,
-    cast: fields.cast,
-    posterUrl: fields.posterUrl,
-    mpaaRating: extractUSCertification(releaseDates),
-    studio: fields.studio,
-    collection: fields.collection,
-    originalLanguage: fields.originalLanguage,
-    keywords: fields.keywords,
+    ...fields,
+    sources: ['personal'],
   }
 }
 
