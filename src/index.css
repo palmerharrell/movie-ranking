@@ -415,6 +415,29 @@ body {
   border: 1px solid var(--surface-border);
 }
 
+/* Head to Head pack */
+
+.head-to-head-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.head-to-head-card:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+[data-theme='neon'] .head-to-head-card:hover:not(:disabled) {
+  background: rgba(63, 210, 199, 0.08);
+}
+
+.head-to-head-vs {
+  font-family: var(--font-mono);
+  color: var(--text-low);
+}
+
 .skip-button:hover:not(:disabled) {
   color: var(--text-high);
   border-color: var(--accent);

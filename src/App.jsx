@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
+import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
 import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
@@ -10,6 +11,7 @@ import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
+import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
 const QUEUE_SIZE = 3
@@ -97,6 +99,27 @@ function App() {
       // Sequential: the fresh pack's overlap calculation reads timesRanked
       // from the DB, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
+      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
+        () => api.getCategory({ family: isFamily }),
+        queue.slice(1).map((p) => p.label),
+      )
+      noteMoviesUpdate(updatedMovies)
+      setPacks((prev) => [...prev.slice(1), freshPack])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // A "Head to Head" pack submits on a single click — no drag-to-order or
+  // separate "Rank ->" confirmation — since it's just a 2-movie pairwise
+  // pick. Reuses the same POST /api/rank pairwise-Elo path as a normal pack.
+  async function handleHeadToHeadPick(winnerId) {
+    setBusy(true)
+    try {
+      const loserId = category.movies.find((m) => m.id !== winnerId).id
+      const updatedMovies = await api.rankPack([winnerId, loserId])
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
         () => api.getCategory({ family: isFamily }),
         queue.slice(1).map((p) => p.label),
@@ -289,15 +312,24 @@ function App() {
           >
             <div className="w-full max-w-xl">
               {category ? (
-                <RightPanel
-                  category={category}
-                  onReorder={handleReorder}
-                  onSkip={handleSkipMovie}
-                  skippedMovie={skippedMovie}
-                  onUndoSkip={handleUndoSkip}
-                  disabled={busy}
-                  theme={theme}
-                />
+                category.type === HEAD_TO_HEAD_TYPE ? (
+                  <HeadToHeadPanel
+                    category={category}
+                    onPick={handleHeadToHeadPick}
+                    disabled={busy}
+                    theme={theme}
+                  />
+                ) : (
+                  <RightPanel
+                    category={category}
+                    onReorder={handleReorder}
+                    onSkip={handleSkipMovie}
+                    skippedMovie={skippedMovie}
+                    onUndoSkip={handleUndoSkip}
+                    disabled={busy}
+                    theme={theme}
+                  />
+                )
               ) : error ? (
                 <p className="text-sm text-red-400">{error}</p>
               ) : movies ? (
@@ -309,9 +341,11 @@ function App() {
                   Loading…
                 </p>
               )}
-              <div className="mt-4">
-                <RankButton onClick={handleRank} disabled={!category || busy} />
-              </div>
+              {category?.type !== HEAD_TO_HEAD_TYPE && (
+                <div className="mt-4">
+                  <RankButton onClick={handleRank} disabled={!category || busy} />
+                </div>
+              )}
               {category && (
                 <PackQueue queue={queue} theme={theme} disabled={busy} onSelect={handleSelectQueued} />
               )}
