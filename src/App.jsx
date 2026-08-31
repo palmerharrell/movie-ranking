@@ -181,13 +181,6 @@ function App() {
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col">
         <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
           <div className="flex items-center gap-3">
-            {theme === 'classic' && (
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <span className="marquee-bulb" />
-                <span className="marquee-bulb pulsing" />
-                <span className="marquee-bulb pulsing" style={{ animationDelay: '1.2s' }} />
-              </div>
-            )}
             <h1 className="app-title text-[22px] md:text-[30px]">
               {theme === 'neon' ? (
                 <>
