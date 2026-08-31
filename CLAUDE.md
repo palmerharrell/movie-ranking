@@ -135,6 +135,18 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   category can find 5 matches (which becomes more likely as the pool grows
   and gets more thoroughly ranked). A Random Five pack still applies the
   overlap requirement below, same as attribute-based packs.
+- **Head to Head packs:** `categoryGenerator.js` also throws in a "Head to
+  Head" pack — 2 movies instead of 5, drawn at random from the current top 50
+  ranked movies by `eloRating` — with a 10% chance on each pack generated
+  (`HEAD_TO_HEAD_CHANCE`), checked before the Random Five chance. Falls
+  through to the normal pack flow if fewer than 2 ranked movies (with a real
+  `eloRating`) are available yet. Since both movies are already-ranked, a
+  Head to Head pack has no "Haven't Seen" skip button, no drag-and-drop, and
+  no separate "Rank →" confirmation — clicking one of the two movies submits
+  a single pairwise Elo update immediately (`HeadToHeadPanel.jsx`) and
+  advances the queue like any other pack. It doesn't apply the overlap
+  requirement below — reinforcing standings among movies the pool has
+  already ranked isn't about linking in new movies.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
@@ -277,6 +289,7 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 /src/components/LeftPanel.jsx
 /src/components/RightPanel.jsx
 /src/components/MovieTile.jsx
+/src/components/HeadToHeadPanel.jsx  <- 2-movie pick-a-winner pack UI
 /src/components/RankButton.jsx
 /src/components/PackQueue.jsx        <- upcoming-packs queue
 /src/components/SaveRankingModal.jsx <- name/save prompt on completion

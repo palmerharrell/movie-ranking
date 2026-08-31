@@ -12,6 +12,10 @@ const MAX_CATEGORY_ATTEMPTS = 50
 const RANDOM_FIVE_CHANCE = 0.15
 const RANDOM_FIVE_LABEL = 'Random Five'
 const ENGLISH_LANGUAGE_CODE = 'en'
+const HEAD_TO_HEAD_CHANCE = 0.1
+const HEAD_TO_HEAD_LABEL = 'Head to Head'
+const HEAD_TO_HEAD_POOL_SIZE = 50
+export const HEAD_TO_HEAD_TYPE = 'head-to-head'
 
 const ATTRIBUTE_TYPES = [
   'director',
@@ -159,6 +163,20 @@ function randomFivePack(movies, selectOptions) {
   return { label: RANDOM_FIVE_LABEL, movies: pack }
 }
 
+// A "Head to Head" pack is a 2-movie pick-a-winner round drawn from the
+// current top 50 by eloRating among already-ranked movies — reinforcing
+// standings the pool has already formed an opinion on, rather than linking
+// in new movies, so the usual overlap rule doesn't apply here. Returns null
+// if fewer than 2 ranked movies (with a real eloRating) are available.
+function headToHeadPack(movies, { isRanked, random }) {
+  const ranked = movies
+    .filter((m) => isRanked(m) && typeof m.eloRating === 'number')
+    .sort((a, b) => b.eloRating - a.eloRating)
+    .slice(0, HEAD_TO_HEAD_POOL_SIZE)
+  if (ranked.length < 2) return null
+  return { label: HEAD_TO_HEAD_LABEL, movies: sample(ranked, 2, random), type: HEAD_TO_HEAD_TYPE }
+}
+
 // Generates a category + 5-pack for the given list of movies.
 // `isRanked(movie)` should return whether the movie has appeared in a
 // previous pack for this list. `totalRankedCount` is the number of such
@@ -168,12 +186,19 @@ function randomFivePack(movies, selectOptions) {
 // Most packs are attribute-based, but a "Random Five" pack — sampled from
 // the whole pool with no attribute filter — gets thrown in occasionally
 // (RANDOM_FIVE_CHANCE), and also serves as the fallback when no
-// attribute-based category can find 5 matches.
+// attribute-based category can find 5 matches. A "Head to Head" 2-movie
+// pick-a-winner pack gets thrown in even more occasionally
+// (HEAD_TO_HEAD_CHANCE), drawn from the current top 50 ranked movies.
 export function generateCategory(
   movies,
   { isRanked = () => false, totalRankedCount = 0, random = Math.random } = {},
 ) {
   const selectOptions = { isRanked, random, totalRankedCount }
+
+  if (random() < HEAD_TO_HEAD_CHANCE) {
+    const headToHead = headToHeadPack(movies, selectOptions)
+    if (headToHead) return headToHead
+  }
 
   if (random() < RANDOM_FIVE_CHANCE) {
     const randomPack = randomFivePack(movies, selectOptions)

@@ -1,30 +1,45 @@
 import { describe, it, expect } from 'vitest'
 import { generateCategory, tryBuildCategory } from './categoryGenerator.js'
 
-// Forces the first random() draw below RANDOM_FIVE_CHANCE, then delegates to
-// a seeded PRNG for everything after — so the Random Five branch triggers
-// deterministically while the rest of the draw sequence stays reproducible.
+// Forces the first random() draw (Head to Head check) above its chance so
+// it's skipped, the second draw below RANDOM_FIVE_CHANCE so Random Five
+// triggers, then delegates to a seeded PRNG for everything after — so the
+// Random Five branch triggers deterministically while the rest of the draw
+// sequence stays reproducible.
 function forceRandomFiveThenSeeded(seed) {
+  let call = 0
+  const seeded = seededRandom(seed)
+  return () => {
+    call += 1
+    if (call === 1) return 0.99
+    if (call === 2) return 0
+    return seeded()
+  }
+}
+
+// Forces the first random() draw (Head to Head check) and second draw
+// (Random Five check) both above their chance so neither direct branch
+// triggers, then delegates to a seeded PRNG.
+function skipRandomFiveThenSeeded(seed) {
+  let call = 0
+  const seeded = seededRandom(seed)
+  return () => {
+    call += 1
+    if (call === 1) return 0.99
+    if (call === 2) return 0.99
+    return seeded()
+  }
+}
+
+// Forces the first random() draw below HEAD_TO_HEAD_CHANCE, then delegates
+// to a seeded PRNG for everything after (used to pick the pair).
+function forceHeadToHeadThenSeeded(seed) {
   let first = true
   const seeded = seededRandom(seed)
   return () => {
     if (first) {
       first = false
       return 0
-    }
-    return seeded()
-  }
-}
-
-// Forces the first random() draw at/above RANDOM_FIVE_CHANCE so the direct
-// Random Five branch is skipped, then delegates to a seeded PRNG.
-function skipRandomFiveThenSeeded(seed) {
-  let first = true
-  const seeded = seededRandom(seed)
-  return () => {
-    if (first) {
-      first = false
-      return 0.99
     }
     return seeded()
   }
@@ -272,6 +287,54 @@ describe('generateCategory', () => {
     const result = generateCategory(movies, { random: skipRandomFiveThenSeeded(3) })
     expect(result).not.toBeNull()
     expect(result.label).toBe('Random Five')
+    expect(result.movies).toHaveLength(5)
+  })
+
+  it('builds a "Head to Head" pack when the head-to-head chance hits', () => {
+    const movies = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+
+    const result = generateCategory(movies, {
+      isRanked,
+      totalRankedCount: movies.length,
+      random: forceHeadToHeadThenSeeded(1),
+    })
+    expect(result).not.toBeNull()
+    expect(result.label).toBe('Head to Head')
+    expect(result.type).toBe('head-to-head')
+    expect(result.movies).toHaveLength(2)
+    expect(result.movies[0].id).not.toBe(result.movies[1].id)
+  })
+
+  it('only draws Head to Head movies from ranked movies with a numeric eloRating', () => {
+    const movies = [
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `ranked-${i}`, title: `R${i}`, eloRating: 1200 })),
+      ...Array.from({ length: 5 }, (_, i) => ({ id: `unranked-${i}`, title: `U${i}` })),
+    ]
+    const isRanked = (m) => m.id.startsWith('ranked-')
+
+    for (let seed = 0; seed < 30; seed++) {
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: 3,
+        random: forceHeadToHeadThenSeeded(seed),
+      })
+      if (!result || result.type !== 'head-to-head') continue
+      for (const m of result.movies) {
+        expect(m.id.startsWith('ranked-')).toBe(true)
+      }
+    }
+  })
+
+  it('falls through to a normal pack when fewer than 2 ranked movies are eligible for Head to Head', () => {
+    const movies = makeMovies()
+    const result = generateCategory(movies, { random: forceHeadToHeadThenSeeded(1) })
+    expect(result).not.toBeNull()
+    expect(result.type).not.toBe('head-to-head')
     expect(result.movies).toHaveLength(5)
   })
 })
