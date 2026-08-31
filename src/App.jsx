@@ -5,6 +5,7 @@ import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
+import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
@@ -34,6 +35,7 @@ function App() {
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [showResultsScreen, setShowResultsScreen] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
@@ -58,7 +60,7 @@ function App() {
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
-      setShowSaveModal(true)
+      setShowResultsScreen(true)
     }
     wasFullyRanked.current = fullyRanked
   }
@@ -155,6 +157,7 @@ function App() {
     // progress untouched.
     await api.saveRanking(name, { family: isFamily })
     setShowSaveModal(false)
+    setShowResultsScreen(false)
     wasFullyRanked.current = false
 
     try {
@@ -281,6 +284,13 @@ function App() {
         </div>
       </div>
 
+      {showResultsScreen && movies && (
+        <ResultsScreen
+          movies={movies}
+          onSaveClick={() => setShowSaveModal(true)}
+          onDismiss={() => setShowResultsScreen(false)}
+        />
+      )}
       {showSaveModal && (
         <SaveRankingModal
           onSave={handleSaveRanking}
