@@ -9,6 +9,7 @@ import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
+import { fetchCategoryAvoidingDuplicateRandomFive } from './lib/packQueue.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
 const QUEUE_SIZE = 3
@@ -18,10 +19,15 @@ function initialTheme() {
   return ['classic', 'neon', 'family'].includes(stored) ? stored : 'classic'
 }
 
-function fetchPacks(family) {
-  return Promise.all(
-    Array.from({ length: QUEUE_SIZE + 1 }, () => api.getCategory({ family })),
-  )
+async function fetchPacks(family) {
+  const packs = []
+  for (let i = 0; i < QUEUE_SIZE + 1; i++) {
+    const queueLabels = packs.slice(1).map((p) => p.label)
+    packs.push(
+      await fetchCategoryAvoidingDuplicateRandomFive(() => api.getCategory({ family }), queueLabels),
+    )
+  }
+  return packs
 }
 
 function isFullyRanked(movies) {
@@ -88,7 +94,10 @@ function App() {
       // Sequential: the fresh pack's overlap calculation reads timesRanked
       // from the DB, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
-      const freshPack = await api.getCategory({ family: isFamily })
+      const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+        () => api.getCategory({ family: isFamily }),
+        queue.slice(1).map((p) => p.label),
+      )
       noteMoviesUpdate(updatedMovies)
       setPacks((prev) => [...prev.slice(1), freshPack])
     } catch (err) {
@@ -101,7 +110,13 @@ function App() {
   async function handleSelectQueued(queueIndex) {
     setBusy(true)
     try {
-      const freshPack = await api.getCategory({ family: isFamily })
+      const remainingLabels = queue
+        .filter((_, i) => i !== queueIndex)
+        .map((p) => p.label)
+      const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+        () => api.getCategory({ family: isFamily }),
+        remainingLabels,
+      )
       setPacks((prev) => {
         const packIndex = queueIndex + 1
         const selected = prev[packIndex]
@@ -140,7 +155,10 @@ function App() {
     ;(async () => {
       setBusy(true)
       try {
-        const freshPack = await api.getCategory({ family: isFamily })
+        const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+          () => api.getCategory({ family: isFamily }),
+          queue.slice(1).map((p) => p.label),
+        )
         setPacks((prev) => [...prev.slice(1), freshPack])
       } catch (err) {
         setError(err.message)
