@@ -17,11 +17,29 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="movie-tile flex select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 sm:gap-3 sm:px-3.5"
+      {...attributes}
+      {...listeners}
+      className="movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5"
+      aria-label={`Drag to reorder ${movie.title}`}
     >
-      <span className={`movie-tile-rank w-6 shrink-0 text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
-        {rank}
-      </span>
+      <div className="flex shrink-0 flex-col items-center gap-1.5">
+        <span className={`movie-tile-rank text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
+          {rank}
+        </span>
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation()
+            onSkip(movie.id)
+          }}
+          disabled={disabled}
+          className="skip-button flex h-6 w-6 items-center justify-center text-sm leading-none disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`Haven't seen ${movie.title} — remove from this pack`}
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
       <div className="poster-placeholder h-14 w-9 shrink-0 overflow-hidden rounded-[5px] bg-cover sm:h-16 sm:w-11">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
@@ -40,30 +58,6 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
             {movie.director && <p className="truncate">Directed by: {movie.director}</p>}
           </div>
         )}
-      </div>
-      <button
-        type="button"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => {
-          event.stopPropagation()
-          onSkip(movie.id)
-        }}
-        disabled={disabled}
-        className="skip-button shrink-0 text-[11px] font-medium uppercase disabled:cursor-not-allowed disabled:opacity-50"
-        aria-label={`Haven't seen ${movie.title} — remove from this pack`}
-      >
-        <span className="hidden sm:inline">Haven&apos;t Seen</span>
-        <span className="sm:hidden text-sm leading-none" aria-hidden="true">✕</span>
-      </button>
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex shrink-0 cursor-grab touch-none flex-col gap-[3px] px-1.5 py-3 active:cursor-grabbing"
-        aria-label={`Drag to reorder ${movie.title}`}
-      >
-        <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
-        <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
-        <span className="drag-handle-bar h-[2px] w-4 rounded-full" />
       </div>
     </div>
   )

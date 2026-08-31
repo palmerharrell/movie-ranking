@@ -311,6 +311,20 @@ body {
   letter-spacing: 0.17em;
 }
 
+.undo-skip {
+  font-family: var(--font-mono);
+  color: var(--text-low);
+}
+
+.undo-skip-button {
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.undo-skip-button:hover:not(:disabled) {
+  color: var(--text-high);
+}
+
 .pack-category-label {
   font-family: var(--font-display);
   color: var(--text-high);
@@ -393,18 +407,12 @@ body {
   line-height: 1.35;
 }
 
-.drag-handle-bar {
-  background: var(--text-low);
-}
-
 .skip-button {
   font-family: var(--font-mono);
   color: var(--text-low);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: 1px solid var(--surface-border);
-  white-space: nowrap;
 }
 
 .skip-button:hover:not(:disabled) {
