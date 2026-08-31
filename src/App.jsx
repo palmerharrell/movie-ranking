@@ -9,7 +9,7 @@ import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
-import { fetchCategoryAvoidingDuplicateRandomFive } from './lib/packQueue.js'
+import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
 const QUEUE_SIZE = 3
@@ -24,7 +24,7 @@ async function fetchPacks(family) {
   for (let i = 0; i < QUEUE_SIZE + 1; i++) {
     const queueLabels = packs.slice(1).map((p) => p.label)
     packs.push(
-      await fetchCategoryAvoidingDuplicateRandomFive(() => api.getCategory({ family }), queueLabels),
+      await fetchCategoryAvoidingDuplicateLabel(() => api.getCategory({ family }), queueLabels),
     )
   }
   return packs
@@ -94,7 +94,7 @@ function App() {
       // Sequential: the fresh pack's overlap calculation reads timesRanked
       // from the DB, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
-      const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
         () => api.getCategory({ family: isFamily }),
         queue.slice(1).map((p) => p.label),
       )
@@ -113,7 +113,7 @@ function App() {
       const remainingLabels = queue
         .filter((_, i) => i !== queueIndex)
         .map((p) => p.label)
-      const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
         () => api.getCategory({ family: isFamily }),
         remainingLabels,
       )
@@ -155,7 +155,7 @@ function App() {
     ;(async () => {
       setBusy(true)
       try {
-        const freshPack = await fetchCategoryAvoidingDuplicateRandomFive(
+        const freshPack = await fetchCategoryAvoidingDuplicateLabel(
           () => api.getCategory({ family: isFamily }),
           queue.slice(1).map((p) => p.label),
         )
