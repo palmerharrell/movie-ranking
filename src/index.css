@@ -119,28 +119,6 @@ body {
   font-weight: 800;
 }
 
-@keyframes bulbGlow {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
-.marquee-bulb {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-}
-
-.marquee-bulb.pulsing {
-  animation: bulbGlow 2.4s ease-in-out infinite;
-}
-
 /* Theme toggle */
 
 .theme-toggle {
@@ -148,6 +126,7 @@ body {
   box-sizing: border-box;
   padding: 3px;
   display: flex;
+  gap: 6px;
   border: 1px solid var(--surface-border);
   background: rgba(0, 0, 0, 0.25);
 }

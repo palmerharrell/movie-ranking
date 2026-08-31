@@ -10,7 +10,7 @@ import { KEYWORD_LABELS } from './curatedAttributes.js'
 const MIN_RANKED_FOR_OVERLAP = 5
 const MAX_CATEGORY_ATTEMPTS = 50
 const RANDOM_FIVE_CHANCE = 0.15
-const RANDOM_FIVE_LABEL = 'Random Five'
+export const RANDOM_FIVE_LABEL = 'Random Five'
 const ENGLISH_LANGUAGE_CODE = 'en'
 
 const ATTRIBUTE_TYPES = [
