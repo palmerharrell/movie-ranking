@@ -47,6 +47,7 @@ function App() {
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   const pendingSkipDiscard = useRef(false)
+  const [skippedMovie, setSkippedMovie] = useState(null)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -78,6 +79,7 @@ function App() {
   // Re-fetch when family-mode-ness flips (different pool), not on every
   // Classic <-> Neon swap (same pool, cosmetic only).
   useEffect(() => {
+    setSkippedMovie(null)
     api.getMovies({ family: isFamily }).then(noteMoviesUpdate).catch((err) => setError(err.message))
     fetchPacks(isFamily).then(setPacks).catch((err) => setError(err.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,6 +91,7 @@ function App() {
 
   async function handleRank() {
     setBusy(true)
+    setSkippedMovie(null)
     try {
       const movieIds = category.movies.map((m) => m.id)
       // Sequential: the fresh pack's overlap calculation reads timesRanked
@@ -109,6 +112,7 @@ function App() {
 
   async function handleSelectQueued(queueIndex) {
     setBusy(true)
+    setSkippedMovie(null)
     try {
       const remainingLabels = queue
         .filter((_, i) => i !== queueIndex)
@@ -137,6 +141,8 @@ function App() {
   // pack is recorded in a ref and acted on from an effect once the state
   // update has actually committed.
   function handleSkipMovie(movieId) {
+    const skipIndex = category.movies.findIndex((m) => m.id === movieId)
+    const skippedMovieRecord = category.movies[skipIndex]
     setPacks((prev) => {
       const remaining = prev[0].movies.filter((m) => m.id !== movieId)
       if (remaining.length <= 1) {
@@ -145,11 +151,27 @@ function App() {
       }
       return [{ ...prev[0], movies: remaining }, ...prev.slice(1)]
     })
+    // If the pack is about to be discarded (< 2 movies left), there's
+    // nothing left to undo back into — the pendingSkipDiscard effect below
+    // replaces the whole pack.
+    const willDiscard = category.movies.length <= 2
+    setSkippedMovie(willDiscard ? null : { movie: skippedMovieRecord, index: skipIndex })
+  }
+
+  function handleUndoSkip() {
+    if (!skippedMovie) return
+    setPacks((prev) => {
+      const movies = [...prev[0].movies]
+      movies.splice(Math.min(skippedMovie.index, movies.length), 0, skippedMovie.movie)
+      return [{ ...prev[0], movies }, ...prev.slice(1)]
+    })
+    setSkippedMovie(null)
   }
 
   useEffect(() => {
     if (!pendingSkipDiscard.current) return
     pendingSkipDiscard.current = false
+    setSkippedMovie(null)
 
     // Fewer than 2 movies left to rank — move on without collecting ranking data.
     ;(async () => {
@@ -176,6 +198,7 @@ function App() {
     await api.saveRanking(name, { family: isFamily })
     setShowSaveModal(false)
     setShowResultsScreen(false)
+    setSkippedMovie(null)
     wasFullyRanked.current = false
 
     try {
@@ -270,6 +293,8 @@ function App() {
                   category={category}
                   onReorder={handleReorder}
                   onSkip={handleSkipMovie}
+                  skippedMovie={skippedMovie}
+                  onUndoSkip={handleUndoSkip}
                   disabled={busy}
                   theme={theme}
                 />

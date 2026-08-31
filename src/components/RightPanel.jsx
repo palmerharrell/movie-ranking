@@ -13,7 +13,7 @@ import {
 import { MovieTile } from './MovieTile.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
-export function RightPanel({ category, onReorder, onSkip, disabled, theme }) {
+export function RightPanel({ category, onReorder, onSkip, skippedMovie, onUndoSkip, disabled, theme }) {
   const sensors = useSensors(useSensor(PointerSensor))
 
   function handleDragEnd(event) {
@@ -35,6 +35,19 @@ export function RightPanel({ category, onReorder, onSkip, disabled, theme }) {
           </p>
         </div>
         <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
+        {skippedMovie && (
+          <p className="undo-skip mt-1.5 text-[11px]">
+            Removed &ldquo;{skippedMovie.movie.title}&rdquo;.{' '}
+            <button
+              type="button"
+              onClick={onUndoSkip}
+              disabled={disabled}
+              className="undo-skip-button font-medium underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Undo
+            </button>
+          </p>
+        )}
       </div>
       <DndContext
         sensors={sensors}
