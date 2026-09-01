@@ -28,3 +28,38 @@ export function upsertSourceMovie(pool, movie, sourceId) {
   const updated = { ...existing, sources: [...existingSources, sourceId] }
   return [...pool.slice(0, index), updated, ...pool.slice(index + 1)]
 }
+
+// Upserts one TMDb-enriched personal-import movie into the existing pool.
+// Unlike upsertSourceMovie, this is the *authoritative* refresh for a
+// movie's static metadata (enrich.js re-running is how personal-import data
+// gets updated), so on a match it overwrites fields with the freshly
+// enriched ones rather than leaving them untouched — but keeps the
+// existing `id` (a source-only match won't have a Letterboxd URI to key
+// off, and re-keying would invalidate any ranking progress stored against
+// that id) and unions in 'personal' rather than replacing sources[].
+//
+// Matches by `id === key` (its Letterboxd URI) as well as tmdbId — not
+// tmdbId alone — because a pre-migration personal entry has no tmdbId yet
+// on the very re-run that's supposed to backfill it; matching by tmdbId
+// only would never find it and would insert a duplicate instead of
+// updating it in place.
+//
+// - Already in the pool (any source): fields refreshed, 'personal' added
+//   to sources[] if not already present, existing `id` preserved.
+// - Not yet in the pool: added as a new entry keyed by `key` (its
+//   Letterboxd URI), sources: ['personal'].
+export function upsertPersonalMovie(pool, movie, key) {
+  const index = pool.findIndex((m) => m.id === key || m.tmdbId === movie.tmdbId)
+  if (index === -1) {
+    return [...pool, { id: key, ...movie, sources: ['personal'] }]
+  }
+
+  const existing = pool[index]
+  const existingSources = existing.sources || []
+  const sources = existingSources.includes('personal')
+    ? existingSources
+    : [...existingSources, 'personal']
+
+  const updated = { ...existing, ...movie, id: existing.id, sources }
+  return [...pool.slice(0, index), updated, ...pool.slice(index + 1)]
+}

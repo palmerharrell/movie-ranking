@@ -14,7 +14,20 @@ const OUTPUT_FILE = path.join(ROOT, 'data', 'movies.json')
 
 function loadPool() {
   if (!fs.existsSync(OUTPUT_FILE)) return []
-  return JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'))
+  const pool = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'))
+
+  // Source-merge dedup matches by tmdbId (see mergeSourceMovie.js), so any
+  // pre-migration entry missing it can never match an existing pool entry
+  // and would silently get inserted as a duplicate instead of merged.
+  if (pool.some((m) => !m.tmdbId)) {
+    console.error(
+      `${OUTPUT_FILE} has entries with no tmdbId (pre-migration personal-import data). ` +
+        'Run `npm run enrich` first to backfill tmdbId before merging sources.',
+    )
+    process.exit(1)
+  }
+
+  return pool
 }
 
 async function main() {
@@ -48,7 +61,7 @@ async function main() {
         continue
       }
       const before = pool.length
-      const beforeHasSource = pool.some((m) => m.tmdbId === movie.tmdbId && m.sources.includes(sourceId))
+      const beforeHasSource = pool.some((m) => m.tmdbId === movie.tmdbId && (m.sources || []).includes(sourceId))
       pool = upsertSourceMovie(pool, movie, sourceId)
       if (pool.length > before) added++
       else if (!beforeHasSource) merged++

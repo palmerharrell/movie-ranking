@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { parseLetterboxdExport } from './parseLetterboxdExport.js'
 import { enrichMovieByTitleYear } from './enrichMovie.js'
+import { upsertPersonalMovie } from './mergeSourceMovie.js'
 
 dotenv.config({ quiet: true })
 
@@ -12,17 +13,9 @@ const ROOT = path.join(__dirname, '..')
 const EXPORT_DIR = path.join(ROOT, 'data', 'letterboxd-export')
 const OUTPUT_FILE = path.join(ROOT, 'data', 'movies.json')
 
-async function enrichMovie(apiKey, movie) {
-  const fields = await enrichMovieByTitleYear(apiKey, movie.title, movie.year)
-  if (!fields) {
-    console.warn(`No TMDb match for "${movie.title}" (${movie.year}) — skipping (likely a TV series or other non-movie entry)`)
-    return null
-  }
-  return {
-    id: movie.key,
-    ...fields,
-    sources: ['personal'],
-  }
+function loadPool() {
+  if (!fs.existsSync(OUTPUT_FILE)) return []
+  return JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'))
 }
 
 async function main() {
@@ -40,18 +33,29 @@ async function main() {
     process.exit(1)
   }
 
+  // Loaded and merged into rather than overwritten, so movies added by
+  // enrich-sources.js (published-list-only entries, or sources[] tags on
+  // movies shared with the personal import) survive a re-run of this
+  // script when the user re-exports fresh Letterboxd data.
+  let pool = loadPool()
+
   console.log(`Enriching ${movies.length} movies via TMDb...`)
-  const enriched = []
+  let count = 0
   for (const [i, movie] of movies.entries()) {
-    const result = await enrichMovie(apiKey, movie)
-    if (result) enriched.push(result)
+    const fields = await enrichMovieByTitleYear(apiKey, movie.title, movie.year)
+    if (!fields) {
+      console.warn(`No TMDb match for "${movie.title}" (${movie.year}) — skipping (likely a TV series or other non-movie entry)`)
+    } else {
+      pool = upsertPersonalMovie(pool, fields, movie.key)
+      count++
+    }
     if ((i + 1) % 20 === 0) {
       console.log(`  ${i + 1}/${movies.length}`)
     }
   }
 
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(enriched, null, 2))
-  console.log(`Wrote ${enriched.length} movies to ${OUTPUT_FILE}`)
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(pool, null, 2))
+  console.log(`Enriched ${count} personal movies. Pool now has ${pool.length} movies. Wrote to ${OUTPUT_FILE}`)
 }
 
 main()
