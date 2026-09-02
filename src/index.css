@@ -205,6 +205,17 @@ body {
   letter-spacing: 0.14em;
 }
 
+.standings-reset-button {
+  font-family: var(--font-mono);
+  color: var(--text-low);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.standings-reset-button:hover:not(:disabled) {
+  color: var(--text-high);
+}
+
 .standings-list {
   gap: 2px;
 }

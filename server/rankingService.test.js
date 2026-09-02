@@ -8,6 +8,7 @@ import {
   applyRank,
   pickCategory,
   saveRanking,
+  resetRanking,
   listSavedRankings,
   getSavedRankingMovies,
 } from './rankingService.js'
@@ -170,6 +171,41 @@ test('saveRanking snapshots state and resets live state to defaults', () => {
     assert.equal(m.eloRating, 1000)
     assert.equal(m.timesRanked, 0)
   }
+})
+
+test('resetRanking clears live state to defaults without creating a saved snapshot', () => {
+  const db = freshDb()
+  rankAllOnce(db)
+
+  resetRanking(db, FIXTURES_DIR)
+
+  const liveMovies = getMoviesWithState(db, FIXTURES_DIR)
+  for (const m of liveMovies) {
+    assert.equal(m.eloRating, 1000)
+    assert.equal(m.timesRanked, 0)
+  }
+  assert.equal(listSavedRankings(db).length, 0)
+})
+
+test('resetRanking({ family: true }) only resets the family-safe subset', () => {
+  const db = freshDb()
+  rankFamilyMoviesOnce(db)
+  applyRank(db, FAMILY_FIXTURES_DIR, ['6', '7']) // non-family progress, should survive the reset
+
+  resetRanking(db, FAMILY_FIXTURES_DIR, { family: true })
+
+  const liveMovies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
+  const byId = new Map(liveMovies.map((m) => [m.id, m]))
+  for (const id of ['1', '2', '3', '4', '5']) {
+    assert.equal(byId.get(id).timesRanked, 0, `family movie ${id} should reset`)
+  }
+  assert.equal(byId.get('6').timesRanked, 1, 'non-family progress should not be reset')
+  assert.equal(byId.get('7').timesRanked, 1, 'non-family progress should not be reset')
+})
+
+test('resetRanking throws if the pool is not found', () => {
+  const db = freshDb()
+  assert.throws(() => resetRanking(db, EMPTY_FIXTURES_DIR))
 })
 
 test('listSavedRankings lists snapshots newest first', () => {

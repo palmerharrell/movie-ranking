@@ -41,6 +41,13 @@ export function saveRanking(name, { family } = {}) {
   })
 }
 
+export function resetRanking({ family } = {}) {
+  return request('/api/reset', {
+    method: 'POST',
+    body: JSON.stringify({ family: !!family }),
+  })
+}
+
 export function getSavedRankings() {
   return request('/api/rankings')
 }

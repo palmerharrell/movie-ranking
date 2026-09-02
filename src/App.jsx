@@ -6,6 +6,7 @@ import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
+import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
@@ -45,6 +46,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
@@ -240,6 +242,29 @@ function App() {
     }
   }
 
+  async function handleResetRanking() {
+    // Let a failure here propagate to the modal, which shows it inline.
+    await api.resetRanking({ family: isFamily })
+    setShowResetModal(false)
+    setSkippedMovie(null)
+    wasFullyRanked.current = false
+
+    try {
+      const [updatedMovies, freshPacks] = await Promise.all([
+        api.getMovies({ family: isFamily }),
+        fetchPacks(isFamily),
+      ])
+      noteMoviesUpdate(updatedMovies)
+      setPacks(freshPacks)
+    } catch (err) {
+      // The reset already committed server-side, so drop the now-stale
+      // board rather than silently leaving it displayed.
+      setMovies(null)
+      setPacks(null)
+      setError(err.message)
+    }
+  }
+
   return (
     <div data-theme={theme} className="app-shell flex h-screen flex-col overflow-hidden">
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col">
@@ -295,7 +320,7 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel movies={movies} />
+              <LeftPanel movies={movies} onReset={() => setShowResetModal(true)} />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (
@@ -365,6 +390,13 @@ function App() {
         <SaveRankingModal
           onSave={handleSaveRanking}
           onDismiss={() => setShowSaveModal(false)}
+          isFamily={isFamily}
+        />
+      )}
+      {showResetModal && (
+        <ResetRankingModal
+          onConfirm={handleResetRanking}
+          onDismiss={() => setShowResetModal(false)}
           isFamily={isFamily}
         />
       )}

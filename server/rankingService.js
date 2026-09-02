@@ -86,6 +86,17 @@ export function saveRanking(db, dataDir, name, { family = false } = {}) {
   return { id, name }
 }
 
+// Resets live ranking state back to defaults (eloRating 1000, timesRanked 0)
+// WITHOUT snapshotting it first — unlike saveRanking, in-progress ranking
+// data is discarded. Pass { family: true } to reset only the family-safe
+// subset, leaving the rest of the pool's progress untouched. Throws if the
+// pool isn't found.
+export function resetRanking(db, dataDir, { family = false } = {}) {
+  const movies = getMoviesWithState(db, dataDir, { family })
+  if (!movies) throw new Error('Movie pool not found')
+  resetState(db, movies.map((m) => m.id))
+}
+
 // { id, name, createdAt, movieCount }[] for every saved snapshot, newest first.
 export function listSavedRankings(db) {
   return listSavedRankingsFromDb(db)
