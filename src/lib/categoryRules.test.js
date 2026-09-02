@@ -55,11 +55,12 @@ describe('shortDecade', () => {
   })
 })
 
-describe('pairLabel genre pluralization', () => {
-  // Genres in PLURALIZE_GENRES pluralize; everything else (the majority)
-  // stays singular, per issue #66.
+describe('pairLabel genre labeling', () => {
+  // Genres in PLURALIZE_GENRES pluralize (the plural noun already implies
+  // "Movies"); Animation gets its own "Animated Movies" phrasing; every
+  // other genre appends " Movies" to the raw name (issue #87).
   const pluralizes = ['Comedy', 'Thriller', 'Mystery', 'Western', 'Documentary']
-  const staysSingular = [
+  const appendsMovies = [
     'Horror',
     'Action',
     'Crime',
@@ -67,7 +68,6 @@ describe('pairLabel genre pluralization', () => {
     'Family',
     'Music',
     'History',
-    'Animation',
     'Science Fiction',
     'Fantasy',
     'Drama',
@@ -84,12 +84,20 @@ describe('pairLabel genre pluralization', () => {
     expect(label).toMatch(/^90s /)
   })
 
-  it.each(staysSingular)('keeps %s singular in decade+genre labels', (genre) => {
+  it.each(appendsMovies)('appends "Movies" to %s in decade+genre labels', (genre) => {
     const label = pairLabel([
       { type: 'decade', value: '1990s' },
       { type: 'genre', value: genre },
     ])
-    expect(label).toBe(`90s ${genre}`)
+    expect(label).toBe(`90s ${genre} Movies`)
+  })
+
+  it('uses "Animated Movies" for Animation in decade+genre labels', () => {
+    const label = pairLabel([
+      { type: 'decade', value: '1990s' },
+      { type: 'genre', value: 'Animation' },
+    ])
+    expect(label).toBe('90s Animated Movies')
   })
 
   it('pluralizes Comedy to Comedies in director+genre labels', () => {
@@ -100,12 +108,12 @@ describe('pairLabel genre pluralization', () => {
     expect(label).toBe('Wes Anderson Comedies')
   })
 
-  it('keeps Horror singular in cast+genre labels', () => {
+  it('appends "Movies" to Horror in cast+genre labels', () => {
     const label = pairLabel([
       { type: 'cast', value: 'Bruce Willis' },
       { type: 'genre', value: 'Horror' },
     ])
-    expect(label).toBe('Horror starring Bruce Willis')
+    expect(label).toBe('Horror Movies starring Bruce Willis')
   })
 })
 

@@ -46,20 +46,33 @@ export function languageName(code) {
 
 // Most genres read naturally as uncountable/singular ("90s Horror", "90s
 // Drama") rather than pluralized. These are the exceptions that do pluralize
-// ("90s Comedies", "90s Thrillers").
+// ("90s Comedies", "90s Thrillers") — for these, the plural noun already
+// implies "Movies" and gets no further suffix.
 const PLURALIZE_GENRES = new Set(['Comedy', 'Thriller', 'Mystery', 'Western', 'Documentary'])
 
+// Genres whose display form isn't just the raw TMDb name + " Movies".
+const GENRE_LABEL_OVERRIDES = {
+  Animation: 'Animated Movies',
+}
+
 function pluralizeGenre(genre) {
-  if (!PLURALIZE_GENRES.has(genre)) return genre
   if (genre.endsWith('y')) return `${genre.slice(0, -1)}ies`
   return `${genre}s`
 }
 
+// Full noun phrase for a genre, for use standalone or composed with another
+// attribute's modifier ("90s " + genreLabel("Crime") -> "90s Crime Movies").
+export function genreLabel(genre) {
+  if (GENRE_LABEL_OVERRIDES[genre]) return GENRE_LABEL_OVERRIDES[genre]
+  if (PLURALIZE_GENRES.has(genre)) return pluralizeGenre(genre)
+  return `${genre} Movies`
+}
+
 const PAIR_LABELS = {
-  'decade|genre': ({ decade, genre }) => `${shortDecade(decade)} ${pluralizeGenre(genre)}`,
-  'genre|year': ({ genre, year }) => `${year} ${genre} Movies`,
-  'director|genre': ({ director, genre }) => `${director} ${pluralizeGenre(genre)}`,
-  'cast|genre': ({ cast, genre }) => `${pluralizeGenre(genre)} starring ${cast}`,
+  'decade|genre': ({ decade, genre }) => `${shortDecade(decade)} ${genreLabel(genre)}`,
+  'genre|year': ({ genre, year }) => `${year} ${genreLabel(genre)}`,
+  'director|genre': ({ director, genre }) => `${director} ${genreLabel(genre)}`,
+  'cast|genre': ({ cast, genre }) => `${genreLabel(genre)} starring ${cast}`,
   'decade|director': ({ decade, director }) => `${shortDecade(decade)} ${director} Movies`,
   'cast|decade': ({ cast, decade }) => `${shortDecade(decade)} Movies starring ${cast}`,
   'director|year': ({ director, year }) => `${year} ${director} Movies`,
@@ -68,12 +81,12 @@ const PAIR_LABELS = {
   'cast|studio': ({ cast, studio }) => `${studio} Movies starring ${cast}`,
   'decade|studio': ({ decade, studio }) => `${shortDecade(decade)} ${studio} Movies`,
   'director|studio': ({ director, studio }) => `${studio} ${director} Movies`,
-  'genre|studio': ({ genre, studio }) => `${studio} ${pluralizeGenre(genre)}`,
+  'genre|studio': ({ genre, studio }) => `${studio} ${genreLabel(genre)}`,
   'studio|year': ({ studio, year }) => `${year} ${studio} Movies`,
   'cast|language': ({ cast, language }) => `${languageName(language)} Movies starring ${cast}`,
   'decade|language': ({ decade, language }) => `${shortDecade(decade)} ${languageName(language)} Movies`,
   'director|language': ({ director, language }) => `${languageName(language)} ${director} Movies`,
-  'genre|language': ({ genre, language }) => `${languageName(language)} ${pluralizeGenre(genre)}`,
+  'genre|language': ({ genre, language }) => `${languageName(language)} ${genreLabel(genre)}`,
   'language|year': ({ language, year }) => `${year} ${languageName(language)} Movies`,
   'language|studio': ({ language, studio }) => `${languageName(language)} ${studio} Movies`,
 }

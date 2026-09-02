@@ -4,6 +4,7 @@ import {
   shortDecade,
   stripCollectionSuffix,
   languageName,
+  genreLabel,
 } from './categoryRules.js'
 import { KEYWORD_LABELS } from './curatedAttributes.js'
 
@@ -31,7 +32,7 @@ const ATTRIBUTE_TYPES = [
 
 const LABELS = {
   director: (v) => `Directed by ${v}`,
-  genre: (v) => v,
+  genre: (v) => genreLabel(v),
   decade: (v) => `${shortDecade(v)} Movies`,
   year: (v) => `Movies from ${v}`,
   cast: (v) => `Movies starring ${v}`,

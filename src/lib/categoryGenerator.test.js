@@ -165,10 +165,10 @@ describe('generateCategory', () => {
     const movies = Array.from({ length: 5 }, (_, i) => ({ id: String(i + 1), title: `M${i + 1}`, ...movie }))
 
     const expectedByPair = {
-      'decade,genre': '90s Adventure',
+      'decade,genre': '90s Adventure Movies',
       'genre,year': '1999 Adventure Movies',
-      'director,genre': 'Wes Anderson Adventure',
-      'cast,genre': 'Adventure starring Harrison Ford',
+      'director,genre': 'Wes Anderson Adventure Movies',
+      'cast,genre': 'Adventure Movies starring Harrison Ford',
       'decade,director': '90s Wes Anderson Movies',
       'cast,decade': '90s Movies starring Harrison Ford',
       'director,year': '1999 Wes Anderson Movies',
@@ -177,12 +177,12 @@ describe('generateCategory', () => {
       'cast,studio': 'A24 Movies starring Harrison Ford',
       'decade,studio': '90s A24 Movies',
       'director,studio': 'A24 Wes Anderson Movies',
-      'genre,studio': 'A24 Adventure',
+      'genre,studio': 'A24 Adventure Movies',
       'studio,year': '1999 A24 Movies',
       'cast,language': 'French Movies starring Harrison Ford',
       'decade,language': '90s French Movies',
       'director,language': 'French Wes Anderson Movies',
-      'genre,language': 'French Adventure',
+      'genre,language': 'French Adventure Movies',
       'language,year': '1999 French Movies',
       'language,studio': 'French A24 Movies',
     }
@@ -216,7 +216,7 @@ describe('generateCategory', () => {
 
     const expectedByType = {
       director: 'Directed by Wes Anderson',
-      genre: 'Horror',
+      genre: 'Horror Movies',
       decade: '90s Movies',
       year: 'Movies from 1999',
       cast: 'Movies starring Harrison Ford',
