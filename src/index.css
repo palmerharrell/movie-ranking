@@ -461,7 +461,6 @@ body {
 }
 
 [data-theme='neon'] .rank-button {
-  width: 100%;
   border-radius: 8px;
   background: #f04f8c;
   color: #2a0a18;
