@@ -1,0 +1,402 @@
+[
+  {
+    "title": "How the Grinch Stole Christmas",
+    "year": 2000
+  },
+  {
+    "title": "Mission: Impossible II",
+    "year": 2000
+  },
+  {
+    "title": "Gladiator",
+    "year": 2000
+  },
+  {
+    "title": "The Perfect Storm",
+    "year": 2000
+  },
+  {
+    "title": "Meet the Parents",
+    "year": 2000
+  },
+  {
+    "title": "X-Men",
+    "year": 2000
+  },
+  {
+    "title": "Scary Movie",
+    "year": 2000
+  },
+  {
+    "title": "What Lies Beneath",
+    "year": 2000
+  },
+  {
+    "title": "Dinosaur",
+    "year": 2000
+  },
+  {
+    "title": "Erin Brockovich",
+    "year": 2000
+  },
+  {
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "year": 2001
+  },
+  {
+    "title": "Shrek",
+    "year": 2001
+  },
+  {
+    "title": "Monsters, Inc.",
+    "year": 2001
+  },
+  {
+    "title": "Rush Hour 2",
+    "year": 2001
+  },
+  {
+    "title": "The Mummy Returns",
+    "year": 2001
+  },
+  {
+    "title": "Pearl Harbor",
+    "year": 2001
+  },
+  {
+    "title": "Jurassic Park III",
+    "year": 2001
+  },
+  {
+    "title": "Planet of the Apes",
+    "year": 2001
+  },
+  {
+    "title": "Hannibal",
+    "year": 2001
+  },
+  {
+    "title": "The Lord of the Rings: The Fellowship of the Ring",
+    "year": 2001
+  },
+  {
+    "title": "Spider-Man",
+    "year": 2002
+  },
+  {
+    "title": "Star Wars: Episode II - Attack of the Clones",
+    "year": 2002
+  },
+  {
+    "title": "Harry Potter and the Chamber of Secrets",
+    "year": 2002
+  },
+  {
+    "title": "Signs",
+    "year": 2002
+  },
+  {
+    "title": "My Big Fat Greek Wedding",
+    "year": 2002
+  },
+  {
+    "title": "The Lord of the Rings: The Two Towers",
+    "year": 2002
+  },
+  {
+    "title": "Austin Powers in Goldmember",
+    "year": 2002
+  },
+  {
+    "title": "Men in Black II",
+    "year": 2002
+  },
+  {
+    "title": "Ice Age",
+    "year": 2002
+  },
+  {
+    "title": "A Beautiful Mind",
+    "year": 2002
+  },
+  {
+    "title": "Finding Nemo",
+    "year": 2003
+  },
+  {
+    "title": "Pirates of the Caribbean: The Curse of the Black Pearl",
+    "year": 2003
+  },
+  {
+    "title": "The Matrix Reloaded",
+    "year": 2003
+  },
+  {
+    "title": "The Lord of the Rings: The Return of the King",
+    "year": 2003
+  },
+  {
+    "title": "Bruce Almighty",
+    "year": 2003
+  },
+  {
+    "title": "X2: X-Men United",
+    "year": 2003
+  },
+  {
+    "title": "Elf",
+    "year": 2003
+  },
+  {
+    "title": "Chicago",
+    "year": 2003
+  },
+  {
+    "title": "Terminator 3: Rise of the Machines",
+    "year": 2003
+  },
+  {
+    "title": "Bad Boys II",
+    "year": 2003
+  },
+  {
+    "title": "Shrek 2",
+    "year": 2004
+  },
+  {
+    "title": "Spider-Man 2",
+    "year": 2004
+  },
+  {
+    "title": "The Passion of the Christ",
+    "year": 2004
+  },
+  {
+    "title": "Harry Potter and the Prisoner of Azkaban",
+    "year": 2004
+  },
+  {
+    "title": "The Incredibles",
+    "year": 2004
+  },
+  {
+    "title": "The Day After Tomorrow",
+    "year": 2004
+  },
+  {
+    "title": "The Bourne Supremacy",
+    "year": 2004
+  },
+  {
+    "title": "Shark Tale",
+    "year": 2004
+  },
+  {
+    "title": "The Polar Express",
+    "year": 2004
+  },
+  {
+    "title": "National Treasure",
+    "year": 2004
+  },
+  {
+    "title": "Star Wars: Episode III - Revenge of the Sith",
+    "year": 2005
+  },
+  {
+    "title": "Harry Potter and the Goblet of Fire",
+    "year": 2005
+  },
+  {
+    "title": "War of the Worlds",
+    "year": 2005
+  },
+  {
+    "title": "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe",
+    "year": 2005
+  },
+  {
+    "title": "Wedding Crashers",
+    "year": 2005
+  },
+  {
+    "title": "Charlie and the Chocolate Factory",
+    "year": 2005
+  },
+  {
+    "title": "Batman Begins",
+    "year": 2005
+  },
+  {
+    "title": "Madagascar",
+    "year": 2005
+  },
+  {
+    "title": "Mr. & Mrs. Smith",
+    "year": 2005
+  },
+  {
+    "title": "Hitch",
+    "year": 2005
+  },
+  {
+    "title": "Pirates of the Caribbean: Dead Man's Chest",
+    "year": 2006
+  },
+  {
+    "title": "Cars",
+    "year": 2006
+  },
+  {
+    "title": "X-Men: The Last Stand",
+    "year": 2006
+  },
+  {
+    "title": "The Da Vinci Code",
+    "year": 2006
+  },
+  {
+    "title": "Superman Returns",
+    "year": 2006
+  },
+  {
+    "title": "Ice Age 2: The Meltdown",
+    "year": 2006
+  },
+  {
+    "title": "Happy Feet",
+    "year": 2006
+  },
+  {
+    "title": "Over the Hedge",
+    "year": 2006
+  },
+  {
+    "title": "Casino Royale",
+    "year": 2006
+  },
+  {
+    "title": "Talladega Nights: The Ballad of Ricky Bobby",
+    "year": 2006
+  },
+  {
+    "title": "Spider-Man 3",
+    "year": 2007
+  },
+  {
+    "title": "Shrek the Third",
+    "year": 2007
+  },
+  {
+    "title": "Transformers",
+    "year": 2007
+  },
+  {
+    "title": "Pirates of the Caribbean: At World's End",
+    "year": 2007
+  },
+  {
+    "title": "Harry Potter and the Order of the Phoenix",
+    "year": 2007
+  },
+  {
+    "title": "The Bourne Ultimatum",
+    "year": 2007
+  },
+  {
+    "title": "300",
+    "year": 2007
+  },
+  {
+    "title": "Ratatouille",
+    "year": 2007
+  },
+  {
+    "title": "I Am Legend",
+    "year": 2007
+  },
+  {
+    "title": "The Simpsons Movie",
+    "year": 2007
+  },
+  {
+    "title": "The Dark Knight",
+    "year": 2008
+  },
+  {
+    "title": "Iron Man",
+    "year": 2008
+  },
+  {
+    "title": "Indiana Jones and the Kingdom of the Crystal Skull",
+    "year": 2008
+  },
+  {
+    "title": "Hancock",
+    "year": 2008
+  },
+  {
+    "title": "WALL·E",
+    "year": 2008
+  },
+  {
+    "title": "Kung Fu Panda",
+    "year": 2008
+  },
+  {
+    "title": "Madagascar: Escape 2 Africa",
+    "year": 2008
+  },
+  {
+    "title": "Twilight",
+    "year": 2008
+  },
+  {
+    "title": "Quantum of Solace",
+    "year": 2008
+  },
+  {
+    "title": "Horton Hears a Who!",
+    "year": 2008
+  },
+  {
+    "title": "Transformers: Revenge of the Fallen",
+    "year": 2009
+  },
+  {
+    "title": "Harry Potter and the Half-Blood Prince",
+    "year": 2009
+  },
+  {
+    "title": "Up",
+    "year": 2009
+  },
+  {
+    "title": "The Twilight Saga: New Moon",
+    "year": 2009
+  },
+  {
+    "title": "Avatar",
+    "year": 2009
+  },
+  {
+    "title": "The Hangover",
+    "year": 2009
+  },
+  {
+    "title": "Star Trek",
+    "year": 2009
+  },
+  {
+    "title": "Monsters vs. Aliens",
+    "year": 2009
+  },
+  {
+    "title": "Ice Age: Dawn of the Dinosaurs",
+    "year": 2009
+  },
+  {
+    "title": "The Blind Side",
+    "year": 2009
+  }
+]

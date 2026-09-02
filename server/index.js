@@ -9,6 +9,7 @@ import {
   applyRank,
   pickCategory,
   saveRanking,
+  resetRanking,
   listSavedRankings,
   getSavedRankingMovies,
 } from './rankingService.js'
@@ -73,6 +74,16 @@ app.post('/api/rankings', (req, res) => {
   }
   try {
     res.json(saveRanking(db, DATA_DIR, name.trim(), { family: family === true }))
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+app.post('/api/reset', (req, res) => {
+  const { family } = req.body
+  try {
+    resetRanking(db, DATA_DIR, { family: family === true })
+    res.json(getMoviesWithState(db, DATA_DIR, { family: family === true }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

@@ -34,7 +34,7 @@ function StandingsRow({ movie, rank, isLast }) {
   )
 }
 
-export function LeftPanel({ movies }) {
+export function LeftPanel({ movies, onReset }) {
   const sorted = sortMovies(movies)
   const rankedCount = movies.filter((m) => m.timesRanked >= 1).length
 
@@ -46,6 +46,15 @@ export function LeftPanel({ movies }) {
           {rankedCount}/{sorted.length} ranked
         </span>
       </div>
+      {rankedCount > 0 && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="standings-reset-button mb-3 shrink-0 self-start text-xs font-medium uppercase"
+        >
+          Reset Ranking
+        </button>
+      )}
       <ol className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
         {sorted.map((movie, index) => (
           <StandingsRow

@@ -1,0 +1,30 @@
+{
+  "name": "Movie Ranker",
+  "short_name": "Movie Ranker",
+  "description": "Rank your movie pool with a repeated 5-at-a-time drag-and-drop ranking game.",
+  "start_url": "/movie-ranking/",
+  "scope": "/movie-ranking/",
+  "display": "standalone",
+  "background_color": "#1c1030",
+  "theme_color": "#7e14ff",
+  "icons": [
+    {
+      "src": "/movie-ranking/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/movie-ranking/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/movie-ranking/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

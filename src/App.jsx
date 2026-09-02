@@ -6,6 +6,7 @@ import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { ThemeToggle } from './components/ThemeToggle.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
+import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
@@ -45,11 +46,12 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   const pendingSkipDiscard = useRef(false)
-  const [skippedMovie, setSkippedMovie] = useState(null)
+  const [skippedMovies, setSkippedMovies] = useState([])
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -81,7 +83,7 @@ function App() {
   // Re-fetch when family-mode-ness flips (different pool), not on every
   // Classic <-> Neon swap (same pool, cosmetic only).
   useEffect(() => {
-    setSkippedMovie(null)
+    setSkippedMovies([])
     api.getMovies({ family: isFamily }).then(noteMoviesUpdate).catch((err) => setError(err.message))
     fetchPacks(isFamily).then(setPacks).catch((err) => setError(err.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,7 +95,7 @@ function App() {
 
   async function handleRank() {
     setBusy(true)
-    setSkippedMovie(null)
+    setSkippedMovies([])
     try {
       const movieIds = category.movies.map((m) => m.id)
       // Sequential: the fresh pack's overlap calculation reads timesRanked
@@ -135,7 +137,7 @@ function App() {
 
   async function handleSelectQueued(queueIndex) {
     setBusy(true)
-    setSkippedMovie(null)
+    setSkippedMovies([])
     try {
       const remainingLabels = queue
         .filter((_, i) => i !== queueIndex)
@@ -178,23 +180,29 @@ function App() {
     // nothing left to undo back into — the pendingSkipDiscard effect below
     // replaces the whole pack.
     const willDiscard = category.movies.length <= 2
-    setSkippedMovie(willDiscard ? null : { movie: skippedMovieRecord, index: skipIndex })
+    setSkippedMovies((prev) =>
+      willDiscard ? [] : [...prev, { movie: skippedMovieRecord, index: skipIndex }],
+    )
   }
 
-  function handleUndoSkip() {
-    if (!skippedMovie) return
+  // Any movie skipped from the active pack can be restored, as long as that
+  // pack is still active — identified by movie id rather than list position
+  // since several skips can be pending restoration at once.
+  function handleUndoSkip(movieId) {
+    const entry = skippedMovies.find((s) => s.movie.id === movieId)
+    if (!entry) return
     setPacks((prev) => {
       const movies = [...prev[0].movies]
-      movies.splice(Math.min(skippedMovie.index, movies.length), 0, skippedMovie.movie)
+      movies.splice(Math.min(entry.index, movies.length), 0, entry.movie)
       return [{ ...prev[0], movies }, ...prev.slice(1)]
     })
-    setSkippedMovie(null)
+    setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
   }
 
   useEffect(() => {
     if (!pendingSkipDiscard.current) return
     pendingSkipDiscard.current = false
-    setSkippedMovie(null)
+    setSkippedMovies([])
 
     // Fewer than 2 movies left to rank — move on without collecting ranking data.
     ;(async () => {
@@ -221,7 +229,7 @@ function App() {
     await api.saveRanking(name, { family: isFamily })
     setShowSaveModal(false)
     setShowResultsScreen(false)
-    setSkippedMovie(null)
+    setSkippedMovies([])
     wasFullyRanked.current = false
 
     try {
@@ -234,6 +242,29 @@ function App() {
     } catch (err) {
       // The save already committed server-side (including the state reset),
       // so drop the now-stale board rather than silently leaving it displayed.
+      setMovies(null)
+      setPacks(null)
+      setError(err.message)
+    }
+  }
+
+  async function handleResetRanking() {
+    // Let a failure here propagate to the modal, which shows it inline.
+    await api.resetRanking({ family: isFamily })
+    setShowResetModal(false)
+    setSkippedMovies([])
+    wasFullyRanked.current = false
+
+    try {
+      const [updatedMovies, freshPacks] = await Promise.all([
+        api.getMovies({ family: isFamily }),
+        fetchPacks(isFamily),
+      ])
+      noteMoviesUpdate(updatedMovies)
+      setPacks(freshPacks)
+    } catch (err) {
+      // The reset already committed server-side, so drop the now-stale
+      // board rather than silently leaving it displayed.
       setMovies(null)
       setPacks(null)
       setError(err.message)
@@ -295,7 +326,7 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel movies={movies} />
+              <LeftPanel movies={movies} onReset={() => setShowResetModal(true)} />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (
@@ -324,7 +355,7 @@ function App() {
                     category={category}
                     onReorder={handleReorder}
                     onSkip={handleSkipMovie}
-                    skippedMovie={skippedMovie}
+                    skippedMovies={skippedMovies}
                     onUndoSkip={handleUndoSkip}
                     disabled={busy}
                     theme={theme}
@@ -365,6 +396,13 @@ function App() {
         <SaveRankingModal
           onSave={handleSaveRanking}
           onDismiss={() => setShowSaveModal(false)}
+          isFamily={isFamily}
+        />
+      )}
+      {showResetModal && (
+        <ResetRankingModal
+          onConfirm={handleResetRanking}
+          onDismiss={() => setShowResetModal(false)}
           isFamily={isFamily}
         />
       )}
