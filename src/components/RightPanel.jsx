@@ -13,7 +13,15 @@ import {
 import { MovieTile } from './MovieTile.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
-export function RightPanel({ category, onReorder, onSkip, skippedMovie, onUndoSkip, disabled, theme }) {
+export function RightPanel({
+  category,
+  onReorder,
+  onSkip,
+  skippedMovies,
+  onUndoSkip,
+  disabled,
+  theme,
+}) {
   const sensors = useSensors(useSensor(PointerSensor))
 
   function handleDragEnd(event) {
@@ -35,19 +43,6 @@ export function RightPanel({ category, onReorder, onSkip, skippedMovie, onUndoSk
           </p>
         </div>
         <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
-        {skippedMovie && (
-          <p className="undo-skip mt-1.5 text-[11px]">
-            Removed &ldquo;{skippedMovie.movie.title}&rdquo;.{' '}
-            <button
-              type="button"
-              onClick={onUndoSkip}
-              disabled={disabled}
-              className="undo-skip-button font-medium underline disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Undo
-            </button>
-          </p>
-        )}
       </div>
       <DndContext
         sensors={sensors}
@@ -71,6 +66,23 @@ export function RightPanel({ category, onReorder, onSkip, skippedMovie, onUndoSk
           </div>
         </SortableContext>
       </DndContext>
+      {skippedMovies.length > 0 && (
+        <div className="mt-3 flex flex-col gap-1">
+          {skippedMovies.map(({ movie }) => (
+            <p key={movie.id} className="undo-skip text-[11px]">
+              Removed &ldquo;{movie.title}&rdquo;.{' '}
+              <button
+                type="button"
+                onClick={() => onUndoSkip(movie.id)}
+                disabled={disabled}
+                className="undo-skip-button font-medium underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Undo
+              </button>
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
