@@ -63,7 +63,7 @@ function App() {
   // (the save itself is scoped the same way — see handleSaveRanking), so
   // this fires on family-subset completion too, independent of the rest of
   // the pool.
-  // POST /api/rank returns the full pool's state (unfiltered), so re-apply
+  // api.rankPack() returns the full pool's state (unfiltered), so re-apply
   // the family filter client-side to keep the displayed pool consistent
   // with what's currently shown while family mode is active.
   function noteMoviesUpdate(updatedMovies) {
@@ -99,7 +99,7 @@ function App() {
     try {
       const movieIds = category.movies.map((m) => m.id)
       // Sequential: the fresh pack's overlap calculation reads timesRanked
-      // from the DB, so it must run after the rank submission commits.
+      // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
         () => api.getCategory({ family: isFamily }),
@@ -116,7 +116,7 @@ function App() {
 
   // A "Head to Head" pack submits on a single click — no drag-to-order or
   // separate "Rank ->" confirmation — since it's just a 2-movie pairwise
-  // pick. Reuses the same POST /api/rank pairwise-Elo path as a normal pack.
+  // pick. Reuses the same api.rankPack() pairwise-Elo path as a normal pack.
   async function handleHeadToHeadPick(winnerId) {
     setBusy(true)
     try {
@@ -240,8 +240,8 @@ function App() {
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
     } catch (err) {
-      // The save already committed server-side (including the state reset),
-      // so drop the now-stale board rather than silently leaving it displayed.
+      // The save already committed (snapshot posted, local state reset), so
+      // drop the now-stale board rather than silently leaving it displayed.
       setMovies(null)
       setPacks(null)
       setError(err.message)
@@ -263,8 +263,8 @@ function App() {
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
     } catch (err) {
-      // The reset already committed server-side, so drop the now-stale
-      // board rather than silently leaving it displayed.
+      // The reset already committed (local state cleared), so drop the
+      // now-stale board rather than silently leaving it displayed.
       setMovies(null)
       setPacks(null)
       setError(err.message)

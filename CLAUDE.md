@@ -75,8 +75,8 @@ with a `sources[]` field listing every source it came from.
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
 mpaaRating, studio, collection, originalLanguage, keywords[], sources[]`.
-Static metadata only — `eloRating` and `timesRanked` live in the backend's
-ranking-state store instead (see **Online deployment**). `mpaaRating` is the
+Static metadata only — `eloRating` and `timesRanked` live in the browser's
+local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
 certification for it — see **Family mode**. `studio` is the movie's
@@ -183,14 +183,18 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   `timesRanked ≥ 1`, show a modal prompting the user to name and save the
   ranking. Outside Family mode "visible pool" is the whole pool; inside
   Family mode it's just the family-safe subset — see **Family mode**.
-- **Save:** copies the current per-movie `eloRating`/`timesRanked` for the
-  visible pool into a named, timestamped snapshot, then resets that scope's
-  live ranking state back to defaults (`eloRating = 1000`, `timesRanked =
-  0`) so a fresh ranking run can start from scratch. A full-pool save resets
-  the whole pool; a Family-mode save resets only the family-safe subset,
-  leaving progress on the rest of the pool untouched. This lets the pool be
-  ranked repeatedly over time (e.g. "2026 Draft", "2027 Redo") without the
-  runs interfering with each other.
+- **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
+  for the visible pool (gathered from its own local ranking state — see
+  **Online deployment**) to the server as a named, timestamped snapshot, then
+  resets that scope's local ranking state back to defaults (`eloRating =
+  1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
+  full-pool save resets the whole pool; a Family-mode save resets only the
+  family-safe subset, leaving progress on the rest of the pool untouched.
+  This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
+  "2027 Redo") without the runs interfering with each other. Every saved
+  snapshot is stamped with the creating browser's client id (see **Online
+  deployment**), reserved for a future feature restricting edits/re-ranks to
+  the ranking's creator (#115) — not yet enforced anywhere.
 - **Load:** a "Load Ranking" entry point lists saved snapshots by
   name/date/movie count; opening one shows its standings list — only the
   movies that were actually part of that saved run, not the current full
@@ -201,29 +205,41 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   at runtime — enrichment is a build-time/offline step (`enrich.js` /
   `enrich-sources.js`), so the deployed site only ever serves already-enriched
   JSON.
+- **In-progress ranking state lives in the browser, not the server** (#115).
+  `eloRating`/`timesRanked` for a run in progress are kept in `localStorage`
+  (`src/lib/localRankingStore.js`), computed with the same `elo.js`/
+  `categoryGenerator.js`/`familyMode.js` logic the server used to run — those
+  modules are framework-agnostic and now run client-side instead. This is a
+  deliberate change from the app's original single-user design: since the
+  deployed site is reachable by more than one person at once (e.g. several
+  family members ranking on their own devices in Family mode), a shared
+  server-side ranking state let one visitor's clicks clobber another's. A
+  consequence is that in-progress state no longer syncs across a single
+  person's own devices — only completed, named snapshots do (see below). Each
+  browser also holds a durable random client id (`src/lib/clientId.js`),
+  generated once and reused, unrelated to any account.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
-  droplet, whose only job is persisting ranking state (Elo ratings/`timesRanked`)
-  and saved-ranking snapshots across sessions and devices — everything else
-  stays static.
+  droplet, whose only job is persisting completed saved-ranking snapshots
+  across sessions and devices, plus serving the pool's static metadata —
+  everything else stays static or lives client-side.
   - Storage: SQLite (`better-sqlite3`) is enough at this scale:
-    - `movie_state(movie_id, elo_rating, times_ranked)` — live ranking state,
-      seeded from `movies.json` on first load.
-    - `saved_rankings(id, name, created_at, data)` — completed snapshots;
-      `data` is the JSON-serialized `{movieId, eloRating, timesRanked}[]` at
-      save time — only the movies actually in scope for that save (the
-      whole pool, or just the family-safe subset for a Family-mode save).
+    - `saved_rankings(id, name, created_at, data, owner_client_id)` —
+      completed snapshots; `data` is the JSON-serialized
+      `{movieId, eloRating, timesRanked}[]` at save time — only the movies
+      actually in scope for that save (the whole pool, or just the
+      family-safe subset for a Family-mode save). `owner_client_id` is the
+      creating browser's client id — reserved for a future edit/re-rank
+      feature restricted to the ranking's creator (#115); not yet enforced by
+      any endpoint.
   - Endpoints:
-    - `GET /api/movies` — the pool's movies + current `eloRating`/`timesRanked`;
-      `?family=true` restricts to the family-safe subset (see **Family mode**)
-    - `POST /api/rank` — body: ordered array of 5 movie IDs; server performs
-      the 10 pairwise Elo updates, persists, returns updated ratings
-    - `GET /api/category` — server picks a random valid category (≥5
-      matches, applying the overlap rule), reusing `categoryGenerator.js`
-      logic; stateless — safe to call repeatedly to fill the upcoming queue;
-      `?family=true` restricts category generation to the family-safe subset
-    - `POST /api/rankings` — body: `{name, family}`; snapshots the current
-      (optionally family-scoped) `movie_state` into `saved_rankings`, then
-      resets just that scope's `movie_state` rows to defaults
+    - `GET /api/movies` — the pool's static metadata only, no ranking state;
+      `?family=true` restricts to the family-safe subset (see **Family
+      mode**). The client merges this with its own local ranking state.
+    - `POST /api/rankings` — body: `{name, family, entries, clientId}`, where
+      `entries` is the `{movieId, eloRating, timesRanked}[]` the browser
+      gathered from its own local ranking state; the server just persists it
+      tagged with `clientId` as `owner_client_id`. The browser resets its own
+      local state for that scope after a successful save.
     - `GET /api/rankings` — list of saved snapshots (`id`, `name`,
       `createdAt`, `movieCount`)
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
@@ -259,19 +275,20 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
   with no confirmed US certification (`mpaaRating: null`) is excluded, not
   assumed safe.
-- Filtering happens server-side: `GET /api/movies` and `GET /api/category`
-  accept `?family=true` and filter before merging Elo state / generating a
-  category, so category generation (overlap rule, attribute matching) only
-  ever draws from the family-safe subset.
+- `GET /api/movies?family=true` filters the pool's static metadata
+  server-side; the client then merges in its own local ranking state and
+  generates categories from that filtered set, so category generation
+  (overlap rule, attribute matching) only ever draws from the family-safe
+  subset.
 - Switching Classic ⇄ Neon does not re-fetch (same pool, cosmetic only);
   switching Family mode on/off does, since the pool itself differs.
 - **Scoped completion/save:** the "every movie ranked" completion check (see
   **Saved rankings**) operates on the currently-visible pool, so ranking all
   of the family-safe subset while in Family mode triggers the save prompt
   just like finishing the whole pool does outside it. Saving from Family
-  mode (`POST /api/rankings` with `family: true`) snapshots and resets only
-  the family-safe subset's Elo state — progress on movies outside Family
-  mode (e.g. R-rated movies ranked in Classic/Neon) is left untouched. This
+  mode (`api.saveRanking(name, { family: true })`) snapshots and resets only
+  the family-safe subset's local Elo state — progress on movies outside
+  Family mode (e.g. R-rated movies ranked in Classic/Neon) is left untouched. This
   keeps a Family-mode save from either being blocked by unrelated unranked
   movies, or fabricating "ranked" data for movies that were never actually
   compared.
@@ -296,6 +313,8 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 /src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer
 /src/lib/elo.js
 /src/lib/categoryGenerator.js
+/src/lib/localRankingStore.js <- browser-local in-progress ranking state (#115)
+/src/lib/clientId.js          <- durable per-browser id, tags saved-ranking ownership
 .env                          <- TMDB_API_KEY (gitignored)
 ```
 
