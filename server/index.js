@@ -4,15 +4,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { createDb } from './db.js'
-import {
-  getMoviesWithState,
-  applyRank,
-  pickCategory,
-  saveRanking,
-  resetRanking,
-  listSavedRankings,
-  getSavedRankingMovies,
-} from './rankingService.js'
+import { getMovies, saveRanking, listSavedRankings, getSavedRankingMovies } from './rankingService.js'
 
 dotenv.config({ quiet: true })
 
@@ -43,47 +35,21 @@ app.use((req, res, next) => {
 
 app.get('/api/movies', (req, res) => {
   const family = req.query.family === 'true'
-  const movies = getMoviesWithState(db, DATA_DIR, { family })
+  const movies = getMovies(DATA_DIR, { family })
   if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
 })
 
-app.post('/api/rank', (req, res) => {
-  const { movieIds } = req.body
-  if (!Array.isArray(movieIds) || movieIds.length < 2 || movieIds.length > 5) {
-    return res.status(400).json({ error: 'movieIds must be an array of 2 to 5 ids' })
-  }
-  try {
-    res.json(applyRank(db, DATA_DIR, movieIds))
-  } catch (err) {
-    res.status(400).json({ error: err.message })
-  }
-})
-
-app.get('/api/category', (req, res) => {
-  const family = req.query.family === 'true'
-  const category = pickCategory(db, DATA_DIR, { family })
-  if (!category) return res.status(404).json({ error: 'Movie pool not found or not enough movies' })
-  res.json(category)
-})
-
 app.post('/api/rankings', (req, res) => {
-  const { name, family } = req.body
+  const { name, entries, clientId } = req.body
   if (typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'name is required' })
   }
-  try {
-    res.json(saveRanking(db, DATA_DIR, name.trim(), { family: family === true }))
-  } catch (err) {
-    res.status(400).json({ error: err.message })
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return res.status(400).json({ error: 'entries must be a non-empty array' })
   }
-})
-
-app.post('/api/reset', (req, res) => {
-  const { family } = req.body
   try {
-    resetRanking(db, DATA_DIR, { family: family === true })
-    res.json(getMoviesWithState(db, DATA_DIR, { family: family === true }))
+    res.json(saveRanking(db, name.trim(), entries, { ownerClientId: clientId }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

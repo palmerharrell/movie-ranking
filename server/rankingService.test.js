@@ -3,20 +3,11 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDb } from './db.js'
-import {
-  getMoviesWithState,
-  applyRank,
-  pickCategory,
-  saveRanking,
-  resetRanking,
-  listSavedRankings,
-  getSavedRankingMovies,
-} from './rankingService.js'
+import { getMovies, saveRanking, listSavedRankings, getSavedRankingMovies } from './rankingService.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
-const EMPTY_POOL_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty-pool')
 const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
 const GROWN_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'grown-data')
 
@@ -24,196 +15,53 @@ function freshDb() {
   return createDb(':memory:')
 }
 
-test('getMoviesWithState seeds unranked movies at 1000/0', () => {
-  const db = freshDb()
-  const movies = getMoviesWithState(db, FIXTURES_DIR)
+function fullPoolEntries() {
+  return ['1', '2', '3', '4', '5'].map((id) => ({ movieId: id, eloRating: 1000, timesRanked: 1 }))
+}
+
+test('getMovies returns the pool\'s static metadata', () => {
+  const movies = getMovies(FIXTURES_DIR)
   assert.equal(movies.length, 5)
-  for (const m of movies) {
-    assert.equal(m.eloRating, 1000)
-    assert.equal(m.timesRanked, 0)
-  }
 })
 
-test('getMoviesWithState returns null when movies.json does not exist', () => {
-  const db = freshDb()
-  assert.equal(getMoviesWithState(db, EMPTY_FIXTURES_DIR), null)
+test('getMovies returns null when movies.json does not exist', () => {
+  assert.equal(getMovies(EMPTY_FIXTURES_DIR), null)
 })
 
-test('applyRank updates elo and timesRanked for the ranked movies', () => {
-  const db = freshDb()
-  const updated = applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', '5'])
-  assert.equal(updated.length, 5)
-  const byId = new Map(updated.map((m) => [m.id, m]))
-  assert.equal(byId.get('1').timesRanked, 1)
-  assert.ok(byId.get('1').eloRating > 1000, 'rank-1 movie should gain rating')
-  assert.ok(byId.get('5').eloRating < 1000, 'rank-5 movie should lose rating')
-})
-
-test('applyRank persists state across calls (accumulates timesRanked)', () => {
-  const db = freshDb()
-  applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', '5'])
-  const second = applyRank(db, FIXTURES_DIR, ['5', '4', '3', '2', '1'])
-  const byId = new Map(second.map((m) => [m.id, m]))
-  assert.equal(byId.get('1').timesRanked, 2)
-})
-
-test('applyRank throws on an unknown movie id', () => {
-  const db = freshDb()
-  assert.throws(() => applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', 'nope']))
-})
-
-test('applyRank accepts a shrunk pack (fewer than 5 ids, e.g. after skips)', () => {
-  const db = freshDb()
-  const updated = applyRank(db, FIXTURES_DIR, ['1', '2'])
-  const byId = new Map(updated.map((m) => [m.id, m]))
-  assert.equal(byId.get('1').timesRanked, 1)
-  assert.equal(byId.get('2').timesRanked, 1)
-  assert.equal(byId.get('3').timesRanked, 0)
-  assert.ok(byId.get('1').eloRating > 1000)
-  assert.ok(byId.get('2').eloRating < 1000)
-})
-
-test('applyRank throws on a single-movie pack', () => {
-  const db = freshDb()
-  assert.throws(() => applyRank(db, FIXTURES_DIR, ['1']))
-})
-
-test('pickCategory returns a 5-movie category', () => {
-  const db = freshDb()
-  const category = pickCategory(db, FIXTURES_DIR)
-  assert.ok(category)
-  assert.equal(category.movies.length, 5)
-})
-
-test('getMoviesWithState({ family: true }) excludes non-family-safe and unrated movies', () => {
-  const db = freshDb()
-  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR, { family: true })
+test('getMovies({ family: true }) excludes non-family-safe and unrated movies', () => {
+  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true })
   assert.equal(movies.length, 5)
   assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
 })
 
-test('getMoviesWithState() without family returns the full pool', () => {
-  const db = freshDb()
-  const movies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
+test('getMovies() without family returns the full pool', () => {
+  const movies = getMovies(FAMILY_FIXTURES_DIR)
   assert.equal(movies.length, 7)
 })
 
-test('pickCategory({ family: true }) only draws from family-safe movies', () => {
+test('saveRanking persists a client-computed snapshot', () => {
   const db = freshDb()
-  const category = pickCategory(db, FAMILY_FIXTURES_DIR, { family: true })
-  assert.ok(category)
-  assert.equal(category.movies.length, 5)
-  assert.ok(category.movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
-})
-
-function rankAllOnce(db) {
-  applyRank(db, FIXTURES_DIR, ['1', '2', '3', '4', '5'])
-}
-
-function rankFamilyMoviesOnce(db) {
-  applyRank(db, FAMILY_FIXTURES_DIR, ['1', '2', '3', '4', '5'])
-}
-
-test('saveRanking({ family: true }) only requires the family-safe subset to be ranked', () => {
-  const db = freshDb()
-  rankFamilyMoviesOnce(db)
-  // Non-family movies (6, 7) are left unranked — should not block a
-  // family-scoped save.
-  assert.doesNotThrow(() => saveRanking(db, FAMILY_FIXTURES_DIR, 'Family Draft', { family: true }))
-})
-
-test('saveRanking({ family: true }) throws if the family-safe subset is incomplete', () => {
-  const db = freshDb()
-  applyRank(db, FAMILY_FIXTURES_DIR, ['1', '2', '3', '4']) // 5 left unranked
-  assert.throws(() => saveRanking(db, FAMILY_FIXTURES_DIR, 'Incomplete', { family: true }))
-})
-
-test('saveRanking({ family: true }) snapshots and resets only the family-safe subset', () => {
-  const db = freshDb()
-  rankFamilyMoviesOnce(db)
-  applyRank(db, FAMILY_FIXTURES_DIR, ['6', '7']) // non-family progress, should survive the save
-
-  const { id } = saveRanking(db, FAMILY_FIXTURES_DIR, 'Family Draft', { family: true })
-
-  const saved = getSavedRankingMovies(db, FAMILY_FIXTURES_DIR, id)
-  assert.equal(saved.movies.length, 5)
-  assert.ok(saved.movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
-
-  const liveMovies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
-  const byId = new Map(liveMovies.map((m) => [m.id, m]))
-  for (const id of ['1', '2', '3', '4', '5']) {
-    assert.equal(byId.get(id).timesRanked, 0, `family movie ${id} should reset`)
-  }
-  assert.equal(byId.get('6').timesRanked, 1, 'non-family progress should not be reset')
-  assert.equal(byId.get('7').timesRanked, 1, 'non-family progress should not be reset')
-})
-
-test('saveRanking throws if any movie is unranked', () => {
-  const db = freshDb()
-  assert.throws(() => saveRanking(db, FIXTURES_DIR, 'Incomplete'))
-})
-
-test('saveRanking throws on an empty pool instead of saving vacuously', () => {
-  const db = freshDb()
-  assert.throws(() => saveRanking(db, EMPTY_POOL_FIXTURES_DIR, 'Empty'))
-})
-
-test('saveRanking snapshots state and resets live state to defaults', () => {
-  const db = freshDb()
-  rankAllOnce(db)
-
-  const { id, name } = saveRanking(db, FIXTURES_DIR, 'My First Ranking')
+  const { id, name } = saveRanking(db, 'My First Ranking', fullPoolEntries())
   assert.ok(id)
   assert.equal(name, 'My First Ranking')
-
-  const liveMovies = getMoviesWithState(db, FIXTURES_DIR)
-  for (const m of liveMovies) {
-    assert.equal(m.eloRating, 1000)
-    assert.equal(m.timesRanked, 0)
-  }
 })
 
-test('resetRanking clears live state to defaults without creating a saved snapshot', () => {
+test('saveRanking stamps the snapshot with the given owner client id', () => {
   const db = freshDb()
-  rankAllOnce(db)
-
-  resetRanking(db, FIXTURES_DIR)
-
-  const liveMovies = getMoviesWithState(db, FIXTURES_DIR)
-  for (const m of liveMovies) {
-    assert.equal(m.eloRating, 1000)
-    assert.equal(m.timesRanked, 0)
-  }
-  assert.equal(listSavedRankings(db).length, 0)
+  const { id } = saveRanking(db, 'Mine', fullPoolEntries(), { ownerClientId: 'client-abc' })
+  const saved = getSavedRankingMovies(db, FIXTURES_DIR, id)
+  assert.ok(saved)
 })
 
-test('resetRanking({ family: true }) only resets the family-safe subset', () => {
+test('saveRanking throws on empty entries', () => {
   const db = freshDb()
-  rankFamilyMoviesOnce(db)
-  applyRank(db, FAMILY_FIXTURES_DIR, ['6', '7']) // non-family progress, should survive the reset
-
-  resetRanking(db, FAMILY_FIXTURES_DIR, { family: true })
-
-  const liveMovies = getMoviesWithState(db, FAMILY_FIXTURES_DIR)
-  const byId = new Map(liveMovies.map((m) => [m.id, m]))
-  for (const id of ['1', '2', '3', '4', '5']) {
-    assert.equal(byId.get(id).timesRanked, 0, `family movie ${id} should reset`)
-  }
-  assert.equal(byId.get('6').timesRanked, 1, 'non-family progress should not be reset')
-  assert.equal(byId.get('7').timesRanked, 1, 'non-family progress should not be reset')
-})
-
-test('resetRanking throws if the pool is not found', () => {
-  const db = freshDb()
-  assert.throws(() => resetRanking(db, EMPTY_FIXTURES_DIR))
+  assert.throws(() => saveRanking(db, 'Empty', []))
 })
 
 test('listSavedRankings lists snapshots newest first', () => {
   const db = freshDb()
-  rankAllOnce(db)
-  saveRanking(db, FIXTURES_DIR, 'First')
-  rankAllOnce(db)
-  saveRanking(db, FIXTURES_DIR, 'Second')
+  saveRanking(db, 'First', fullPoolEntries())
+  saveRanking(db, 'Second', fullPoolEntries())
 
   const list = listSavedRankings(db)
   assert.equal(list.length, 2)
@@ -223,8 +71,7 @@ test('listSavedRankings lists snapshots newest first', () => {
 
 test('listSavedRankings reports movieCount so partial saves are distinguishable', () => {
   const db = freshDb()
-  rankAllOnce(db)
-  saveRanking(db, FIXTURES_DIR, 'Full Pool')
+  saveRanking(db, 'Full Pool', fullPoolEntries())
 
   const list = listSavedRankings(db)
   assert.equal(list[0].movieCount, 5)
@@ -232,8 +79,14 @@ test('listSavedRankings reports movieCount so partial saves are distinguishable'
 
 test('getSavedRankingMovies returns snapshot-time state sorted by eloRating descending', () => {
   const db = freshDb()
-  rankAllOnce(db)
-  const { id } = saveRanking(db, FIXTURES_DIR, 'Snapshot')
+  const entries = [
+    { movieId: '1', eloRating: 1050, timesRanked: 1 },
+    { movieId: '2', eloRating: 1020, timesRanked: 1 },
+    { movieId: '3', eloRating: 990, timesRanked: 1 },
+    { movieId: '4', eloRating: 970, timesRanked: 1 },
+    { movieId: '5', eloRating: 940, timesRanked: 1 },
+  ]
+  const { id } = saveRanking(db, 'Snapshot', entries)
 
   const saved = getSavedRankingMovies(db, FIXTURES_DIR, id)
   assert.equal(saved.name, 'Snapshot')
@@ -250,8 +103,7 @@ test('getSavedRankingMovies returns null for an unknown id', () => {
 
 test('getSavedRankingMovies stays frozen when the pool grows after save (#51)', () => {
   const db = freshDb()
-  rankAllOnce(db)
-  const { id } = saveRanking(db, FIXTURES_DIR, 'Snapshot')
+  const { id } = saveRanking(db, 'Snapshot', fullPoolEntries())
 
   // Simulate the pool having grown (e.g. via enrich-sources.js) since the
   // snapshot was taken, by reading the saved snapshot back against a data

@@ -1,57 +1,37 @@
 import Database from 'better-sqlite3'
 
+// In-progress ranking state (eloRating/timesRanked) used to live here as a
+// shared movie_state table — every visitor read and wrote the same rows,
+// which let concurrent visitors interfere with each other's ranking runs.
+// That state now lives client-side (see src/lib/localRankingStore.js, #115);
+// the server only persists completed, named snapshots.
 export function createDb(dbPath) {
   const db = new Database(dbPath)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS movie_state (
-      movie_id TEXT PRIMARY KEY,
-      elo_rating REAL NOT NULL DEFAULT 1000,
-      times_ranked INTEGER NOT NULL DEFAULT 0
-    )
-  `)
+  db.exec('DROP TABLE IF EXISTS movie_state')
   db.exec(`
     CREATE TABLE IF NOT EXISTS saved_rankings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      data TEXT NOT NULL
+      data TEXT NOT NULL,
+      owner_client_id TEXT
     )
   `)
+  const columns = db.prepare('PRAGMA table_info(saved_rankings)').all()
+  if (!columns.some((c) => c.name === 'owner_client_id')) {
+    db.exec('ALTER TABLE saved_rankings ADD COLUMN owner_client_id TEXT')
+  }
   return db
 }
 
-// Map of movie_id -> { eloRating, timesRanked } for every tracked movie.
-export function getAllState(db) {
-  const rows = db.prepare('SELECT movie_id, elo_rating, times_ranked FROM movie_state').all()
-  return new Map(
-    rows.map((r) => [r.movie_id, { eloRating: r.elo_rating, timesRanked: r.times_ranked }]),
-  )
-}
-
-export function upsertState(db, movieId, eloRating, timesRanked) {
-  db.prepare(
-    `INSERT INTO movie_state (movie_id, elo_rating, times_ranked)
-     VALUES (?, ?, ?)
-     ON CONFLICT(movie_id) DO UPDATE SET
-       elo_rating = excluded.elo_rating,
-       times_ranked = excluded.times_ranked`,
-  ).run(movieId, eloRating, timesRanked)
-}
-
-// Clears live ranking state for `movieIds` back to defaults (eloRating 1000,
-// timesRanked 0). A no-op for an empty list.
-export function resetState(db, movieIds) {
-  if (movieIds.length === 0) return
-  const placeholders = movieIds.map(() => '?').join(', ')
-  db.prepare(`DELETE FROM movie_state WHERE movie_id IN (${placeholders})`).run(...movieIds)
-}
-
 // Snapshots `entries` ({movieId, eloRating, timesRanked}[]) as a named,
-// timestamped ranking. Returns the new snapshot's id.
-export function createSavedRanking(db, name, entries) {
+// timestamped ranking, tagged with the browser's client id (see
+// src/lib/clientId.js) so a future edit/re-rank feature can restrict changes
+// to the ranking's creator. Returns the new snapshot's id.
+export function createSavedRanking(db, name, entries, ownerClientId) {
   const result = db
-    .prepare('INSERT INTO saved_rankings (name, data) VALUES (?, ?)')
-    .run(name, JSON.stringify(entries))
+    .prepare('INSERT INTO saved_rankings (name, data, owner_client_id) VALUES (?, ?, ?)')
+    .run(name, JSON.stringify(entries), ownerClientId ?? null)
   return result.lastInsertRowid
 }
 
@@ -70,12 +50,12 @@ export function listSavedRankings(db) {
   }))
 }
 
-// A saved snapshot's { id, name, createdAt, entries } — entries is the
-// {movieId, eloRating, timesRanked}[] captured at save time — or null if
-// the id doesn't exist.
+// A saved snapshot's { id, name, createdAt, entries, ownerClientId } —
+// entries is the {movieId, eloRating, timesRanked}[] captured at save time —
+// or null if the id doesn't exist.
 export function getSavedRanking(db, id) {
   const row = db
-    .prepare('SELECT id, name, created_at, data FROM saved_rankings WHERE id = ?')
+    .prepare('SELECT id, name, created_at, data, owner_client_id FROM saved_rankings WHERE id = ?')
     .get(id)
   if (!row) return null
   return {
@@ -83,5 +63,6 @@ export function getSavedRanking(db, id) {
     name: row.name,
     createdAt: row.created_at,
     entries: JSON.parse(row.data),
+    ownerClientId: row.owner_client_id,
   }
 }
