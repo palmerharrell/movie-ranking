@@ -1,14 +1,37 @@
+import { useEffect, useState } from 'react'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
-function HeadToHeadCard({ movie, onPick, disabled }) {
+// How long the winner-slides-to-center / loser-slides-off animation plays
+// before the pick is actually submitted (see handlePick below) — must match
+// the CSS transition duration on .head-to-head-card so the pack doesn't swap
+// out from under the animation.
+const SLIDE_DURATION_MS = 350
+
+// `slide` is null (no pick yet), 'winner' (slide toward center, on top), or
+// 'loser' (slide further off in its own direction and fade out). `side`
+// says which half of the row this card started in, since the direction to
+// slide depends on that.
+function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
   const cast = movie.cast?.slice(0, 3) ?? []
+
+  const slideStyle =
+    slide === 'winner'
+      ? {
+          transform: `translateX(${side === 'left' ? '62%' : '-62%'}) scale(1.04)`,
+          zIndex: 1,
+          opacity: 1,
+        }
+      : slide === 'loser'
+        ? { transform: `translateX(${side === 'left' ? '-120%' : '120%'})`, opacity: 0 }
+        : undefined
 
   return (
     <button
       type="button"
       onClick={() => onPick(movie.id)}
       disabled={disabled}
+      style={slideStyle}
       className="head-to-head-card flex min-w-0 flex-1 flex-col items-center gap-3 rounded-lg border p-4 text-center disabled:cursor-not-allowed disabled:opacity-50"
     >
       <div className="poster-placeholder h-44 w-[120px] shrink-0 overflow-hidden rounded-[6px] bg-cover sm:h-56 sm:w-[152px]">
@@ -41,6 +64,34 @@ function HeadToHeadCard({ movie, onPick, disabled }) {
 // the pool has already seen and ranked).
 export function HeadToHeadPanel({ category, onPick, disabled, theme }) {
   const [first, second] = category.movies
+  // Identifies this specific pack (not just a movie — the same movie can
+  // reappear in the next pack) so each card can be keyed to remount cleanly
+  // on a pack swap instead of inheriting the outgoing pack's leftover slide
+  // transform and animating out of it.
+  const packKey = `${first.id}:${second.id}`
+  // Tied to the category it was made for, so a pick from the *previous*
+  // pack can never leak into the render of a freshly-promoted one — no
+  // stale-state frame for the effect below to race with.
+  const [pick, setPick] = useState(null) // { category, winnerId } | null
+  const pickedId = pick?.category === category ? pick.winnerId : null
+
+  // Once the real pack swap lands (new category promoted), the pick object
+  // is stale by definition (see pickedId above) — clear it so the next pick
+  // starts from a clean state instead of holding a dangling reference.
+  useEffect(() => {
+    if (pick && pick.category !== category) setPick(null)
+  }, [category, pick])
+
+  function handlePick(winnerId) {
+    if (pickedId || disabled) return
+    setPick({ category, winnerId })
+    setTimeout(() => onPick(winnerId), SLIDE_DURATION_MS)
+  }
+
+  function slideFor(movieId) {
+    if (!pickedId) return null
+    return movieId === pickedId ? 'winner' : 'loser'
+  }
 
   return (
     <div className="pack-card">
@@ -51,12 +102,29 @@ export function HeadToHeadPanel({ category, onPick, disabled, theme }) {
         </div>
         <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
       </div>
-      <div className="flex items-stretch gap-3">
-        <HeadToHeadCard movie={first} onPick={onPick} disabled={disabled} />
-        <span className="head-to-head-vs shrink-0 self-center text-[13px] font-bold uppercase">
+      <div className="flex items-stretch gap-3 overflow-hidden">
+        <HeadToHeadCard
+          key={`left-${packKey}`}
+          movie={first}
+          onPick={handlePick}
+          disabled={disabled || !!pickedId}
+          slide={slideFor(first.id)}
+          side="left"
+        />
+        <span
+          className="head-to-head-vs shrink-0 self-center text-[13px] font-bold uppercase transition-opacity duration-200"
+          style={pickedId ? { opacity: 0 } : undefined}
+        >
           vs
         </span>
-        <HeadToHeadCard movie={second} onPick={onPick} disabled={disabled} />
+        <HeadToHeadCard
+          key={`right-${packKey}`}
+          movie={second}
+          onPick={handlePick}
+          disabled={disabled || !!pickedId}
+          slide={slideFor(second.id)}
+          side="right"
+        />
       </div>
       {disabled && <PackLoadingOverlay />}
     </div>

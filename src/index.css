@@ -461,7 +461,7 @@ body {
   border: 1px solid var(--surface-border);
   box-shadow: var(--surface-shadow);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.35s ease, opacity 0.35s ease;
 }
 
 .head-to-head-card:hover:not(:disabled) {
