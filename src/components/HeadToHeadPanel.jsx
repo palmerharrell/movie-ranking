@@ -16,8 +16,8 @@ function HeadToHeadCard({ movie, onPick, disabled }) {
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}
       </div>
-      <div className="min-w-0">
-        <p className="text-[15px] font-semibold" style={{ color: 'var(--text-high)' }}>
+      <div className="w-full min-w-0">
+        <p className="truncate text-[15px] font-semibold" style={{ color: 'var(--text-high)' }}>
           {movie.title}{' '}
           <span className="font-mono text-[12px] font-normal" style={{ color: 'var(--text-low)' }}>
             ({movie.year})
