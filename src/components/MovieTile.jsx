@@ -31,6 +31,7 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation()
+            event.currentTarget.blur()
             onSkip(movie.id)
           }}
           disabled={disabled}
