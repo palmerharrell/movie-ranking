@@ -273,7 +273,7 @@ function App() {
 
   return (
     <div data-theme={theme} className="app-shell flex h-screen flex-col overflow-hidden">
-      <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col">
+      <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
         <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
           <div className="flex items-center gap-3">
             <h1 className="app-title text-[22px] md:text-[30px]">
@@ -341,44 +341,58 @@ function App() {
               theme === 'neon' ? 'py-4' : 'py-[26px]'
             }`}
           >
-            <div className="w-full max-w-xl">
-              {category ? (
-                category.type === HEAD_TO_HEAD_TYPE ? (
-                  <HeadToHeadPanel
-                    category={category}
-                    onPick={handleHeadToHeadPick}
-                    disabled={busy}
-                    theme={theme}
-                  />
+            <div className="flex w-full max-w-xl flex-col gap-4 xl:max-w-none xl:flex-row xl:items-start xl:justify-center">
+              <div className="w-full xl:max-w-xl">
+                {category ? (
+                  category.type === HEAD_TO_HEAD_TYPE ? (
+                    <HeadToHeadPanel
+                      category={category}
+                      onPick={handleHeadToHeadPick}
+                      disabled={busy}
+                      theme={theme}
+                    />
+                  ) : (
+                    <RightPanel
+                      category={category}
+                      onReorder={handleReorder}
+                      onSkip={handleSkipMovie}
+                      skippedMovies={skippedMovies}
+                      onUndoSkip={handleUndoSkip}
+                      disabled={busy}
+                      theme={theme}
+                    />
+                  )
+                ) : error ? (
+                  <p className="text-sm text-red-400">{error}</p>
+                ) : movies ? (
+                  <p className="text-sm" style={{ color: 'var(--text-low)' }}>
+                    Not enough movies to build a category yet.
+                  </p>
                 ) : (
-                  <RightPanel
-                    category={category}
-                    onReorder={handleReorder}
-                    onSkip={handleSkipMovie}
-                    skippedMovies={skippedMovies}
-                    onUndoSkip={handleUndoSkip}
-                    disabled={busy}
+                  <p className="text-sm" style={{ color: 'var(--text-low)' }}>
+                    Loading…
+                  </p>
+                )}
+                {category?.type !== HEAD_TO_HEAD_TYPE && (
+                  <div className="mt-4">
+                    <RankButton onClick={handleRank} disabled={!category || busy} />
+                  </div>
+                )}
+              </div>
+              {/* Beside the active pack once there's room (xl+); below it
+                  (PackQueue's own top margin) on narrower windows. Skipped
+                  entirely when the queue is empty so no empty column is
+                  reserved next to the pack. */}
+              {category && queue.length > 0 && (
+                <div className="w-full xl:w-72 xl:shrink-0">
+                  <PackQueue
+                    queue={queue}
                     theme={theme}
+                    disabled={busy}
+                    onSelect={handleSelectQueued}
+                    className="mt-4 flex flex-col gap-2 xl:mt-0"
                   />
-                )
-              ) : error ? (
-                <p className="text-sm text-red-400">{error}</p>
-              ) : movies ? (
-                <p className="text-sm" style={{ color: 'var(--text-low)' }}>
-                  Not enough movies to build a category yet.
-                </p>
-              ) : (
-                <p className="text-sm" style={{ color: 'var(--text-low)' }}>
-                  Loading…
-                </p>
-              )}
-              {category?.type !== HEAD_TO_HEAD_TYPE && (
-                <div className="mt-4">
-                  <RankButton onClick={handleRank} disabled={!category || busy} />
                 </div>
-              )}
-              {category && (
-                <PackQueue queue={queue} theme={theme} disabled={busy} onSelect={handleSelectQueued} />
               )}
             </div>
           </main>

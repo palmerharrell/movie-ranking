@@ -27,11 +27,11 @@ function QueuedPackCard({ pack, theme, disabled, onSelect }) {
   )
 }
 
-export function PackQueue({ queue, theme, disabled, onSelect }) {
+export function PackQueue({ queue, theme, disabled, onSelect, className = 'mt-4 flex flex-col gap-2' }) {
   if (queue.length === 0) return null
 
   return (
-    <div className="mt-4 flex flex-col gap-2">
+    <div className={className}>
       <p className="queue-eyebrow text-[11px] font-medium uppercase">Up Next</p>
       <div className="flex flex-col gap-2">
         {queue.map((pack, index) => (
