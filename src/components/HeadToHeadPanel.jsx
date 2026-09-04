@@ -1,3 +1,4 @@
+import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
 function HeadToHeadCard({ movie, onPick, disabled }) {
@@ -57,6 +58,7 @@ export function HeadToHeadPanel({ category, onPick, disabled, theme }) {
         </span>
         <HeadToHeadCard movie={second} onPick={onPick} disabled={disabled} />
       </div>
+      {disabled && <PackLoadingOverlay />}
     </div>
   )
 }

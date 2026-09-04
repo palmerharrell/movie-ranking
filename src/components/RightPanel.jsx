@@ -11,6 +11,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { MovieTile } from './MovieTile.jsx'
+import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
 import { applyThemeWording } from '../lib/labelWording.js'
 
 export function RightPanel({
@@ -83,6 +84,7 @@ export function RightPanel({
           ))}
         </div>
       )}
+      {disabled && <PackLoadingOverlay />}
     </div>
   )
 }
