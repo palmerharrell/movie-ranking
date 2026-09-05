@@ -1,5 +1,11 @@
 import { generateCategory } from './categoryGenerator.js'
-import { mergeWithLocalState, applyRankToLocalState, resetLocalState } from './localRankingStore.js'
+import {
+  mergeWithLocalState,
+  applyRankToLocalState,
+  resetLocalState,
+  markSkipped as markSkippedLocal,
+  unmarkSkipped as unmarkSkippedLocal,
+} from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
 const BASE_URL = import.meta.env.VITE_API_URL
@@ -34,13 +40,24 @@ export async function getMovies({ family } = {}) {
   return mergeWithLocalState(staticMovies)
 }
 
+// Skipped ("haven't seen") movies are excluded from the eligible pool
+// entirely (#136), not just from the pack they were skipped in.
 export async function getCategory({ family } = {}) {
   const movies = await getMovies({ family })
-  const rankedCount = movies.filter((m) => m.timesRanked > 0).length
-  return generateCategory(movies, {
+  const eligible = movies.filter((m) => !m.skipped)
+  const rankedCount = eligible.filter((m) => m.timesRanked > 0).length
+  return generateCategory(eligible, {
     isRanked: (m) => m.timesRanked > 0,
     totalRankedCount: rankedCount,
   })
+}
+
+export function markSkipped(movieId) {
+  markSkippedLocal(movieId)
+}
+
+export function unmarkSkipped(movieId) {
+  unmarkSkippedLocal(movieId)
 }
 
 // Unfiltered — a pack built in Family mode still only contains family-safe
@@ -58,10 +75,11 @@ export async function rankPack(movieIds) {
 
 export async function saveRanking(name, { family } = {}) {
   const movies = await getMovies({ family })
-  if (movies.length === 0 || movies.some((m) => m.timesRanked < 1)) {
+  const eligible = movies.filter((m) => !m.skipped)
+  if (eligible.length === 0 || eligible.some((m) => m.timesRanked < 1)) {
     throw new Error('Every movie in the pool must be ranked at least once before saving')
   }
-  const entries = movies.map((m) => ({
+  const entries = eligible.map((m) => ({
     movieId: m.id,
     eloRating: m.eloRating,
     timesRanked: m.timesRanked,
@@ -70,7 +88,7 @@ export async function saveRanking(name, { family } = {}) {
     method: 'POST',
     body: JSON.stringify({ name, family: !!family, entries, clientId: getOrCreateClientId() }),
   })
-  resetLocalState(movies.map((m) => m.id))
+  resetLocalState(eligible.map((m) => m.id))
   return result
 }
 

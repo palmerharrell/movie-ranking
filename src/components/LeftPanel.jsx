@@ -37,14 +37,23 @@ function StandingsRow({ movie, rank, isLast }) {
 export function LeftPanel({ movies, onReset }) {
   const sorted = sortMovies(movies)
   const rankedCount = movies.filter((m) => m.timesRanked >= 1).length
+  const skippedCount = movies.filter((m) => m.skipped).length
+  const eligibleCount = sorted.length - skippedCount
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3 flex shrink-0 items-baseline justify-between">
-        <span className="standings-label text-xs font-medium uppercase">The Standings</span>
-        <span className="font-mono text-xs" style={{ color: 'var(--text-low)' }}>
-          {rankedCount}/{sorted.length} ranked
-        </span>
+      <div className="mb-3 flex shrink-0 flex-col gap-0.5">
+        <div className="flex items-baseline justify-between">
+          <span className="standings-label text-xs font-medium uppercase">The Standings</span>
+          <span className="font-mono text-xs" style={{ color: 'var(--text-low)' }}>
+            {rankedCount}/{eligibleCount} ranked
+          </span>
+        </div>
+        {skippedCount > 0 && (
+          <span className="self-end font-mono text-xs" style={{ color: 'var(--text-low)' }}>
+            {skippedCount} skipped
+          </span>
+        )}
       </div>
       {rankedCount > 0 && (
         <button
