@@ -65,4 +65,6 @@ export const KEYWORD_LABELS = {
   'nonlinear timeline': 'Nonlinear Movies',
   dream: 'Movies About Dreams',
   musician: 'Movies About Musicians',
+  musical: 'Musicals',
+  'rock musical': 'Musicals',
 }

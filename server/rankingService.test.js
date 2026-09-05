@@ -52,6 +52,16 @@ test('getMovies({ family: true, popular: true }) applies family first, then top-
   assert.deepEqual(movies.map((m) => m.id), ['1', '5', '3', '4'])
 })
 
+test('getMovies({ genre: "comedy" }) filters to that genre, sorted by voteCount descending (#150)', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { genre: 'comedy' })
+  assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5'])
+})
+
+test('getMovies({ genre }) takes precedence over popular when both are set', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { genre: 'comedy', popular: true })
+  assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5'])
+})
+
 test('saveRanking persists a client-computed snapshot', () => {
   const db = freshDb()
   const { id, name } = saveRanking(db, 'My First Ranking', fullPoolEntries())
