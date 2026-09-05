@@ -33,8 +33,11 @@ async function fetchPacks(family) {
   return packs
 }
 
+// Skipped ("haven't seen") movies are excluded from the pool being ranked
+// (#136), so completion only requires every non-skipped movie to be ranked.
 function isFullyRanked(movies) {
-  return movies.length > 0 && movies.every((m) => m.timesRanked >= 1)
+  const eligible = movies.filter((m) => !m.skipped)
+  return eligible.length > 0 && eligible.every((m) => m.timesRanked >= 1)
 }
 
 function App() {
@@ -183,6 +186,10 @@ function App() {
     setSkippedMovies((prev) =>
       willDiscard ? [] : [...prev, { movie: skippedMovieRecord, index: skipIndex }],
     )
+    // "Haven't seen" is a persistent fact (#136) — mark it right away, not
+    // just for this pack. handleUndoSkip below reverses it.
+    api.markSkipped(movieId)
+    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: true } : m)))
   }
 
   // Any movie skipped from the active pack can be restored, as long as that
@@ -197,6 +204,8 @@ function App() {
       return [{ ...prev[0], movies }, ...prev.slice(1)]
     })
     setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
+    api.unmarkSkipped(movieId)
+    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m)))
   }
 
   useEffect(() => {

@@ -1,5 +1,11 @@
 import { beforeEach, describe, it, expect } from 'vitest'
-import { mergeWithLocalState, applyRankToLocalState, resetLocalState } from './localRankingStore.js'
+import {
+  mergeWithLocalState,
+  applyRankToLocalState,
+  resetLocalState,
+  markSkipped,
+  unmarkSkipped,
+} from './localRankingStore.js'
 
 function createMemoryStorage() {
   const store = new Map()
@@ -28,6 +34,40 @@ describe('mergeWithLocalState', () => {
       expect(m.eloRating).toBe(1000)
       expect(m.timesRanked).toBe(0)
     }
+  })
+
+  it('defaults movies to skipped: false', () => {
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    for (const m of merged) {
+      expect(m.skipped).toBe(false)
+    }
+  })
+})
+
+describe('markSkipped / unmarkSkipped', () => {
+  it('marks a movie skipped, persisted across calls', () => {
+    markSkipped('2')
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').skipped).toBe(false)
+    expect(byId.get('2').skipped).toBe(true)
+  })
+
+  it('unmarks a previously skipped movie', () => {
+    markSkipped('2')
+    unmarkSkipped('2')
+    expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '2').skipped).toBe(false)
+  })
+
+  it('survives resetLocalState (skip is independent of elo/timesRanked reset)', () => {
+    markSkipped('1')
+    applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
+    resetLocalState(['1', '2', '3'])
+
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').timesRanked).toBe(0)
+    expect(byId.get('1').skipped).toBe(true)
   })
 })
 

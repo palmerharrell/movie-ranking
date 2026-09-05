@@ -103,6 +103,16 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   skip would drop the pack to 1 movie, the app discards the pack (without
   submitting any ranking data) and advances to the next pack instead —
   mirroring "Rank →"'s queue-advance behavior, just without the Elo update.
+  Skip is persistent (#136), not just for the active pack: a skipped movie
+  is marked "haven't seen" in this browser's local state
+  (`src/lib/localRankingStore.js`) and is permanently excluded from future
+  pack generation and from the ranked-progress denominator (see **Progress
+  tracking**), until un-skipped. The only way to undo a skip today is the
+  in-pack "undo" while that pack is still active (`onUndoSkip`) — a
+  dedicated "Skipped" view for browsing/un-skipping/clearing the whole list
+  later is tracked separately (#137, **NOT YET IMPLEMENTED**). Skipped state
+  survives Reset/Save (it's a fact about the viewer, not about a ranking
+  run — see **Saved rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
   transitively linked — approximate (Elo doesn't guarantee strict
   transitivity) but converges toward a consistent full ranking as more of the
@@ -176,15 +186,20 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 ## Progress tracking
 - `LeftPanel.jsx` shows a label near the standings header: `n/nnn ranked` —
   `n` is the count of movies with `timesRanked ≥ 1`, `nnn` is the total pool
-  size.
+  size minus the number of skipped ("haven't seen") movies (#136) — see
+  **Skip ("Haven't Seen")** above.
+- Below that label, when the skipped count is nonzero, a second line reads
+  `n skipped` (#136).
 
 ## Saved rankings
-- **Completion:** once every movie in the *currently visible* pool has
-  `timesRanked ≥ 1`, show a modal prompting the user to name and save the
-  ranking. Outside Family mode "visible pool" is the whole pool; inside
-  Family mode it's just the family-safe subset — see **Family mode**.
+- **Completion:** once every non-skipped movie in the *currently visible*
+  pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
+  save the ranking. Outside Family mode "visible pool" is the whole pool
+  minus skipped movies; inside Family mode it's the family-safe subset minus
+  skipped movies — see **Family mode** and **Skip ("Haven't Seen")** (#136).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
-  for the visible pool (gathered from its own local ranking state — see
+  for the visible, non-skipped pool (gathered from its own local ranking
+  state — see
   **Online deployment**) to the server as a named, timestamped snapshot, then
   resets that scope's local ranking state back to defaults (`eloRating =
   1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
