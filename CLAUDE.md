@@ -162,6 +162,16 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   advances. It doesn't apply the overlap requirement below — reinforcing
   standings among movies the pool has already ranked isn't about linking in
   new movies.
+- **Top 10 Tough Choice packs (#131):** a rarer variant of Head to Head —
+  same 2-movie pick-a-winner UI and submission flow (`HeadToHeadPanel.jsx`,
+  `type: 'head-to-head'`) — but drawn from just the current top 10 ranked
+  movies by `eloRating` instead of the top 50, with a 4% chance
+  (`TOP_10_TOUGH_CHOICE_CHANCE`), checked before the regular Head to Head
+  chance. Only becomes possible once at least 50 movies have been ranked
+  (`MIN_RANKED_FOR_TOUGH_CHOICE`) — below that, the "top 10" would just be
+  whichever handful of movies got ranked first, not movies the user actually
+  cares about. Falls through to the normal pack flow if the threshold isn't
+  met or fewer than 2 ranked movies are available.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
