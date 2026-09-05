@@ -226,9 +226,13 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   deployment**), reserved for a future feature restricting edits/re-ranks to
   the ranking's creator (#115) — not yet enforced anywhere.
 - **Load:** a "Load Ranking" entry point lists saved snapshots by
-  name/date/movie count; opening one shows its standings list — only the
-  movies that were actually part of that saved run, not the current full
-  pool — read-only, and it does not affect or restore live ranking state.
+  name/date/movie count; opening one displays it via the same tiered Results
+  screen shown on live completion (#107, `ResultsScreen.jsx` reused by
+  `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and 26-100
+  tiers, and anything outside the snapshot's top 100) — only the movies that
+  were actually part of that saved run, not the current full pool —
+  read-only (no Save Ranking button; a "Back to list" link replaces it), and
+  it does not affect or restore live ranking state.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key

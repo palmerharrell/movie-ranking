@@ -82,7 +82,10 @@ function OutsideRow({ movie, rank }) {
   )
 }
 
-export function ResultsScreen({ movies, onSaveClick, onDismiss }) {
+// `title`/`onBack`/`readOnly` support the read-only saved-snapshot view
+// (#107, via LoadRankingView) — the live post-completion screen (no title)
+// keeps its original header with no "Save Ranking" button hidden.
+export function ResultsScreen({ movies, onSaveClick, onDismiss, title, onBack, readOnly }) {
   const sorted = sortMovies(movies)
   const topTen = sorted.slice(0, 10)
   const elevenToTwentyFive = sorted.slice(10, 25)
@@ -149,16 +152,32 @@ export function ResultsScreen({ movies, onSaveClick, onDismiss }) {
             </span>
           </p>
         )}
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="modal-close absolute top-0 right-0"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
+        {title ? (
+          <div className="shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <p className="modal-eyebrow truncate text-[11px] font-medium uppercase">{title}</p>
+              <button type="button" onClick={onDismiss} className="modal-close" aria-label="Close">
+                ×
+              </button>
+            </div>
+            {onBack && (
+              <button type="button" onClick={onBack} className="modal-back mt-1 text-xs">
+                ← Back to list
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="modal-close absolute top-0 right-0"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <div ref={scrollRef} className="mt-10 min-h-0 flex-1 overflow-y-auto pr-1">
           <div className="results-top-ten-panel">
@@ -201,11 +220,13 @@ export function ResultsScreen({ movies, onSaveClick, onDismiss }) {
           )}
         </div>
 
-        <div className="mt-4 flex shrink-0 justify-end">
-          <button type="button" onClick={onSaveClick} className="modal-button-primary text-sm">
-            Save Ranking
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="mt-4 flex shrink-0 justify-end">
+            <button type="button" onClick={onSaveClick} className="modal-button-primary text-sm">
+              Save Ranking
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

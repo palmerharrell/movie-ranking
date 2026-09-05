@@ -1,26 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
-
-function SnapshotRow({ movie, rank }) {
-  return (
-    <li className="flex items-center gap-3 px-2 py-1.5">
-      <span className="w-[26px] shrink-0 text-right text-sm" style={{ color: 'var(--text-low)' }}>
-        {rank}
-      </span>
-      <div className="poster-placeholder h-[48px] w-[32px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
-        {movie.posterUrl && (
-          <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
-        )}
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium" style={{ color: 'var(--text-high)' }}>
-          {movie.title}
-        </p>
-        <p className="font-mono text-[11px]" style={{ color: 'var(--text-low)' }}>{movie.year}</p>
-      </div>
-    </li>
-  )
-}
+import { ResultsScreen } from './ResultsScreen.jsx'
 
 export function LoadRankingView({ onClose }) {
   const [rankings, setRankings] = useState(null)
@@ -36,13 +16,26 @@ export function LoadRankingView({ onClose }) {
     api.getSavedRanking(id).then(setSelected).catch((err) => setError(err.message))
   }
 
+  // A selected snapshot displays via the same tiered Results screen shown on
+  // live completion (#107) — read-only, with a "Back to list" link in place
+  // of the Save Ranking footer button.
+  if (selected) {
+    return (
+      <ResultsScreen
+        movies={selected.movies}
+        title={selected.name}
+        onBack={() => setSelected(null)}
+        onDismiss={onClose}
+        readOnly
+      />
+    )
+  }
+
   return (
     <div className="modal-overlay">
       <div className="modal-card modal-card-wide">
         <div className="flex items-center justify-between">
-          <p className="modal-eyebrow text-[11px] font-medium uppercase">
-            {selected ? selected.name : 'Saved Rankings'}
-          </p>
+          <p className="modal-eyebrow text-[11px] font-medium uppercase">Saved Rankings</p>
           <button type="button" onClick={onClose} className="modal-close" aria-label="Close">
             ×
           </button>
@@ -56,7 +49,7 @@ export function LoadRankingView({ onClose }) {
           </p>
         )}
 
-        {rankings && !selected && (
+        {rankings && (
           <>
             {rankings.length === 0 ? (
               <p className="mt-3 text-sm" style={{ color: 'var(--text-low)' }}>
@@ -85,23 +78,6 @@ export function LoadRankingView({ onClose }) {
                 ))}
               </ul>
             )}
-          </>
-        )}
-
-        {selected && (
-          <>
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="modal-back mt-3 text-xs"
-            >
-              ← Back to list
-            </button>
-            <ol className="mt-3 flex max-h-[50vh] flex-col overflow-y-auto pr-2">
-              {selected.movies.map((movie, index) => (
-                <SnapshotRow key={movie.id} movie={movie} rank={index + 1} />
-              ))}
-            </ol>
           </>
         )}
       </div>
