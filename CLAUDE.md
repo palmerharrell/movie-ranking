@@ -153,10 +153,15 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   `eloRating`) are available yet. Since both movies are already-ranked, a
   Head to Head pack has no "Haven't Seen" skip button, no drag-and-drop, and
   no separate "Rank →" confirmation — clicking one of the two movies submits
-  a single pairwise Elo update immediately (`HeadToHeadPanel.jsx`) and
-  advances the queue like any other pack. It doesn't apply the overlap
-  requirement below — reinforcing standings among movies the pool has
-  already ranked isn't about linking in new movies.
+  a single pairwise Elo update (`HeadToHeadPanel.jsx`) and advances the queue
+  like any other pack, but not immediately (#135): the winner first slides
+  toward center while the loser slides off and fades out (350ms, matching
+  the `.head-to-head-card` CSS transition duration), then the loser is
+  removed and the winner grows to fill the freed-up row, held there alone
+  for about 1.6s before the pick is actually submitted and the pack
+  advances. It doesn't apply the overlap requirement below — reinforcing
+  standings among movies the pool has already ranked isn't about linking in
+  new movies.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
