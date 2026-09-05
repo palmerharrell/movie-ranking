@@ -175,10 +175,10 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
 - **Upcoming queue:** rather than a single "next category" generated on
-  demand, the app keeps a small queue of pre-generated upcoming packs (3,
-  via `PackQueue.jsx`) displayed alongside the active pack, replacing the old
-  multi-list picker chips (there's only one pool now, so there's nothing to
-  switch between).
+  demand, the app keeps a small queue of pre-generated upcoming packs (8,
+  via `PackQueue.jsx`, `QUEUE_SIZE` in `App.jsx` — #134) displayed alongside
+  the active pack, replacing the old multi-list picker chips (there's only
+  one pool now, so there's nothing to switch between).
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
   - **Clicking a queued pack** discards the current active pack without
