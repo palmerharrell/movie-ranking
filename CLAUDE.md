@@ -37,49 +37,20 @@ of every movie in that pool, using an Elo-style rating system.
   best-of lists, genre/decade lists, etc.) are merged in. See **Building the
   list** below.
 
-## TMDb signup steps
-1. Create a free account at themoviedb.org.
-2. Go to Settings → API → Request an API key (choose "Developer", personal use is fine).
-3. Copy the "API Read Access Token" (v4 auth) or the API key (v3) — either works.
-4. Store it in a local `.env` file as `TMDB_API_KEY=...` — **never commit this file**.
-
-## Building the list
-There is one output file, `/data/movies.json`, built by merging multiple
-sources. Movies are deduped by TMDb ID — a title appearing in more than one
-source (e.g. on both the Letterboxd export and AFI Top 100) is a single entry
-with a `sources[]` field listing every source it came from.
-
-- **Personal Letterboxd source** (`scripts/enrich.js`):
-  1. Export Letterboxd data as a zip (Settings → Import & Export) — produces
-     `films.csv`, the full watched list.
-  2. Drop the extracted CSVs into `/data/letterboxd-export/`.
-  3. Run `scripts/enrich.js`: parses `films.csv` into unique movies (deduped —
-     a rewatch can produce multiple rows for the same title); calls TMDb
-     `/search/movie?query={title}&year={year}` for `tmdb_id`, then
-     `/movie/{id}?append_to_response=credits` for director, genres, top-billed
-     cast, and poster path; upserts each into `/data/movies.json` tagged with
-     `sources: ["personal"]`. An entry with no TMDb movie match (e.g. a TV
-     series) is skipped rather than written in as a bare placeholder.
-  4. Re-run any time the user re-exports fresh Letterboxd data.
-- **Published-list sources** (`scripts/enrich-sources.js`):
-  - Each source is a hand-maintained `title, year` JSON file under
-    `/data/sources/` (e.g. `afi-top-100.source.json`), added as needed — no
-    user-facing list management, just files in the repo.
-  - `scripts/enrich-sources.js` runs every `/data/sources/*.source.json`
-    through the same TMDb enrichment as `scripts/enrich.js` and upserts each
-    into `/data/movies.json`, tagging with that source's id (e.g.
-    `sources: ["afi-top-100"]`). A movie already present from another source
-    gets the new source id appended to its `sources[]` rather than being
-    duplicated.
+> **Setup & data pipeline:** TMDb API signup and the enrichment scripts that
+> build `/data/movies.json` are documented in the `tmdb-setup` and
+> `enrich-movie-data` skills (`.claude/skills/`) rather than here, since
+> they're one-time/occasional workflows, not everyday context.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-mpaaRating, studio, collection, originalLanguage, keywords[], sources[]`.
+mpaaRating, studio, collection, originalLanguage, keywords[], voteCount,
+sources[]`.
 Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
-certification for it — see **Family mode**. `studio` is the movie's
+certification for it — see **Movie subsets**. `studio` is the movie's
 production company if it matches a curated allowlist of notable studios
 (`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
 TMDb lists several production companies per movie, most too obscure to be a
@@ -90,6 +61,18 @@ original-language code (e.g. `"fr"`). `keywords[]` is the subset of TMDb's
 keyword tags that match a curated allowlist (`KEYWORD_LABELS` in
 `src/lib/curatedAttributes.js`) — TMDb keyword data is high-cardinality and
 mostly one-off per movie, so only allowlisted tags are kept (can be empty).
+`voteCount` is TMDb's `vote_count` from `/movie/{id}` — a stable "how
+mainstream/well-known is this" proxy, used to build the Popular subset (see
+below) — or `null` if TMDb has no vote data for it.
+
+## Popular subset (#104)
+`GET /api/movies` also accepts `?popular=true` (composable with
+`?family=true`), which restricts the pool to the top
+`POPULAR_POOL_SIZE` (`src/lib/popularMode.js`) movies by `voteCount`
+descending (`null`/missing sorts last). When combined with `family`, family
+filtering is applied first so "popular" always means "top-N within whatever
+scope is already active." See **Movie subsets** below for how this is
+exposed in the UI.
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
@@ -209,9 +192,9 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 ## Saved rankings
 - **Completion:** once every non-skipped movie in the *currently visible*
   pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
-  save the ranking. Outside Family mode "visible pool" is the whole pool
-  minus skipped movies; inside Family mode it's the family-safe subset minus
-  skipped movies — see **Family mode** and **Skip ("Haven't Seen")** (#136).
+  save the ranking. "Visible pool" is whichever subset is active (Popular,
+  Family, or All Movies) minus skipped movies — see **Movie subsets** and
+  **Skip ("Haven't Seen")** (#136).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
   for the visible, non-skipped pool (gathered from its own local ranking
   state — see
@@ -294,63 +277,61 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**). No more list-picker
-  chips — there's only one pool.
+- **Banner:** app title, subset picker, and a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**).
 
-## Family mode
-- **Themes:** the theme toggle has three entries — Classic, Neon, and
-  Family — each a `data-theme` value with its own CSS custom-property
-  palette in `src/index.css`. Family uses a dark, warm "storybook night"
-  palette (deep indigo background, marigold/teal accents) — cheerful without
-  being glaring, and visually distinct from Classic/Neon.
-- **Filtering:** selecting Family also restricts the pool everywhere (left
-  panel, active pack, upcoming queue) to movies whose `mpaaRating` is `G`,
+## Movie subsets (#104, #146, #150)
+There are no more cosmetic-only "themes" — the banner's picker
+(`src/components/SubsetPicker.jsx`, a grouped `<select>`) chooses which
+**subset of the pool** to rank, and each subset carries its own visual
+identity (a `data-theme` value with its own CSS custom-property palette in
+`src/index.css`) purely as a side effect of which subset is active, not as
+an independent choice. Three general entries plus 14 genre/language
+entries, grouped in the picker:
+- **Popular** (`subset: 'popular'`, the default) — the top
+  `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
+  above). Dark, moody palette.
+- **Family (PG-13)** (`subset: 'family'`) — movies whose `mpaaRating` is `G`,
   `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
   with no confirmed US certification (`mpaaRating: null`) is excluded, not
-  assumed safe.
-- `GET /api/movies?family=true` filters the pool's static metadata
-  server-side; the client then merges in its own local ranking state and
-  generates categories from that filtered set, so category generation
-  (overlap rule, attribute matching) only ever draws from the family-safe
-  subset.
-- Switching Classic ⇄ Neon does not re-fetch (same pool, cosmetic only);
-  switching Family mode on/off does, since the pool itself differs.
+  assumed safe. Warm "storybook night" palette (deep indigo background,
+  marigold/teal accents) — cheerful without being glaring.
+- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
+  parchment-toned palette.
+- **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
+  Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
+  Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
+  Italian. Each filters the pool by the movie's own genre(s) (`genres[]`,
+  matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`),
+  keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
+  genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
+  which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
+  (French/Spanish/Italian) — then caps to the same top-N-by-`voteCount` as
+  Popular via the shared `selectTopByVoteCount` (`src/lib/popularMode.js`).
+  All share Popular's palette (no bespoke palette per genre). Filtering is
+  by the movie's own attributes, not by which `sources[]` tag brought it
+  into the pool — a Comedy added via personal import still surfaces here if
+  popular enough. See **Building the list** below for how the pool is kept
+  stocked with genuinely popular movies per subset, not just whatever we'd
+  already collected.
+- `GET /api/movies?family=true&popular=true&genre=comedy` composes
+  server-side filters (family applied first, then one top-N strategy —
+  `genre` and `popular` are alternate strategies, only one ever applies);
+  the client then merges in its own local ranking state and generates
+  categories from that filtered set, so category generation (overlap rule,
+  attribute matching) only ever draws from the active subset. Switching
+  subsets always re-fetches, since every one is a different pool.
+- Pack labels never vary by subset — `src/lib/labelWording.js`'s
+  `formatPackLabel` only shortens "Random Five" to "Random 5"; there is no
+  more movie/film wording variance.
 - **Scoped completion/save:** the "every movie ranked" completion check (see
-  **Saved rankings**) operates on the currently-visible pool, so ranking all
-  of the family-safe subset while in Family mode triggers the save prompt
-  just like finishing the whole pool does outside it. Saving from Family
-  mode (`api.saveRanking(name, { family: true })`) snapshots and resets only
-  the family-safe subset's local Elo state — progress on movies outside
-  Family mode (e.g. R-rated movies ranked in Classic/Neon) is left untouched. This
-  keeps a Family-mode save from either being blocked by unrelated unranked
-  movies, or fabricating "ranked" data for movies that were never actually
-  compared.
-
-## Suggested project structure
-```
-/data/letterboxd-export/     <- user drops raw Letterboxd CSVs here
-/data/sources/*.source.json  <- hand-maintained title/year lists (AFI Top 100, etc.)
-/data/movies.json            <- the one merged, enriched pool
-/scripts/enrich.js           <- Letterboxd CSV parse + TMDb enrichment (personal source)
-/scripts/enrich-sources.js   <- title/year + TMDb enrichment (published-list sources)
-/server/                     <- DigitalOcean backend (Express/Fastify + SQLite)
-/server/index.js
-/server/db.js
-/src/components/LeftPanel.jsx
-/src/components/RightPanel.jsx
-/src/components/MovieTile.jsx
-/src/components/HeadToHeadPanel.jsx  <- 2-movie pick-a-winner pack UI
-/src/components/RankButton.jsx
-/src/components/PackQueue.jsx        <- upcoming-packs queue
-/src/components/SaveRankingModal.jsx <- name/save prompt on completion
-/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer
-/src/lib/elo.js
-/src/lib/categoryGenerator.js
-/src/lib/localRankingStore.js <- browser-local in-progress ranking state (#115)
-/src/lib/clientId.js          <- durable per-browser id, tags saved-ranking ownership
-.env                          <- TMDB_API_KEY (gitignored)
-```
+  **Saved rankings**) operates on the currently-visible subset, so ranking
+  all of any subset triggers the save prompt just as finishing All Movies
+  does. Saving (`api.saveRanking(name, { family, popular, genre })`)
+  snapshots and resets only the active subset's local Elo state — progress
+  on movies outside that subset is left untouched. This keeps a save from
+  either being blocked by unrelated unranked movies, or fabricating
+  "ranked" data for movies that were never actually compared.
 
 ## Maintaining this spec
 - When a PR implements a feature marked **NOT YET IMPLEMENTED** above (or
@@ -387,7 +368,9 @@ for visual verification), clean up before finishing:
 - Stop any `vite`/frontend dev server processes you started.
 - Leave the `server/` backend (`node index.js`, port 3001) running if it was
   already running before you started — it's a long-lived local process, not
-  something to stop per-task.
+  something to stop per-task. Exception: if the task changed any code under
+  `server/`, restart it (kill the running process, start a fresh `node
+  index.js`) before finishing, so the running instance reflects the change.
 - Close any browser tabs opened for testing.
 - Check `git branch -a` / `git worktree list` for stray branches or worktrees
   created during the task and remove ones no longer needed (especially after a

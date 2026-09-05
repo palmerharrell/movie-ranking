@@ -1,4 +1,6 @@
 import { isFamilySafe } from '../src/lib/familyMode.js'
+import { selectPopular } from '../src/lib/popularMode.js'
+import { selectGenreSubset } from '../src/lib/genreSubsets.js'
 import {
   createSavedRanking,
   listSavedRankings as listSavedRankingsFromDb,
@@ -17,14 +19,23 @@ function mergeWithState(staticMovies, state) {
 }
 
 // The pool's static metadata, optionally restricted to family-safe (G/PG/
-// PG-13, confirmed-rating) movies. Returns null if the enriched JSON doesn't
-// exist yet. Per-visitor ranking state (eloRating/timesRanked) lives in the
-// browser now (#115) — see src/lib/localRankingStore.js — so this is
-// metadata only.
-export function getMovies(dataDir, { family = false } = {}) {
+// PG-13, confirmed-rating) movies and/or one top-N-most-voted-on strategy —
+// either the overall Popular subset (#104) or a genre/language/keyword
+// subset (#150). Family is applied first so a top-N strategy always means
+// "top-N within whatever scope is active" — this is what makes Popular/
+// genre subsets combine correctly with Family. `genre` and `popular` are
+// alternate top-N strategies over different match sets, so only one ever
+// applies; nothing in the UI sets both, but keeping them independent params
+// costs nothing. Returns null if the enriched JSON doesn't exist yet.
+// Per-visitor ranking state (eloRating/timesRanked) lives in the browser now
+// (#115) — see src/lib/localRankingStore.js — so this is metadata only.
+export function getMovies(dataDir, { family = false, popular = false, genre = null } = {}) {
   const staticMovies = loadMovies(dataDir)
   if (!staticMovies) return null
-  return family ? staticMovies.filter(isFamilySafe) : staticMovies
+  let result = family ? staticMovies.filter(isFamilySafe) : staticMovies
+  if (genre) result = selectGenreSubset(result, genre)
+  else if (popular) result = selectPopular(result)
+  return result
 }
 
 // Persists a client-computed ranking snapshot — `entries` is the

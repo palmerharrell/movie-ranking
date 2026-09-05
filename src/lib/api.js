@@ -31,19 +31,24 @@ async function request(path, options = {}) {
 
 // The pool's static metadata only — no per-visitor eloRating/timesRanked.
 // That state lives in this browser's localStorage (#115), not the server.
-function fetchStaticMovies({ family } = {}) {
-  return request(family ? '/api/movies?family=true' : '/api/movies')
+function fetchStaticMovies({ family, popular, genre } = {}) {
+  const params = new URLSearchParams()
+  if (family) params.set('family', 'true')
+  if (popular) params.set('popular', 'true')
+  if (genre) params.set('genre', genre)
+  const qs = params.toString()
+  return request(qs ? `/api/movies?${qs}` : '/api/movies')
 }
 
-export async function getMovies({ family } = {}) {
-  const staticMovies = await fetchStaticMovies({ family })
+export async function getMovies({ family, popular, genre } = {}) {
+  const staticMovies = await fetchStaticMovies({ family, popular, genre })
   return mergeWithLocalState(staticMovies)
 }
 
 // Skipped ("haven't seen") movies are excluded from the eligible pool
 // entirely (#136), not just from the pack they were skipped in.
-export async function getCategory({ family } = {}) {
-  const movies = await getMovies({ family })
+export async function getCategory({ family, popular, genre } = {}) {
+  const movies = await getMovies({ family, popular, genre })
   const eligible = movies.filter((m) => !m.skipped)
   const rankedCount = eligible.filter((m) => m.timesRanked > 0).length
   return generateCategory(eligible, {
@@ -73,8 +78,8 @@ export async function rankPack(movieIds) {
   return mergeWithLocalState(staticMovies)
 }
 
-export async function saveRanking(name, { family } = {}) {
-  const movies = await getMovies({ family })
+export async function saveRanking(name, { family, popular, genre } = {}) {
+  const movies = await getMovies({ family, popular, genre })
   const eligible = movies.filter((m) => !m.skipped)
   if (eligible.length === 0 || eligible.some((m) => m.timesRanked < 1)) {
     throw new Error('Every movie in the pool must be ranked at least once before saving')
@@ -86,14 +91,21 @@ export async function saveRanking(name, { family } = {}) {
   }))
   const result = await request('/api/rankings', {
     method: 'POST',
-    body: JSON.stringify({ name, family: !!family, entries, clientId: getOrCreateClientId() }),
+    body: JSON.stringify({
+      name,
+      family: !!family,
+      popular: !!popular,
+      genre: genre || null,
+      entries,
+      clientId: getOrCreateClientId(),
+    }),
   })
   resetLocalState(eligible.map((m) => m.id))
   return result
 }
 
-export async function resetRanking({ family } = {}) {
-  const movies = await getMovies({ family })
+export async function resetRanking({ family, popular, genre } = {}) {
+  const movies = await getMovies({ family, popular, genre })
   resetLocalState(movies.map((m) => m.id))
 }
 

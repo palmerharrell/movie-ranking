@@ -9,9 +9,9 @@ body {
   margin: 0;
 }
 
-/* ===================== Theme tokens ===================== */
+/* ===================== Subset tokens ===================== */
 
-[data-theme='classic'] {
+[data-theme='all'] {
   --bg-page: #2a1216;
   --bg-overlay: radial-gradient(120% 90% at 50% -20%, rgba(224, 178, 90, 0.16), transparent 60%);
   --surface: #3a1a21;
@@ -31,7 +31,7 @@ body {
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
-[data-theme='neon'] {
+[data-theme='popular'] {
   --bg-page: #0b1224;
   --bg-overlay:
     radial-gradient(55% 55% at 15% 0%, rgba(63, 210, 199, 0.14), transparent 60%),
@@ -101,88 +101,55 @@ body {
   color: var(--text-high);
 }
 
-[data-theme='classic'] .app-title {
+[data-theme='all'] .app-title {
   font-weight: 800;
 }
 
-[data-theme='neon'] .app-title {
+[data-theme='popular'] .app-title {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.01em;
-}
-
-[data-theme='neon'] .app-title .accent {
-  color: var(--accent2);
 }
 
 [data-theme='family'] .app-title {
   font-weight: 800;
 }
 
-/* Theme toggle */
+/* Subset picker */
 
-.theme-toggle {
+.subset-select {
   height: 37px;
   box-sizing: border-box;
-  padding: 3px;
-  display: flex;
-  gap: 6px;
+  padding: 6px 28px 6px 12px;
   border: 1px solid var(--surface-border);
+  border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  cursor: pointer;
 }
 
-[data-theme='classic'] .theme-toggle {
+.subset-select:hover,
+.subset-select:focus {
+  border-color: var(--accent);
+  color: var(--text-high);
+  outline: none;
+}
+
+[data-theme='all'] .subset-select {
   border-radius: 999px;
 }
 
-[data-theme='neon'] .theme-toggle {
-  border-radius: 6px;
-}
-
-[data-theme='family'] .theme-toggle {
+[data-theme='family'] .subset-select {
   border-radius: 999px;
   border-color: var(--surface-border);
   background: rgba(0, 0, 0, 0.2);
 }
 
-.theme-toggle-segment {
-  font-family: var(--font-mono);
-  color: var(--text-mid);
-  padding: 6px 8px;
-  transition: background 0.15s, color 0.15s;
-}
-
-@media (min-width: 768px) {
-  .theme-toggle-segment {
-    padding: 6px 14px;
-  }
-}
-
-[data-theme='classic'] .theme-toggle-segment {
-  border-radius: 999px;
-}
-
-[data-theme='neon'] .theme-toggle-segment {
-  border-radius: 4px;
-}
-
-[data-theme='family'] .theme-toggle-segment {
-  border-radius: 999px;
-}
-
-[data-theme='classic'] .theme-toggle-segment.active {
-  background: var(--accent);
-  color: #2a1216;
-}
-
-[data-theme='neon'] .theme-toggle-segment.active {
-  background: var(--accent2);
-  color: #2a0a18;
-}
-
-[data-theme='family'] .theme-toggle-segment.active {
-  background: var(--accent);
-  color: #241a3d;
+.subset-select option,
+.subset-select optgroup {
+  background: var(--surface);
+  color: var(--text-high);
 }
 
 /* Body / standings column */
@@ -195,7 +162,7 @@ body {
   box-sizing: border-box;
 }
 
-[data-theme='neon'] .standings-col {
+[data-theme='popular'] .standings-col {
   border-right: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -220,7 +187,7 @@ body {
   gap: 2px;
 }
 
-[data-theme='neon'] .standings-list {
+[data-theme='popular'] .standings-list {
   gap: 6px;
 }
 
@@ -234,33 +201,33 @@ body {
   margin-bottom: 3px;
 }
 
-[data-theme='neon'] .standings-row {
+[data-theme='popular'] .standings-row {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid transparent;
 }
 
-[data-theme='classic'] .standings-row.ranked {
+[data-theme='all'] .standings-row.ranked {
   background-color: rgba(224, 178, 90, 0.05);
 }
 
-[data-theme='neon'] .standings-row.ranked {
+[data-theme='popular'] .standings-row.ranked {
   background: rgba(63, 210, 199, 0.07);
   border-color: rgba(63, 210, 199, 0.25);
 }
 
-[data-theme='classic'] .standings-row.top-1 {
+[data-theme='all'] .standings-row.top-1 {
   background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.16), transparent);
 }
 
-[data-theme='classic'] .standings-row.top-2 {
+[data-theme='all'] .standings-row.top-2 {
   background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.12), transparent);
 }
 
-[data-theme='classic'] .standings-row.top-3 {
+[data-theme='all'] .standings-row.top-3 {
   background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.07), transparent);
 }
 
-[data-theme='neon'] .standings-row.top-1 {
+[data-theme='popular'] .standings-row.top-1 {
   background: rgba(240, 79, 140, 0.08);
   border-color: rgba(240, 79, 140, 0.4);
 }
@@ -282,22 +249,22 @@ body {
   font-family: var(--font-ui);
 }
 
-[data-theme='classic'] .standings-row.top-1 .standings-rank,
-[data-theme='classic'] .standings-row.top-2 .standings-rank,
-[data-theme='classic'] .standings-row.top-3 .standings-rank {
+[data-theme='all'] .standings-row.top-1 .standings-rank,
+[data-theme='all'] .standings-row.top-2 .standings-rank,
+[data-theme='all'] .standings-row.top-3 .standings-rank {
   color: var(--accent);
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 700;
 }
 
-[data-theme='neon'] .standings-row.top-1 .standings-rank {
+[data-theme='popular'] .standings-row.top-1 .standings-rank {
   color: var(--accent2);
   font-weight: 700;
 }
 
-[data-theme='neon'] .standings-row.top-2 .standings-rank,
-[data-theme='neon'] .standings-row.top-3 .standings-rank {
+[data-theme='popular'] .standings-row.top-2 .standings-rank,
+[data-theme='popular'] .standings-row.top-3 .standings-rank {
   color: var(--accent);
   font-weight: 700;
 }
@@ -341,13 +308,13 @@ body {
   color: var(--text-high);
 }
 
-[data-theme='classic'] .pack-category-label {
+[data-theme='all'] .pack-category-label {
   font-style: italic;
   font-weight: 600;
   font-size: 26px;
 }
 
-[data-theme='neon'] .pack-category-label {
+[data-theme='popular'] .pack-category-label {
   font-weight: 400;
   font-size: 24px;
 }
@@ -389,7 +356,7 @@ body {
   }
 }
 
-[data-theme='neon'] .pack-card {
+[data-theme='popular'] .pack-card {
   border: 1px solid rgba(63, 210, 199, 0.3);
   border-radius: 12px;
   background: rgba(63, 210, 199, 0.05);
@@ -415,7 +382,7 @@ body {
   border-color: var(--accent);
 }
 
-[data-theme='neon'] .queue-pack-card:hover {
+[data-theme='popular'] .queue-pack-card:hover {
   background: rgba(63, 210, 199, 0.08);
 }
 
@@ -436,7 +403,7 @@ body {
   color: var(--accent);
 }
 
-[data-theme='neon'] .movie-tile-rank.top-1 {
+[data-theme='popular'] .movie-tile-rank.top-1 {
   color: var(--accent2);
 }
 
@@ -468,7 +435,7 @@ body {
   border-color: var(--accent);
 }
 
-[data-theme='neon'] .head-to-head-card:hover:not(:disabled) {
+[data-theme='popular'] .head-to-head-card:hover:not(:disabled) {
   background: rgba(63, 210, 199, 0.08);
 }
 
@@ -488,25 +455,25 @@ body {
   font-family: var(--font-ui);
 }
 
-[data-theme='classic'] .rank-button {
+[data-theme='all'] .rank-button {
   border-radius: 999px;
   background-image: linear-gradient(180deg, #f0c771, #d9a746);
   color: #2a1216;
   box-shadow: 0 8px 24px rgba(224, 178, 90, 0.3);
 }
 
-[data-theme='classic'] .rank-button:hover:not(:disabled) {
+[data-theme='all'] .rank-button:hover:not(:disabled) {
   background-image: linear-gradient(180deg, #f8d68d, #e5b65a);
 }
 
-[data-theme='neon'] .rank-button {
+[data-theme='popular'] .rank-button {
   border-radius: 8px;
   background: #f04f8c;
   color: #2a0a18;
   box-shadow: 0 8px 24px rgba(240, 79, 140, 0.28);
 }
 
-[data-theme='neon'] .rank-button:hover:not(:disabled) {
+[data-theme='popular'] .rank-button:hover:not(:disabled) {
   background: #ff6ba1;
 }
 
@@ -591,11 +558,11 @@ body {
   color: var(--bg-page);
 }
 
-[data-theme='classic'] .modal-button-primary:hover:not(:disabled) {
+[data-theme='all'] .modal-button-primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
-[data-theme='neon'] .modal-button-primary:hover:not(:disabled) {
+[data-theme='popular'] .modal-button-primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
@@ -657,8 +624,8 @@ body {
 .results-top-ten-panel {
   padding: 16px;
   border-radius: 12px;
-  /* Neon theme's pink accent, used as a fixed brand color for the Top 10
-     panel regardless of the active theme. */
+  /* Popular subset's pink accent, used as a fixed brand color for the Top 10
+     panel regardless of the active subset. */
   background: linear-gradient(180deg, rgba(240, 79, 140, 0.22), transparent 140%);
   border: 1px solid rgba(240, 79, 140, 0.45);
 }

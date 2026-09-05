@@ -35,7 +35,9 @@ app.use((req, res, next) => {
 
 app.get('/api/movies', (req, res) => {
   const family = req.query.family === 'true'
-  const movies = getMovies(DATA_DIR, { family })
+  const popular = req.query.popular === 'true'
+  const genre = req.query.genre || null
+  const movies = getMovies(DATA_DIR, { family, popular, genre })
   if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
 })

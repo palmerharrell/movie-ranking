@@ -1,0 +1,7 @@
+[
+  { "id": "1", "title": "M1", "year": 1985, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"], "mpaaRating": "G", "voteCount": 100 },
+  { "id": "2", "title": "M2", "year": 1986, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor X"], "mpaaRating": "R", "voteCount": 500 },
+  { "id": "3", "title": "M3", "year": 1987, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"], "mpaaRating": "PG-13", "voteCount": 10 },
+  { "id": "4", "title": "M4", "year": 1988, "decade": "80s", "director": "Director A", "genres": ["Drama"], "cast": ["Actor Y"], "mpaaRating": "PG", "voteCount": null },
+  { "id": "5", "title": "M5", "year": 1989, "decade": "80s", "director": "Director A", "genres": ["Comedy"], "cast": ["Actor Z"], "mpaaRating": "G", "voteCount": 50 }
+]

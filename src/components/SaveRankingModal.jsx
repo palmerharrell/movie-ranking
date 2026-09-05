@@ -1,6 +1,29 @@
 import { useState } from 'react'
+import { genreSubsetLabel } from '../lib/genreSubsets.js'
 
-export function SaveRankingModal({ onSave, onDismiss, isFamily = false }) {
+const FIXED_COPY = {
+  family: {
+    title: 'Every family-friendly movie has been ranked',
+    body: 'Give this ranking a name to save it. Saving resets just the family-friendly movies so you can start a fresh family ranking run — the rest of your pool is untouched.',
+  },
+  all: {
+    title: 'Every movie has been ranked',
+    body: 'Give this ranking a name to save it. Saving resets the board so you can start a fresh ranking run.',
+  },
+}
+
+// Popular and every genre/language subset (#150) share one generic template
+// rather than a bespoke entry per id — there are too many to hand-write.
+function copyFor(subset) {
+  if (FIXED_COPY[subset]) return FIXED_COPY[subset]
+  const label = subset === 'popular' ? 'Popular' : genreSubsetLabel(subset)
+  return {
+    title: `Every movie in ${label} has been ranked`,
+    body: `Give this ranking a name to save it. Saving resets just the ${label} movies so you can start a fresh ${label} ranking run — the rest of your pool is untouched.`,
+  }
+}
+
+export function SaveRankingModal({ onSave, onDismiss, subset }) {
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -24,14 +47,8 @@ export function SaveRankingModal({ onSave, onDismiss, isFamily = false }) {
     <div className="modal-overlay">
       <div className="modal-card">
         <p className="modal-eyebrow text-[11px] font-medium uppercase">Ranking Complete</p>
-        <h2 className="modal-title mt-1 text-xl font-semibold">
-          {isFamily ? 'Every family-friendly movie has been ranked' : 'Every movie has been ranked'}
-        </h2>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-mid)' }}>
-          {isFamily
-            ? 'Give this ranking a name to save it. Saving resets just the family-friendly movies so you can start a fresh family ranking run — the rest of your pool is untouched.'
-            : 'Give this ranking a name to save it. Saving resets the board so you can start a fresh ranking run.'}
-        </p>
+        <h2 className="modal-title mt-1 text-xl font-semibold">{copyFor(subset).title}</h2>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-mid)' }}>{copyFor(subset).body}</p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
           <input
             type="text"

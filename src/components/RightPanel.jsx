@@ -12,7 +12,7 @@ import {
 } from '@dnd-kit/sortable'
 import { MovieTile } from './MovieTile.jsx'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
-import { applyThemeWording } from '../lib/labelWording.js'
+import { formatPackLabel } from '../lib/labelWording.js'
 
 export function RightPanel({
   category,
@@ -21,7 +21,6 @@ export function RightPanel({
   skippedMovies,
   onUndoSkip,
   disabled,
-  theme,
 }) {
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -43,7 +42,7 @@ export function RightPanel({
             Drag to reorder, click Rank to set order and go to next list
           </p>
         </div>
-        <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
+        <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
       </div>
       <DndContext
         sensors={sensors}
