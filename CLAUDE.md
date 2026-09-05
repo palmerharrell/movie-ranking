@@ -103,6 +103,16 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   skip would drop the pack to 1 movie, the app discards the pack (without
   submitting any ranking data) and advances to the next pack instead —
   mirroring "Rank →"'s queue-advance behavior, just without the Elo update.
+  Skip is persistent (#136), not just for the active pack: a skipped movie
+  is marked "haven't seen" in this browser's local state
+  (`src/lib/localRankingStore.js`) and is permanently excluded from future
+  pack generation and from the ranked-progress denominator (see **Progress
+  tracking**), until un-skipped. The only way to undo a skip today is the
+  in-pack "undo" while that pack is still active (`onUndoSkip`) — a
+  dedicated "Skipped" view for browsing/un-skipping/clearing the whole list
+  later is tracked separately (#137, **NOT YET IMPLEMENTED**). Skipped state
+  survives Reset/Save (it's a fact about the viewer, not about a ranking
+  run — see **Saved rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
   transitively linked — approximate (Elo doesn't guarantee strict
   transitivity) but converges toward a consistent full ranking as more of the
@@ -143,10 +153,25 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   `eloRating`) are available yet. Since both movies are already-ranked, a
   Head to Head pack has no "Haven't Seen" skip button, no drag-and-drop, and
   no separate "Rank →" confirmation — clicking one of the two movies submits
-  a single pairwise Elo update immediately (`HeadToHeadPanel.jsx`) and
-  advances the queue like any other pack. It doesn't apply the overlap
-  requirement below — reinforcing standings among movies the pool has
-  already ranked isn't about linking in new movies.
+  a single pairwise Elo update (`HeadToHeadPanel.jsx`) and advances the queue
+  like any other pack, but not immediately (#135): the winner first slides
+  toward center while the loser slides off and fades out (350ms, matching
+  the `.head-to-head-card` CSS transition duration), then the loser is
+  removed and the winner grows to fill the freed-up row, held there alone
+  for about 1.6s before the pick is actually submitted and the pack
+  advances. It doesn't apply the overlap requirement below — reinforcing
+  standings among movies the pool has already ranked isn't about linking in
+  new movies.
+- **Top 10 Tough Choice packs (#131):** a rarer variant of Head to Head —
+  same 2-movie pick-a-winner UI and submission flow (`HeadToHeadPanel.jsx`,
+  `type: 'head-to-head'`) — but drawn from just the current top 10 ranked
+  movies by `eloRating` instead of the top 50, with a 4% chance
+  (`TOP_10_TOUGH_CHOICE_CHANCE`), checked before the regular Head to Head
+  chance. Only becomes possible once at least 50 movies have been ranked
+  (`MIN_RANKED_FOR_TOUGH_CHOICE`) — below that, the "top 10" would just be
+  whichever handful of movies got ranked first, not movies the user actually
+  cares about. Falls through to the normal pack flow if the threshold isn't
+  met or fewer than 2 ranked movies are available.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
@@ -160,10 +185,10 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
 - **Upcoming queue:** rather than a single "next category" generated on
-  demand, the app keeps a small queue of pre-generated upcoming packs (3,
-  via `PackQueue.jsx`) displayed alongside the active pack, replacing the old
-  multi-list picker chips (there's only one pool now, so there's nothing to
-  switch between).
+  demand, the app keeps a small queue of pre-generated upcoming packs (8,
+  via `PackQueue.jsx`, `QUEUE_SIZE` in `App.jsx` — #134) displayed alongside
+  the active pack, replacing the old multi-list picker chips (there's only
+  one pool now, so there's nothing to switch between).
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
   - **Clicking a queued pack** discards the current active pack without
@@ -176,15 +201,20 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 ## Progress tracking
 - `LeftPanel.jsx` shows a label near the standings header: `n/nnn ranked` —
   `n` is the count of movies with `timesRanked ≥ 1`, `nnn` is the total pool
-  size.
+  size minus the number of skipped ("haven't seen") movies (#136) — see
+  **Skip ("Haven't Seen")** above.
+- Below that label, when the skipped count is nonzero, a second line reads
+  `n skipped` (#136).
 
 ## Saved rankings
-- **Completion:** once every movie in the *currently visible* pool has
-  `timesRanked ≥ 1`, show a modal prompting the user to name and save the
-  ranking. Outside Family mode "visible pool" is the whole pool; inside
-  Family mode it's just the family-safe subset — see **Family mode**.
+- **Completion:** once every non-skipped movie in the *currently visible*
+  pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
+  save the ranking. Outside Family mode "visible pool" is the whole pool
+  minus skipped movies; inside Family mode it's the family-safe subset minus
+  skipped movies — see **Family mode** and **Skip ("Haven't Seen")** (#136).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
-  for the visible pool (gathered from its own local ranking state — see
+  for the visible, non-skipped pool (gathered from its own local ranking
+  state — see
   **Online deployment**) to the server as a named, timestamped snapshot, then
   resets that scope's local ranking state back to defaults (`eloRating =
   1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
@@ -196,9 +226,13 @@ mostly one-off per movie, so only allowlisted tags are kept (can be empty).
   deployment**), reserved for a future feature restricting edits/re-ranks to
   the ranking's creator (#115) — not yet enforced anywhere.
 - **Load:** a "Load Ranking" entry point lists saved snapshots by
-  name/date/movie count; opening one shows its standings list — only the
-  movies that were actually part of that saved run, not the current full
-  pool — read-only, and it does not affect or restore live ranking state.
+  name/date/movie count; opening one displays it via the same tiered Results
+  screen shown on live completion (#107, `ResultsScreen.jsx` reused by
+  `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and 26-100
+  tiers, and anything outside the snapshot's top 100) — only the movies that
+  were actually part of that saved run, not the current full pool —
+  read-only (no Save Ranking button; a "Back to list" link replaces it), and
+  it does not affect or restore live ranking state.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key

@@ -17,6 +17,15 @@ const HEAD_TO_HEAD_CHANCE = 0.1
 const HEAD_TO_HEAD_LABEL = 'Head to Head'
 const HEAD_TO_HEAD_POOL_SIZE = 50
 export const HEAD_TO_HEAD_TYPE = 'head-to-head'
+// A rarer, tighter-pool variant of Head to Head (#131): 2 movies from the
+// current top 10 by eloRating instead of the top 50. Gated behind a higher
+// ranked-count threshold than the overlap requirement — with only a
+// handful of movies ranked, the "top 10" is arbitrary noise rather than
+// movies the user actually cares about.
+const TOP_10_TOUGH_CHOICE_CHANCE = 0.04
+const TOP_10_TOUGH_CHOICE_LABEL = 'Top 10 Tough Choice'
+const TOP_10_TOUGH_CHOICE_POOL_SIZE = 10
+const MIN_RANKED_FOR_TOUGH_CHOICE = 50
 
 const ATTRIBUTE_TYPES = [
   'director',
@@ -164,18 +173,32 @@ function randomFivePack(movies, selectOptions) {
   return { label: RANDOM_FIVE_LABEL, movies: pack }
 }
 
-// A "Head to Head" pack is a 2-movie pick-a-winner round drawn from the
-// current top 50 by eloRating among already-ranked movies — reinforcing
-// standings the pool has already formed an opinion on, rather than linking
-// in new movies, so the usual overlap rule doesn't apply here. Returns null
-// if fewer than 2 ranked movies (with a real eloRating) are available.
-function headToHeadPack(movies, { isRanked, random }) {
+// Shared by "Head to Head" and "Top 10 Tough Choice": a 2-movie
+// pick-a-winner round drawn from the current top `poolSize` by eloRating
+// among already-ranked movies — reinforcing standings the pool has already
+// formed an opinion on, rather than linking in new movies, so the usual
+// overlap rule doesn't apply here. Returns null if fewer than 2 ranked
+// movies (with a real eloRating) are available.
+function rankedTopPack(movies, { isRanked, random }, poolSize, label) {
   const ranked = movies
     .filter((m) => isRanked(m) && typeof m.eloRating === 'number')
     .sort((a, b) => b.eloRating - a.eloRating)
-    .slice(0, HEAD_TO_HEAD_POOL_SIZE)
+    .slice(0, poolSize)
   if (ranked.length < 2) return null
-  return { label: HEAD_TO_HEAD_LABEL, movies: sample(ranked, 2, random), type: HEAD_TO_HEAD_TYPE }
+  return { label, movies: sample(ranked, 2, random), type: HEAD_TO_HEAD_TYPE }
+}
+
+function headToHeadPack(movies, selectOptions) {
+  return rankedTopPack(movies, selectOptions, HEAD_TO_HEAD_POOL_SIZE, HEAD_TO_HEAD_LABEL)
+}
+
+// A rarer variant of Head to Head (#131), drawn from just the top 10 by
+// eloRating instead of the top 50 — a "tougher" choice since both movies
+// are already elite. Gated behind MIN_RANKED_FOR_TOUGH_CHOICE so the top 10
+// reflects real signal rather than the first handful of packs ranked.
+function toughChoicePack(movies, selectOptions) {
+  if (selectOptions.totalRankedCount < MIN_RANKED_FOR_TOUGH_CHOICE) return null
+  return rankedTopPack(movies, selectOptions, TOP_10_TOUGH_CHOICE_POOL_SIZE, TOP_10_TOUGH_CHOICE_LABEL)
 }
 
 // Generates a category + 5-pack for the given list of movies.
@@ -189,12 +212,19 @@ function headToHeadPack(movies, { isRanked, random }) {
 // (RANDOM_FIVE_CHANCE), and also serves as the fallback when no
 // attribute-based category can find 5 matches. A "Head to Head" 2-movie
 // pick-a-winner pack gets thrown in even more occasionally
-// (HEAD_TO_HEAD_CHANCE), drawn from the current top 50 ranked movies.
+// (HEAD_TO_HEAD_CHANCE), drawn from the current top 50 ranked movies, and
+// an even rarer "Top 10 Tough Choice" variant (TOP_10_TOUGH_CHOICE_CHANCE)
+// is checked first, drawn from just the top 10.
 export function generateCategory(
   movies,
   { isRanked = () => false, totalRankedCount = 0, random = Math.random } = {},
 ) {
   const selectOptions = { isRanked, random, totalRankedCount }
+
+  if (random() < TOP_10_TOUGH_CHOICE_CHANCE) {
+    const toughChoice = toughChoicePack(movies, selectOptions)
+    if (toughChoice) return toughChoice
+  }
 
   if (random() < HEAD_TO_HEAD_CHANCE) {
     const headToHead = headToHeadPack(movies, selectOptions)

@@ -1,12 +1,42 @@
 import { describe, it, expect } from 'vitest'
 import { generateCategory, tryBuildCategory } from './categoryGenerator.js'
 
-// Forces the first random() draw (Head to Head check) above its chance so
-// it's skipped, the second draw below RANDOM_FIVE_CHANCE so Random Five
-// triggers, then delegates to a seeded PRNG for everything after — so the
-// Random Five branch triggers deterministically while the rest of the draw
-// sequence stays reproducible.
+// Forces the first random() draw (Tough Choice check) and second draw (Head
+// to Head check) above their chance so both are skipped, the third draw
+// below RANDOM_FIVE_CHANCE so Random Five triggers, then delegates to a
+// seeded PRNG for everything after — so the Random Five branch triggers
+// deterministically while the rest of the draw sequence stays reproducible.
 function forceRandomFiveThenSeeded(seed) {
+  let call = 0
+  const seeded = seededRandom(seed)
+  return () => {
+    call += 1
+    if (call === 1) return 0.99
+    if (call === 2) return 0.99
+    if (call === 3) return 0
+    return seeded()
+  }
+}
+
+// Forces the first three random() draws (Tough Choice, Head to Head, Random
+// Five checks) all above their chance so none of the direct branches
+// trigger, then delegates to a seeded PRNG.
+function skipRandomFiveThenSeeded(seed) {
+  let call = 0
+  const seeded = seededRandom(seed)
+  return () => {
+    call += 1
+    if (call === 1) return 0.99
+    if (call === 2) return 0.99
+    if (call === 3) return 0.99
+    return seeded()
+  }
+}
+
+// Forces the first random() draw (Tough Choice check) above its chance so
+// it's skipped, the second draw below HEAD_TO_HEAD_CHANCE, then delegates
+// to a seeded PRNG for everything after (used to pick the pair).
+function forceHeadToHeadThenSeeded(seed) {
   let call = 0
   const seeded = seededRandom(seed)
   return () => {
@@ -17,23 +47,9 @@ function forceRandomFiveThenSeeded(seed) {
   }
 }
 
-// Forces the first random() draw (Head to Head check) and second draw
-// (Random Five check) both above their chance so neither direct branch
-// triggers, then delegates to a seeded PRNG.
-function skipRandomFiveThenSeeded(seed) {
-  let call = 0
-  const seeded = seededRandom(seed)
-  return () => {
-    call += 1
-    if (call === 1) return 0.99
-    if (call === 2) return 0.99
-    return seeded()
-  }
-}
-
-// Forces the first random() draw below HEAD_TO_HEAD_CHANCE, then delegates
-// to a seeded PRNG for everything after (used to pick the pair).
-function forceHeadToHeadThenSeeded(seed) {
+// Forces the first random() draw below TOP_10_TOUGH_CHOICE_CHANCE, then
+// delegates to a seeded PRNG for everything after (used to pick the pair).
+function forceToughChoiceThenSeeded(seed) {
   let first = true
   const seeded = seededRandom(seed)
   return () => {
@@ -335,6 +351,76 @@ describe('generateCategory', () => {
     const result = generateCategory(movies, { random: forceHeadToHeadThenSeeded(1) })
     expect(result).not.toBeNull()
     expect(result.type).not.toBe('head-to-head')
+    expect(result.movies).toHaveLength(5)
+  })
+
+  it('builds a "Top 10 Tough Choice" pack when its chance hits and the ranked threshold is met', () => {
+    const movies = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+
+    const result = generateCategory(movies, {
+      isRanked,
+      totalRankedCount: 50,
+      random: forceToughChoiceThenSeeded(1),
+    })
+    expect(result).not.toBeNull()
+    expect(result.label).toBe('Top 10 Tough Choice')
+    expect(result.type).toBe('head-to-head')
+    expect(result.movies).toHaveLength(2)
+    expect(result.movies[0].id).not.toBe(result.movies[1].id)
+  })
+
+  it('only draws Top 10 Tough Choice movies from the top 10 by eloRating', () => {
+    const movies = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i, // ids 11-20 hold the top 10 ratings
+    }))
+    const isRanked = () => true
+    const top10Ids = new Set(movies.slice(10).map((m) => m.id))
+
+    for (let seed = 0; seed < 30; seed++) {
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: 50,
+        random: forceToughChoiceThenSeeded(seed),
+      })
+      if (!result || result.label !== 'Top 10 Tough Choice') continue
+      for (const m of result.movies) {
+        expect(top10Ids.has(m.id)).toBe(true)
+      }
+    }
+  })
+
+  it('does not build a Top 10 Tough Choice pack below the ranked-count threshold', () => {
+    const movies = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+
+    const result = generateCategory(movies, {
+      isRanked,
+      totalRankedCount: 49,
+      random: forceToughChoiceThenSeeded(1),
+    })
+    expect(result).not.toBeNull()
+    expect(result.label).not.toBe('Top 10 Tough Choice')
+  })
+
+  it('falls through to a normal pack when fewer than 2 ranked movies are eligible for Top 10 Tough Choice', () => {
+    const movies = makeMovies()
+    const result = generateCategory(movies, {
+      totalRankedCount: 50,
+      random: forceToughChoiceThenSeeded(1),
+    })
+    expect(result).not.toBeNull()
+    expect(result.label).not.toBe('Top 10 Tough Choice')
     expect(result.movies).toHaveLength(5)
   })
 })
