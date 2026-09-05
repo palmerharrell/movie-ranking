@@ -1,4 +1,5 @@
 import { isFamilySafe } from '../src/lib/familyMode.js'
+import { selectPopular } from '../src/lib/popularMode.js'
 import {
   createSavedRanking,
   listSavedRankings as listSavedRankingsFromDb,
@@ -17,14 +18,18 @@ function mergeWithState(staticMovies, state) {
 }
 
 // The pool's static metadata, optionally restricted to family-safe (G/PG/
-// PG-13, confirmed-rating) movies. Returns null if the enriched JSON doesn't
-// exist yet. Per-visitor ranking state (eloRating/timesRanked) lives in the
-// browser now (#115) — see src/lib/localRankingStore.js — so this is
-// metadata only.
-export function getMovies(dataDir, { family = false } = {}) {
+// PG-13, confirmed-rating) movies and/or the top-N most-voted-on (#104).
+// Family is applied first so "popular" always means "top-N within whatever
+// scope is active" — this is what makes Popular+Family combine correctly.
+// Returns null if the enriched JSON doesn't exist yet. Per-visitor ranking
+// state (eloRating/timesRanked) lives in the browser now (#115) — see
+// src/lib/localRankingStore.js — so this is metadata only.
+export function getMovies(dataDir, { family = false, popular = false } = {}) {
   const staticMovies = loadMovies(dataDir)
   if (!staticMovies) return null
-  return family ? staticMovies.filter(isFamilySafe) : staticMovies
+  let result = family ? staticMovies.filter(isFamilySafe) : staticMovies
+  if (popular) result = selectPopular(result)
+  return result
 }
 
 // Persists a client-computed ranking snapshot — `entries` is the

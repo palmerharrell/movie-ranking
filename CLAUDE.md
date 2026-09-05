@@ -74,7 +74,8 @@ with a `sources[]` field listing every source it came from.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
-mpaaRating, studio, collection, originalLanguage, keywords[], sources[]`.
+mpaaRating, studio, collection, originalLanguage, keywords[], voteCount,
+sources[]`.
 Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
@@ -90,6 +91,21 @@ original-language code (e.g. `"fr"`). `keywords[]` is the subset of TMDb's
 keyword tags that match a curated allowlist (`KEYWORD_LABELS` in
 `src/lib/curatedAttributes.js`) — TMDb keyword data is high-cardinality and
 mostly one-off per movie, so only allowlisted tags are kept (can be empty).
+`voteCount` is TMDb's `vote_count` from `/movie/{id}` — a stable "how
+mainstream/well-known is this" proxy, used to build the Popular subset (see
+below) — or `null` if TMDb has no vote data for it.
+
+## Popular subset (#104)
+`GET /api/movies` also accepts `?popular=true` (composable with
+`?family=true`), which restricts the pool to the top
+`POPULAR_POOL_SIZE` (`src/lib/popularMode.js`) movies by `voteCount`
+descending (`null`/missing sorts last). When combined with `family`, family
+filtering is applied first so "popular" always means "top-N within whatever
+scope is already active." This exists purely as data/filtering plumbing
+today — **NOT YET IMPLEMENTED**: there is no UI entry point to turn Popular
+mode on, no default-subset behavior, and no theme changes; that's tracked in
+#146, which also removes the Classic/Neon themes and replaces the theme
+toggle with a subset picker defaulting to Popular.
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
