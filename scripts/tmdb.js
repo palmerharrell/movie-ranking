@@ -31,6 +31,13 @@ export async function getReleaseDates(apiKey, tmdbId) {
   return tmdbFetch(apiKey, `/movie/${tmdbId}/release_dates`)
 }
 
+// One page (20 results) of /discover/movie sorted by vote_count descending,
+// optionally narrowed by TMDb discover filter params (with_genres,
+// with_keywords, with_original_language, etc. — see TMDb's discover docs).
+export async function discoverMovies(apiKey, params, page) {
+  return tmdbFetch(apiKey, '/discover/movie', { sort_by: 'vote_count.desc', page, ...params })
+}
+
 // US MPAA certification (e.g. "PG-13") from a /release_dates response, or
 // null if TMDb has no US certification data for this movie. Prefers a
 // theatrical release (release_type 3) when multiple US entries have one.

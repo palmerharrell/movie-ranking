@@ -1,0 +1,1202 @@
+[
+  {
+    "title": "The Dark Knight",
+    "year": 2008
+  },
+  {
+    "title": "Fight Club",
+    "year": 1999
+  },
+  {
+    "title": "Pulp Fiction",
+    "year": 1994
+  },
+  {
+    "title": "Joker",
+    "year": 2019
+  },
+  {
+    "title": "Shutter Island",
+    "year": 2010
+  },
+  {
+    "title": "The Dark Knight Rises",
+    "year": 2012
+  },
+  {
+    "title": "Inglourious Basterds",
+    "year": 2009
+  },
+  {
+    "title": "Se7en",
+    "year": 1995
+  },
+  {
+    "title": "The Hunger Games",
+    "year": 2012
+  },
+  {
+    "title": "Jurassic World",
+    "year": 2015
+  },
+  {
+    "title": "John Wick",
+    "year": 2014
+  },
+  {
+    "title": "Parasite",
+    "year": 2019
+  },
+  {
+    "title": "It",
+    "year": 2017
+  },
+  {
+    "title": "Gone Girl",
+    "year": 2014
+  },
+  {
+    "title": "The Shining",
+    "year": 1980
+  },
+  {
+    "title": "Get Out",
+    "year": 2017
+  },
+  {
+    "title": "Split",
+    "year": 2017
+  },
+  {
+    "title": "The Silence of the Lambs",
+    "year": 1991
+  },
+  {
+    "title": "The Maze Runner",
+    "year": 2014
+  },
+  {
+    "title": "The Imitation Game",
+    "year": 2014
+  },
+  {
+    "title": "I Am Legend",
+    "year": 2007
+  },
+  {
+    "title": "Now You See Me",
+    "year": 2013
+  },
+  {
+    "title": "Whiplash",
+    "year": 2014
+  },
+  {
+    "title": "The Hunger Games: Mockingjay - Part 1",
+    "year": 2014
+  },
+  {
+    "title": "Memento",
+    "year": 2000
+  },
+  {
+    "title": "Gravity",
+    "year": 2013
+  },
+  {
+    "title": "The Departed",
+    "year": 2006
+  },
+  {
+    "title": "Skyfall",
+    "year": 2012
+  },
+  {
+    "title": "V for Vendetta",
+    "year": 2006
+  },
+  {
+    "title": "Black Swan",
+    "year": 2010
+  },
+  {
+    "title": "Reservoir Dogs",
+    "year": 1992
+  },
+  {
+    "title": "Kill Bill: Vol. 2",
+    "year": 2004
+  },
+  {
+    "title": "Blade Runner",
+    "year": 1982
+  },
+  {
+    "title": "Once Upon a Time... in Hollywood",
+    "year": 2019
+  },
+  {
+    "title": "The Terminator",
+    "year": 1984
+  },
+  {
+    "title": "Terminator 2: Judgment Day",
+    "year": 1991
+  },
+  {
+    "title": "John Wick: Chapter 2",
+    "year": 2017
+  },
+  {
+    "title": "Drive",
+    "year": 2011
+  },
+  {
+    "title": "No Country for Old Men",
+    "year": 2007
+  },
+  {
+    "title": "Prisoners",
+    "year": 2013
+  },
+  {
+    "title": "The Sixth Sense",
+    "year": 1999
+  },
+  {
+    "title": "Rise of the Planet of the Apes",
+    "year": 2011
+  },
+  {
+    "title": "The Conjuring",
+    "year": 2013
+  },
+  {
+    "title": "Jurassic World: Fallen Kingdom",
+    "year": 2018
+  },
+  {
+    "title": "Ocean's Eleven",
+    "year": 2001
+  },
+  {
+    "title": "American Psycho",
+    "year": 2000
+  },
+  {
+    "title": "Die Hard",
+    "year": 1988
+  },
+  {
+    "title": "Fifty Shades of Grey",
+    "year": 2015
+  },
+  {
+    "title": "Dawn of the Planet of the Apes",
+    "year": 2014
+  },
+  {
+    "title": "The Batman",
+    "year": 2022
+  },
+  {
+    "title": "In Time",
+    "year": 2011
+  },
+  {
+    "title": "Taken",
+    "year": 2008
+  },
+  {
+    "title": "The Matrix Reloaded",
+    "year": 2003
+  },
+  {
+    "title": "John Wick: Chapter 3 - Parabellum",
+    "year": 2019
+  },
+  {
+    "title": "Nightcrawler",
+    "year": 2014
+  },
+  {
+    "title": "Casino Royale",
+    "year": 2006
+  },
+  {
+    "title": "Zodiac",
+    "year": 2007
+  },
+  {
+    "title": "Jaws",
+    "year": 1975
+  },
+  {
+    "title": "Now You See Me 2",
+    "year": 2016
+  },
+  {
+    "title": "Limitless",
+    "year": 2011
+  },
+  {
+    "title": "The Usual Suspects",
+    "year": 1995
+  },
+  {
+    "title": "Tenet",
+    "year": 2020
+  },
+  {
+    "title": "Furious 7",
+    "year": 2015
+  },
+  {
+    "title": "Mr. & Mrs. Smith",
+    "year": 2005
+  },
+  {
+    "title": "Spectre",
+    "year": 2015
+  },
+  {
+    "title": "Fast & Furious 6",
+    "year": 2013
+  },
+  {
+    "title": "Psycho",
+    "year": 1960
+  },
+  {
+    "title": "Maze Runner: The Scorch Trials",
+    "year": 2015
+  },
+  {
+    "title": "Looper",
+    "year": 2012
+  },
+  {
+    "title": "Aliens",
+    "year": 1986
+  },
+  {
+    "title": "The Fast and the Furious",
+    "year": 2001
+  },
+  {
+    "title": "The Matrix Revolutions",
+    "year": 2003
+  },
+  {
+    "title": "Mission: Impossible - Ghost Protocol",
+    "year": 2011
+  },
+  {
+    "title": "The Fate of the Furious",
+    "year": 2017
+  },
+  {
+    "title": "Bird Box",
+    "year": 2018
+  },
+  {
+    "title": "Insurgent",
+    "year": 2015
+  },
+  {
+    "title": "The Bourne Identity",
+    "year": 2002
+  },
+  {
+    "title": "The Da Vinci Code",
+    "year": 2006
+  },
+  {
+    "title": "Mission: Impossible",
+    "year": 1996
+  },
+  {
+    "title": "The Equalizer",
+    "year": 2014
+  },
+  {
+    "title": "Oldboy",
+    "year": 2003
+  },
+  {
+    "title": "Unbreakable",
+    "year": 2000
+  },
+  {
+    "title": "Minority Report",
+    "year": 2002
+  },
+  {
+    "title": "Sicario",
+    "year": 2015
+  },
+  {
+    "title": "Room",
+    "year": 2015
+  },
+  {
+    "title": "It Chapter Two",
+    "year": 2019
+  },
+  {
+    "title": "Elysium",
+    "year": 2013
+  },
+  {
+    "title": "War of the Worlds",
+    "year": 2005
+  },
+  {
+    "title": "Predator",
+    "year": 1987
+  },
+  {
+    "title": "Source Code",
+    "year": 2011
+  },
+  {
+    "title": "Twelve Monkeys",
+    "year": 1995
+  },
+  {
+    "title": "Fargo",
+    "year": 1996
+  },
+  {
+    "title": "Glass",
+    "year": 2019
+  },
+  {
+    "title": "San Andreas",
+    "year": 2015
+  },
+  {
+    "title": "Argo",
+    "year": 2012
+  },
+  {
+    "title": "Terminator Genisys",
+    "year": 2015
+  },
+  {
+    "title": "The Day After Tomorrow",
+    "year": 2004
+  },
+  {
+    "title": "Fast Five",
+    "year": 2011
+  },
+  {
+    "title": "Sin City",
+    "year": 2005
+  },
+  {
+    "title": "The Purge",
+    "year": 2013
+  },
+  {
+    "title": "10 Cloverfield Lane",
+    "year": 2016
+  },
+  {
+    "title": "Bad Boys for Life",
+    "year": 2020
+  },
+  {
+    "title": "Hereditary",
+    "year": 2018
+  },
+  {
+    "title": "28 Days Later",
+    "year": 2002
+  },
+  {
+    "title": "Quantum of Solace",
+    "year": 2008
+  },
+  {
+    "title": "Train to Busan",
+    "year": 2016
+  },
+  {
+    "title": "Nobody",
+    "year": 2021
+  },
+  {
+    "title": "The Bourne Ultimatum",
+    "year": 2007
+  },
+  {
+    "title": "Maze Runner: The Death Cure",
+    "year": 2018
+  },
+  {
+    "title": "Blood Diamond",
+    "year": 2006
+  },
+  {
+    "title": "The Butterfly Effect",
+    "year": 2004
+  },
+  {
+    "title": "The Expendables",
+    "year": 2010
+  },
+  {
+    "title": "Nocturnal Animals",
+    "year": 2016
+  },
+  {
+    "title": "The Bourne Supremacy",
+    "year": 2004
+  },
+  {
+    "title": "2 Fast 2 Furious",
+    "year": 2003
+  },
+  {
+    "title": "Us",
+    "year": 2019
+  },
+  {
+    "title": "127 Hours",
+    "year": 2010
+  },
+  {
+    "title": "John Wick: Chapter 4",
+    "year": 2023
+  },
+  {
+    "title": "Don't Breathe",
+    "year": 2016
+  },
+  {
+    "title": "Ocean's Twelve",
+    "year": 2004
+  },
+  {
+    "title": "Children of Men",
+    "year": 2006
+  },
+  {
+    "title": "Cloverfield",
+    "year": 2008
+  },
+  {
+    "title": "Jurassic Park III",
+    "year": 2001
+  },
+  {
+    "title": "The Platform",
+    "year": 2019
+  },
+  {
+    "title": "Fast & Furious",
+    "year": 2009
+  },
+  {
+    "title": "Prey",
+    "year": 2022
+  },
+  {
+    "title": "Bullet Train",
+    "year": 2022
+  },
+  {
+    "title": "The Witch",
+    "year": 2016
+  },
+  {
+    "title": "Jack Reacher",
+    "year": 2012
+  },
+  {
+    "title": "The Fast and the Furious: Tokyo Drift",
+    "year": 2006
+  },
+  {
+    "title": "Mission: Impossible III",
+    "year": 2006
+  },
+  {
+    "title": "The Girl with the Dragon Tattoo",
+    "year": 2011
+  },
+  {
+    "title": "Mission: Impossible II",
+    "year": 2000
+  },
+  {
+    "title": "The Mummy",
+    "year": 2017
+  },
+  {
+    "title": "Wanted",
+    "year": 2008
+  },
+  {
+    "title": "Captain Phillips",
+    "year": 2013
+  },
+  {
+    "title": "Mystic River",
+    "year": 2003
+  },
+  {
+    "title": "A Quiet Place Part II",
+    "year": 2021
+  },
+  {
+    "title": "Insidious",
+    "year": 2011
+  },
+  {
+    "title": "The Accountant",
+    "year": 2016
+  },
+  {
+    "title": "Sleepy Hollow",
+    "year": 1999
+  },
+  {
+    "title": "The Game",
+    "year": 1997
+  },
+  {
+    "title": "Angels & Demons",
+    "year": 2009
+  },
+  {
+    "title": "Terminator 3: Rise of the Machines",
+    "year": 2003
+  },
+  {
+    "title": "Bridge of Spies",
+    "year": 2015
+  },
+  {
+    "title": "The Others",
+    "year": 2001
+  },
+  {
+    "title": "No Time to Die",
+    "year": 2021
+  },
+  {
+    "title": "Rear Window",
+    "year": 1954
+  },
+  {
+    "title": "The Expendables 2",
+    "year": 2012
+  },
+  {
+    "title": "Predestination",
+    "year": 2014
+  },
+  {
+    "title": "RED",
+    "year": 2010
+  },
+  {
+    "title": "Eyes Wide Shut",
+    "year": 1999
+  },
+  {
+    "title": "Mulholland Drive",
+    "year": 2001
+  },
+  {
+    "title": "Jurassic World Dominion",
+    "year": 2022
+  },
+  {
+    "title": "Super 8",
+    "year": 2011
+  },
+  {
+    "title": "Taken 2",
+    "year": 2012
+  },
+  {
+    "title": "Terminator Salvation",
+    "year": 2009
+  },
+  {
+    "title": "Olympus Has Fallen",
+    "year": 2013
+  },
+  {
+    "title": "Bad Boys",
+    "year": 1995
+  },
+  {
+    "title": "Jackie Brown",
+    "year": 1997
+  },
+  {
+    "title": "First Blood",
+    "year": 1982
+  },
+  {
+    "title": "Ocean's Thirteen",
+    "year": 2007
+  },
+  {
+    "title": "Speed",
+    "year": 1994
+  },
+  {
+    "title": "The Godfather Part III",
+    "year": 1990
+  },
+  {
+    "title": "The Book of Eli",
+    "year": 2010
+  },
+  {
+    "title": "A Good Day to Die Hard",
+    "year": 2013
+  },
+  {
+    "title": "The Impossible",
+    "year": 2012
+  },
+  {
+    "title": "Die Hard: With a Vengeance",
+    "year": 1995
+  },
+  {
+    "title": "The Purge: Anarchy",
+    "year": 2014
+  },
+  {
+    "title": "The Hitman's Bodyguard",
+    "year": 2017
+  },
+  {
+    "title": "Extraction",
+    "year": 2020
+  },
+  {
+    "title": "Underworld",
+    "year": 2003
+  },
+  {
+    "title": "Inferno",
+    "year": 2016
+  },
+  {
+    "title": "Atomic Blonde",
+    "year": 2017
+  },
+  {
+    "title": "Contagion",
+    "year": 2011
+  },
+  {
+    "title": "The Conjuring: The Devil Made Me Do It",
+    "year": 2021
+  },
+  {
+    "title": "Ghost Rider",
+    "year": 2007
+  },
+  {
+    "title": "Enemy",
+    "year": 2014
+  },
+  {
+    "title": "Die Hard 2",
+    "year": 1990
+  },
+  {
+    "title": "What Happened to Monday",
+    "year": 2017
+  },
+  {
+    "title": "Inside Man",
+    "year": 2006
+  },
+  {
+    "title": "Signs",
+    "year": 2002
+  },
+  {
+    "title": "Live Free or Die Hard",
+    "year": 2007
+  },
+  {
+    "title": "Vertigo",
+    "year": 1958
+  },
+  {
+    "title": "Fast X",
+    "year": 2023
+  },
+  {
+    "title": "Collateral",
+    "year": 2004
+  },
+  {
+    "title": "Red Sparrow",
+    "year": 2018
+  },
+  {
+    "title": "The Invisible Man",
+    "year": 2020
+  },
+  {
+    "title": "Jason Bourne",
+    "year": 2016
+  },
+  {
+    "title": "The Hurt Locker",
+    "year": 2008
+  },
+  {
+    "title": "Halloween",
+    "year": 1978
+  },
+  {
+    "title": "The Machinist",
+    "year": 2004
+  },
+  {
+    "title": "The Untouchables",
+    "year": 1987
+  },
+  {
+    "title": "Wrath of Man",
+    "year": 2021
+  },
+  {
+    "title": "Taken 3",
+    "year": 2014
+  },
+  {
+    "title": "The Bourne Legacy",
+    "year": 2012
+  },
+  {
+    "title": "Sinister",
+    "year": 2012
+  },
+  {
+    "title": "Ghost",
+    "year": 1990
+  },
+  {
+    "title": "Battleship",
+    "year": 2012
+  },
+  {
+    "title": "The Girl on the Train",
+    "year": 2016
+  },
+  {
+    "title": "The Equalizer 2",
+    "year": 2018
+  },
+  {
+    "title": "Bright",
+    "year": 2017
+  },
+  {
+    "title": "The Mist",
+    "year": 2007
+  },
+  {
+    "title": "Salt",
+    "year": 2010
+  },
+  {
+    "title": "The Black Phone",
+    "year": 2022
+  },
+  {
+    "title": "The Island",
+    "year": 2005
+  },
+  {
+    "title": "Total Recall",
+    "year": 2012
+  },
+  {
+    "title": "RoboCop",
+    "year": 2014
+  },
+  {
+    "title": "The Transporter",
+    "year": 2002
+  },
+  {
+    "title": "Knowing",
+    "year": 2009
+  },
+  {
+    "title": "Wind River",
+    "year": 2017
+  },
+  {
+    "title": "RoboCop",
+    "year": 1987
+  },
+  {
+    "title": "Transcendence",
+    "year": 2014
+  },
+  {
+    "title": "Chronicle",
+    "year": 2012
+  },
+  {
+    "title": "G.I. Joe: Retaliation",
+    "year": 2013
+  },
+  {
+    "title": "Man on Fire",
+    "year": 2004
+  },
+  {
+    "title": "Non-Stop",
+    "year": 2014
+  },
+  {
+    "title": "The Tourist",
+    "year": 2010
+  },
+  {
+    "title": "Terminator: Dark Fate",
+    "year": 2019
+  },
+  {
+    "title": "Law Abiding Citizen",
+    "year": 2009
+  },
+  {
+    "title": "28 Weeks Later",
+    "year": 2007
+  },
+  {
+    "title": "El Camino: A Breaking Bad Movie",
+    "year": 2019
+  },
+  {
+    "title": "The Town",
+    "year": 2010
+  },
+  {
+    "title": "Death Proof",
+    "year": 2007
+  },
+  {
+    "title": "Orphan",
+    "year": 2009
+  },
+  {
+    "title": "The Lighthouse",
+    "year": 2019
+  },
+  {
+    "title": "Escape Plan",
+    "year": 2013
+  },
+  {
+    "title": "L.A. Confidential",
+    "year": 1997
+  },
+  {
+    "title": "Starship Troopers",
+    "year": 1997
+  },
+  {
+    "title": "Shooter",
+    "year": 2007
+  },
+  {
+    "title": "Cowboys & Aliens",
+    "year": 2011
+  },
+  {
+    "title": "The Purge: Election Year",
+    "year": 2016
+  },
+  {
+    "title": "Gemini Man",
+    "year": 2019
+  },
+  {
+    "title": "Uncut Gems",
+    "year": 2019
+  },
+  {
+    "title": "Panic Room",
+    "year": 2002
+  },
+  {
+    "title": "Greenland",
+    "year": 2020
+  },
+  {
+    "title": "Lord of War",
+    "year": 2005
+  },
+  {
+    "title": "Insomnia",
+    "year": 2002
+  },
+  {
+    "title": "The Mule",
+    "year": 2018
+  },
+  {
+    "title": "Jack Reacher: Never Go Back",
+    "year": 2016
+  },
+  {
+    "title": "The Illusionist",
+    "year": 2006
+  },
+  {
+    "title": "Déjà Vu",
+    "year": 2006
+  },
+  {
+    "title": "The Expendables 3",
+    "year": 2014
+  },
+  {
+    "title": "Skyscraper",
+    "year": 2018
+  },
+  {
+    "title": "The Shallows",
+    "year": 2016
+  },
+  {
+    "title": "Misery",
+    "year": 1990
+  },
+  {
+    "title": "Blade II",
+    "year": 2002
+  },
+  {
+    "title": "Cube",
+    "year": 1998
+  },
+  {
+    "title": "The Rock",
+    "year": 1996
+  },
+  {
+    "title": "Crimson Peak",
+    "year": 2015
+  },
+  {
+    "title": "Mission: Impossible - Dead Reckoning Part One",
+    "year": 2023
+  },
+  {
+    "title": "Geostorm",
+    "year": 2017
+  },
+  {
+    "title": "Hannibal",
+    "year": 2001
+  },
+  {
+    "title": "Obsession",
+    "year": 2026
+  },
+  {
+    "title": "6 Underground",
+    "year": 2019
+  },
+  {
+    "title": "The Visit",
+    "year": 2015
+  },
+  {
+    "title": "The Predator",
+    "year": 2018
+  },
+  {
+    "title": "Sucker Punch",
+    "year": 2011
+  },
+  {
+    "title": "Upgrade",
+    "year": 2018
+  },
+  {
+    "title": "White House Down",
+    "year": 2013
+  },
+  {
+    "title": "London Has Fallen",
+    "year": 2016
+  },
+  {
+    "title": "The King's Man",
+    "year": 2021
+  },
+  {
+    "title": "Lethal Weapon",
+    "year": 1987
+  },
+  {
+    "title": "Equilibrium",
+    "year": 2002
+  },
+  {
+    "title": "Five Nights at Freddy's",
+    "year": 2023
+  },
+  {
+    "title": "Escape Room",
+    "year": 2019
+  },
+  {
+    "title": "Nope",
+    "year": 2022
+  },
+  {
+    "title": "Halloween",
+    "year": 2018
+  },
+  {
+    "title": "Sinners",
+    "year": 2025
+  },
+  {
+    "title": "I Am Number Four",
+    "year": 2011
+  },
+  {
+    "title": "The Invisible Guest",
+    "year": 2017
+  },
+  {
+    "title": "Mad Max",
+    "year": 1979
+  },
+  {
+    "title": "Saw III",
+    "year": 2006
+  },
+  {
+    "title": "The Adjustment Bureau",
+    "year": 2011
+  },
+  {
+    "title": "Old",
+    "year": 2021
+  },
+  {
+    "title": "xXx",
+    "year": 2002
+  },
+  {
+    "title": "G.I. Joe: The Rise of Cobra",
+    "year": 2009
+  },
+  {
+    "title": "Gone in Sixty Seconds",
+    "year": 2000
+  },
+  {
+    "title": "Zero Dark Thirty",
+    "year": 2012
+  },
+  {
+    "title": "Donnie Brasco",
+    "year": 1997
+  },
+  {
+    "title": "Pitch Black",
+    "year": 2000
+  },
+  {
+    "title": "Hush",
+    "year": 2016
+  },
+  {
+    "title": "The Fugitive",
+    "year": 1993
+  },
+  {
+    "title": "Allied",
+    "year": 2016
+  },
+  {
+    "title": "Con Air",
+    "year": 1997
+  },
+  {
+    "title": "Red Dragon",
+    "year": 2002
+  },
+  {
+    "title": "Fall",
+    "year": 2022
+  },
+  {
+    "title": "Need for Speed",
+    "year": 2014
+  },
+  {
+    "title": "The Beach",
+    "year": 2000
+  },
+  {
+    "title": "Memories of Murder",
+    "year": 2003
+  },
+  {
+    "title": "Predators",
+    "year": 2010
+  },
+  {
+    "title": "Snowden",
+    "year": 2016
+  },
+  {
+    "title": "The Commuter",
+    "year": 2018
+  },
+  {
+    "title": "Insidious: Chapter 2",
+    "year": 2013
+  },
+  {
+    "title": "The Skin I Live In",
+    "year": 2011
+  },
+  {
+    "title": "True Lies",
+    "year": 1994
+  },
+  {
+    "title": "The Village",
+    "year": 2004
+  },
+  {
+    "title": "A Simple Favor",
+    "year": 2018
+  },
+  {
+    "title": "The Crow",
+    "year": 1994
+  },
+  {
+    "title": "The Circle",
+    "year": 2017
+  }
+]

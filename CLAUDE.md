@@ -280,37 +280,54 @@ exposed in the UI.
 - **Banner:** app title, subset picker, and a "Load Ranking" entry point for
   browsing saved snapshots (see **Saved rankings**).
 
-## Movie subsets (#104, #146)
+## Movie subsets (#104, #146, #150)
 There are no more cosmetic-only "themes" — the banner's picker
-(`src/components/SubsetPicker.jsx`) chooses which **subset of the pool** to
-rank, and each subset carries its own visual identity (a `data-theme` value
-with its own CSS custom-property palette in `src/index.css`) purely as a
-side effect of which subset is active, not as an independent choice. Three
-entries, in picker order:
+(`src/components/SubsetPicker.jsx`, a grouped `<select>`) chooses which
+**subset of the pool** to rank, and each subset carries its own visual
+identity (a `data-theme` value with its own CSS custom-property palette in
+`src/index.css`) purely as a side effect of which subset is active, not as
+an independent choice. Three general entries plus 14 genre/language
+entries, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody palette.
-- **Family** (`subset: 'family'`) — movies whose `mpaaRating` is `G`, `PG`,
-  or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie with no
-  confirmed US certification (`mpaaRating: null`) is excluded, not assumed
-  safe. Warm "storybook night" palette (deep indigo background,
+- **Family (PG-13)** (`subset: 'family'`) — movies whose `mpaaRating` is `G`,
+  `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
+  with no confirmed US certification (`mpaaRating: null`) is excluded, not
+  assumed safe. Warm "storybook night" palette (deep indigo background,
   marigold/teal accents) — cheerful without being glaring.
 - **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
   parchment-toned palette.
-- `GET /api/movies?family=true&popular=true` composes both server-side
-  filters (family applied first — see **Popular subset**); the client then
-  merges in its own local ranking state and generates categories from that
-  filtered set, so category generation (overlap rule, attribute matching)
-  only ever draws from the active subset. Switching subsets always
-  re-fetches, since all three are different pools (there's no more
-  cosmetic-only swap the way Classic⇄Neon used to be).
+- **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
+  Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
+  Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
+  Italian. Each filters the pool by the movie's own genre(s) (`genres[]`,
+  matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`),
+  keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
+  genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
+  which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
+  (French/Spanish/Italian) — then caps to the same top-N-by-`voteCount` as
+  Popular via the shared `selectTopByVoteCount` (`src/lib/popularMode.js`).
+  All share Popular's palette (no bespoke palette per genre). Filtering is
+  by the movie's own attributes, not by which `sources[]` tag brought it
+  into the pool — a Comedy added via personal import still surfaces here if
+  popular enough. See **Building the list** below for how the pool is kept
+  stocked with genuinely popular movies per subset, not just whatever we'd
+  already collected.
+- `GET /api/movies?family=true&popular=true&genre=comedy` composes
+  server-side filters (family applied first, then one top-N strategy —
+  `genre` and `popular` are alternate strategies, only one ever applies);
+  the client then merges in its own local ranking state and generates
+  categories from that filtered set, so category generation (overlap rule,
+  attribute matching) only ever draws from the active subset. Switching
+  subsets always re-fetches, since every one is a different pool.
 - Pack labels never vary by subset — `src/lib/labelWording.js`'s
   `formatPackLabel` only shortens "Random Five" to "Random 5"; there is no
   more movie/film wording variance.
 - **Scoped completion/save:** the "every movie ranked" completion check (see
   **Saved rankings**) operates on the currently-visible subset, so ranking
-  all of Popular or Family triggers the save prompt just as finishing All
-  Movies does. Saving (`api.saveRanking(name, { family, popular })`)
+  all of any subset triggers the save prompt just as finishing All Movies
+  does. Saving (`api.saveRanking(name, { family, popular, genre })`)
   snapshots and resets only the active subset's local Elo state — progress
   on movies outside that subset is left untouched. This keeps a save from
   either being blocked by unrelated unranked movies, or fabricating

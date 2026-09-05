@@ -12,6 +12,7 @@ import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
+import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 
@@ -20,16 +21,17 @@ const QUEUE_SIZE = 8
 
 function initialSubset() {
   const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
-  return ['popular', 'family', 'all'].includes(stored) ? stored : 'popular'
+  const validIds = ['popular', 'family', 'all', ...GENRE_SUBSETS.map((g) => g.id)]
+  return validIds.includes(stored) ? stored : 'popular'
 }
 
-async function fetchPacks(family, popular) {
+async function fetchPacks(family, popular, genre) {
   const packs = []
   for (let i = 0; i < QUEUE_SIZE + 1; i++) {
     const queueLabels = packs.slice(1).map((p) => p.label)
     packs.push(
       await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family, popular }),
+        () => api.getCategory({ family, popular, genre }),
         queueLabels,
       ),
     )
@@ -64,6 +66,7 @@ function App() {
   const queue = packs?.slice(1) ?? []
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
+  const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) ? subset : null
 
   // Prompts to save once the currently-visible pool transitions into "every
   // movie ranked at least once" — not on every subsequent Rank click while
@@ -76,9 +79,11 @@ function App() {
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = isFamily
       ? updatedMovies.filter(isFamilySafe)
-      : isPopular
-        ? selectPopular(updatedMovies)
-        : updatedMovies
+      : activeGenre
+        ? selectGenreSubset(updatedMovies, activeGenre)
+        : isPopular
+          ? selectPopular(updatedMovies)
+          : updatedMovies
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
@@ -95,10 +100,10 @@ function App() {
   useEffect(() => {
     setSkippedMovies([])
     api
-      .getMovies({ family: isFamily, popular: isPopular })
+      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
       .then(noteMoviesUpdate)
       .catch((err) => setError(err.message))
-    fetchPacks(isFamily, isPopular).then(setPacks).catch((err) => setError(err.message))
+    fetchPacks(isFamily, isPopular, activeGenre).then(setPacks).catch((err) => setError(err.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subset])
 
@@ -115,7 +120,7 @@ function App() {
       // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -136,7 +141,7 @@ function App() {
       const loserId = category.movies.find((m) => m.id !== winnerId).id
       const updatedMovies = await api.rankPack([winnerId, loserId])
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -156,7 +161,7 @@ function App() {
         .filter((_, i) => i !== queueIndex)
         .map((p) => p.label)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
         remainingLabels,
       )
       setPacks((prev) => {
@@ -228,7 +233,7 @@ function App() {
       setBusy(true)
       try {
         const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily, popular: isPopular }),
+          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
           queue.slice(1).map((p) => p.label),
         )
         setPacks((prev) => [...prev.slice(1), freshPack])
@@ -244,7 +249,7 @@ function App() {
     // Let a failure here propagate to the modal, which shows it inline.
     // { family, popular } scopes the snapshot + reset to the active subset,
     // leaving the rest of the pool's progress untouched.
-    await api.saveRanking(name, { family: isFamily, popular: isPopular })
+    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre })
     setShowSaveModal(false)
     setShowResultsScreen(false)
     setSkippedMovies([])
@@ -252,8 +257,8 @@ function App() {
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular }),
-        fetchPacks(isFamily, isPopular),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre }),
+        fetchPacks(isFamily, isPopular, activeGenre),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -268,15 +273,15 @@ function App() {
 
   async function handleResetRanking() {
     // Let a failure here propagate to the modal, which shows it inline.
-    await api.resetRanking({ family: isFamily, popular: isPopular })
+    await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre })
     setShowResetModal(false)
     setSkippedMovies([])
     wasFullyRanked.current = false
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular }),
-        fetchPacks(isFamily, isPopular),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre }),
+        fetchPacks(isFamily, isPopular, activeGenre),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -290,7 +295,10 @@ function App() {
   }
 
   return (
-    <div data-theme={subset} className="app-shell flex h-screen flex-col overflow-hidden">
+    <div
+      data-theme={['family', 'all'].includes(subset) ? subset : 'popular'}
+      className="app-shell flex h-screen flex-col overflow-hidden"
+    >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
         <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
           <div className="flex items-center gap-3">

@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { selectPopular, POPULAR_POOL_SIZE } from './popularMode.js'
+import { selectPopular, selectTopByVoteCount, POPULAR_POOL_SIZE } from './popularMode.js'
 
 function movie(id, voteCount) {
   return { id, voteCount }
 }
+
+describe('selectTopByVoteCount', () => {
+  it('caps to an arbitrary n, reused by genreSubsets.js', () => {
+    const movies = [movie('a', 1), movie('b', 5), movie('c', 3)]
+    expect(selectTopByVoteCount(movies, 2).map((m) => m.id)).toEqual(['b', 'c'])
+  })
+})
 
 describe('selectPopular', () => {
   it('keeps only the top POPULAR_POOL_SIZE by voteCount', () => {
