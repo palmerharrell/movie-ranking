@@ -1,6 +1,6 @@
-import { applyThemeWording } from '../lib/labelWording.js'
+import { formatPackLabel } from '../lib/labelWording.js'
 
-function QueuedPackCard({ pack, theme, disabled, onSelect }) {
+function QueuedPackCard({ pack, disabled, onSelect }) {
   return (
     <button
       type="button"
@@ -21,13 +21,13 @@ function QueuedPackCard({ pack, theme, disabled, onSelect }) {
         ))}
       </div>
       <span className="queue-pack-label truncate text-sm font-medium">
-        {applyThemeWording(pack.label, theme)}
+        {formatPackLabel(pack.label)}
       </span>
     </button>
   )
 }
 
-export function PackQueue({ queue, theme, disabled, onSelect, className = 'mt-4 flex flex-col gap-2' }) {
+export function PackQueue({ queue, disabled, onSelect, className = 'mt-4 flex flex-col gap-2' }) {
   if (queue.length === 0) return null
 
   return (
@@ -38,7 +38,6 @@ export function PackQueue({ queue, theme, disabled, onSelect, className = 'mt-4 
           <QueuedPackCard
             key={pack.movies.map((m) => m.id).join('-')}
             pack={pack}
-            theme={theme}
             disabled={disabled}
             onSelect={() => onSelect(index)}
           />

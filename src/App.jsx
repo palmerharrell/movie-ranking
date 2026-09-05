@@ -4,30 +4,34 @@ import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
 import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
-import { ThemeToggle } from './components/ThemeToggle.jsx'
+import { SubsetPicker } from './components/SubsetPicker.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
+import { selectPopular } from './lib/popularMode.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 
-const THEME_STORAGE_KEY = 'movie-ranking-theme'
+const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
 const QUEUE_SIZE = 8
 
-function initialTheme() {
-  const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  return ['classic', 'neon', 'family'].includes(stored) ? stored : 'classic'
+function initialSubset() {
+  const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
+  return ['popular', 'family', 'all'].includes(stored) ? stored : 'popular'
 }
 
-async function fetchPacks(family) {
+async function fetchPacks(family, popular) {
   const packs = []
   for (let i = 0; i < QUEUE_SIZE + 1; i++) {
     const queueLabels = packs.slice(1).map((p) => p.label)
     packs.push(
-      await fetchCategoryAvoidingDuplicateLabel(() => api.getCategory({ family }), queueLabels),
+      await fetchCategoryAvoidingDuplicateLabel(
+        () => api.getCategory({ family, popular }),
+        queueLabels,
+      ),
     )
   }
   return packs
@@ -41,7 +45,7 @@ function isFullyRanked(movies) {
 }
 
 function App() {
-  const [theme, setTheme] = useState(initialTheme)
+  const [subset, setSubset] = useState(initialSubset)
   const [movies, setMovies] = useState(null)
   // packs[0] is the active pack; packs[1..] is the upcoming queue.
   const [packs, setPacks] = useState(null)
@@ -58,19 +62,23 @@ function App() {
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
-  const isFamily = theme === 'family'
+  const isFamily = subset === 'family'
+  const isPopular = subset === 'popular'
 
   // Prompts to save once the currently-visible pool transitions into "every
   // movie ranked at least once" — not on every subsequent Rank click while
-  // it stays there. In Family mode "the pool" means the family-safe subset
-  // (the save itself is scoped the same way — see handleSaveRanking), so
-  // this fires on family-subset completion too, independent of the rest of
-  // the pool.
+  // it stays there. In a filtered subset "the pool" means that subset (the
+  // save itself is scoped the same way — see handleSaveRanking), so this
+  // fires on subset completion too, independent of the rest of the pool.
   // api.rankPack() returns the full pool's state (unfiltered), so re-apply
-  // the family filter client-side to keep the displayed pool consistent
-  // with what's currently shown while family mode is active.
+  // the active subset's filter client-side to keep the displayed pool
+  // consistent with what's currently shown.
   function noteMoviesUpdate(updatedMovies) {
-    const visibleMovies = isFamily ? updatedMovies.filter(isFamilySafe) : updatedMovies
+    const visibleMovies = isFamily
+      ? updatedMovies.filter(isFamilySafe)
+      : isPopular
+        ? selectPopular(updatedMovies)
+        : updatedMovies
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
@@ -80,17 +88,19 @@ function App() {
   }
 
   useEffect(() => {
-    localStorage.setItem(THEME_STORAGE_KEY, theme)
-  }, [theme])
+    localStorage.setItem(SUBSET_STORAGE_KEY, subset)
+  }, [subset])
 
-  // Re-fetch when family-mode-ness flips (different pool), not on every
-  // Classic <-> Neon swap (same pool, cosmetic only).
+  // Every subset is a different pool, so always re-fetch on change.
   useEffect(() => {
     setSkippedMovies([])
-    api.getMovies({ family: isFamily }).then(noteMoviesUpdate).catch((err) => setError(err.message))
-    fetchPacks(isFamily).then(setPacks).catch((err) => setError(err.message))
+    api
+      .getMovies({ family: isFamily, popular: isPopular })
+      .then(noteMoviesUpdate)
+      .catch((err) => setError(err.message))
+    fetchPacks(isFamily, isPopular).then(setPacks).catch((err) => setError(err.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFamily])
+  }, [subset])
 
   function handleReorder(reorderedMovies) {
     setPacks((prev) => [{ ...prev[0], movies: reorderedMovies }, ...prev.slice(1)])
@@ -105,7 +115,7 @@ function App() {
       // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily }),
+        () => api.getCategory({ family: isFamily, popular: isPopular }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -126,7 +136,7 @@ function App() {
       const loserId = category.movies.find((m) => m.id !== winnerId).id
       const updatedMovies = await api.rankPack([winnerId, loserId])
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily }),
+        () => api.getCategory({ family: isFamily, popular: isPopular }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -146,7 +156,7 @@ function App() {
         .filter((_, i) => i !== queueIndex)
         .map((p) => p.label)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily }),
+        () => api.getCategory({ family: isFamily, popular: isPopular }),
         remainingLabels,
       )
       setPacks((prev) => {
@@ -218,7 +228,7 @@ function App() {
       setBusy(true)
       try {
         const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily }),
+          () => api.getCategory({ family: isFamily, popular: isPopular }),
           queue.slice(1).map((p) => p.label),
         )
         setPacks((prev) => [...prev.slice(1), freshPack])
@@ -232,10 +242,9 @@ function App() {
 
   async function handleSaveRanking(name) {
     // Let a failure here propagate to the modal, which shows it inline.
-    // { family: isFamily } scopes the snapshot + reset to the family-safe
-    // subset when saving from Family mode, leaving the rest of the pool's
-    // progress untouched.
-    await api.saveRanking(name, { family: isFamily })
+    // { family, popular } scopes the snapshot + reset to the active subset,
+    // leaving the rest of the pool's progress untouched.
+    await api.saveRanking(name, { family: isFamily, popular: isPopular })
     setShowSaveModal(false)
     setShowResultsScreen(false)
     setSkippedMovies([])
@@ -243,8 +252,8 @@ function App() {
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily }),
-        fetchPacks(isFamily),
+        api.getMovies({ family: isFamily, popular: isPopular }),
+        fetchPacks(isFamily, isPopular),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -259,15 +268,15 @@ function App() {
 
   async function handleResetRanking() {
     // Let a failure here propagate to the modal, which shows it inline.
-    await api.resetRanking({ family: isFamily })
+    await api.resetRanking({ family: isFamily, popular: isPopular })
     setShowResetModal(false)
     setSkippedMovies([])
     wasFullyRanked.current = false
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily }),
-        fetchPacks(isFamily),
+        api.getMovies({ family: isFamily, popular: isPopular }),
+        fetchPacks(isFamily, isPopular),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -281,19 +290,11 @@ function App() {
   }
 
   return (
-    <div data-theme={theme} className="app-shell flex h-screen flex-col overflow-hidden">
+    <div data-theme={subset} className="app-shell flex h-screen flex-col overflow-hidden">
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
         <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
           <div className="flex items-center gap-3">
-            <h1 className="app-title text-[22px] md:text-[30px]">
-              {theme === 'neon' ? (
-                <>
-                  Movie <span className="accent">Ranking</span>
-                </>
-              ) : (
-                'Movie Ranking'
-              )}
-            </h1>
+            <h1 className="app-title text-[22px] md:text-[30px]">Movie Ranking</h1>
           </div>
           <div className="flex items-center">
             <button
@@ -306,7 +307,7 @@ function App() {
             <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
               Load Ranking
             </button>
-            <ThemeToggle theme={theme} onChange={setTheme} />
+            <SubsetPicker subset={subset} onChange={setSubset} />
           </div>
         </header>
 
@@ -320,7 +321,7 @@ function App() {
 
           <aside
             className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${
-              theme === 'classic' ? 'md:border-r md:border-[var(--surface-border)]' : ''
+              subset === 'all' ? 'md:border-r md:border-[var(--surface-border)]' : ''
             } ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
@@ -347,7 +348,7 @@ function App() {
 
           <main
             className={`flex min-h-0 flex-col items-center overflow-y-auto px-4 md:px-8 ${
-              theme === 'neon' ? 'py-4' : 'py-[26px]'
+              subset === 'popular' ? 'py-4' : 'py-[26px]'
             }`}
           >
             <div className="flex w-full max-w-xl flex-col gap-4 xl:max-w-none xl:flex-row xl:items-start xl:justify-center">
@@ -358,7 +359,6 @@ function App() {
                       category={category}
                       onPick={handleHeadToHeadPick}
                       disabled={busy}
-                      theme={theme}
                     />
                   ) : (
                     <RightPanel
@@ -368,7 +368,6 @@ function App() {
                       skippedMovies={skippedMovies}
                       onUndoSkip={handleUndoSkip}
                       disabled={busy}
-                      theme={theme}
                     />
                   )
                 ) : error ? (
@@ -396,7 +395,6 @@ function App() {
                 <div className="w-full xl:w-72 xl:shrink-0">
                   <PackQueue
                     queue={queue}
-                    theme={theme}
                     disabled={busy}
                     onSelect={handleSelectQueued}
                     className="mt-4 flex flex-col gap-2 xl:mt-0"
@@ -419,14 +417,14 @@ function App() {
         <SaveRankingModal
           onSave={handleSaveRanking}
           onDismiss={() => setShowSaveModal(false)}
-          isFamily={isFamily}
+          subset={subset}
         />
       )}
       {showResetModal && (
         <ResetRankingModal
           onConfirm={handleResetRanking}
           onDismiss={() => setShowResetModal(false)}
-          isFamily={isFamily}
+          subset={subset}
         />
       )}
       {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}

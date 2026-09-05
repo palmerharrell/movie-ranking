@@ -50,7 +50,7 @@ Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
-certification for it — see **Family mode**. `studio` is the movie's
+certification for it — see **Movie subsets**. `studio` is the movie's
 production company if it matches a curated allowlist of notable studios
 (`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
 TMDb lists several production companies per movie, most too obscure to be a
@@ -71,11 +71,8 @@ below) — or `null` if TMDb has no vote data for it.
 `POPULAR_POOL_SIZE` (`src/lib/popularMode.js`) movies by `voteCount`
 descending (`null`/missing sorts last). When combined with `family`, family
 filtering is applied first so "popular" always means "top-N within whatever
-scope is already active." This exists purely as data/filtering plumbing
-today — **NOT YET IMPLEMENTED**: there is no UI entry point to turn Popular
-mode on, no default-subset behavior, and no theme changes; that's tracked in
-#146, which also removes the Classic/Neon themes and replaces the theme
-toggle with a subset picker defaulting to Popular.
+scope is already active." See **Movie subsets** below for how this is
+exposed in the UI.
 
 ## Ranking mechanic (Elo)
 - Each right-panel "Rank →" click takes the pack's tiles (5, or fewer if any
@@ -195,9 +192,9 @@ toggle with a subset picker defaulting to Popular.
 ## Saved rankings
 - **Completion:** once every non-skipped movie in the *currently visible*
   pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
-  save the ranking. Outside Family mode "visible pool" is the whole pool
-  minus skipped movies; inside Family mode it's the family-safe subset minus
-  skipped movies — see **Family mode** and **Skip ("Haven't Seen")** (#136).
+  save the ranking. "Visible pool" is whichever subset is active (Popular,
+  Family, or All Movies) minus skipped movies — see **Movie subsets** and
+  **Skip ("Haven't Seen")** (#136).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
   for the visible, non-skipped pool (gathered from its own local ranking
   state — see
@@ -280,38 +277,44 @@ toggle with a subset picker defaulting to Popular.
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, theme toggle, and a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**). No more list-picker
-  chips — there's only one pool.
+- **Banner:** app title, subset picker, and a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**).
 
-## Family mode
-- **Themes:** the theme toggle has three entries — Classic, Neon, and
-  Family — each a `data-theme` value with its own CSS custom-property
-  palette in `src/index.css`. Family uses a dark, warm "storybook night"
-  palette (deep indigo background, marigold/teal accents) — cheerful without
-  being glaring, and visually distinct from Classic/Neon.
-- **Filtering:** selecting Family also restricts the pool everywhere (left
-  panel, active pack, upcoming queue) to movies whose `mpaaRating` is `G`,
-  `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
-  with no confirmed US certification (`mpaaRating: null`) is excluded, not
-  assumed safe.
-- `GET /api/movies?family=true` filters the pool's static metadata
-  server-side; the client then merges in its own local ranking state and
-  generates categories from that filtered set, so category generation
-  (overlap rule, attribute matching) only ever draws from the family-safe
-  subset.
-- Switching Classic ⇄ Neon does not re-fetch (same pool, cosmetic only);
-  switching Family mode on/off does, since the pool itself differs.
+## Movie subsets (#104, #146)
+There are no more cosmetic-only "themes" — the banner's picker
+(`src/components/SubsetPicker.jsx`) chooses which **subset of the pool** to
+rank, and each subset carries its own visual identity (a `data-theme` value
+with its own CSS custom-property palette in `src/index.css`) purely as a
+side effect of which subset is active, not as an independent choice. Three
+entries, in picker order:
+- **Popular** (`subset: 'popular'`, the default) — the top
+  `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
+  above). Dark, moody palette.
+- **Family** (`subset: 'family'`) — movies whose `mpaaRating` is `G`, `PG`,
+  or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie with no
+  confirmed US certification (`mpaaRating: null`) is excluded, not assumed
+  safe. Warm "storybook night" palette (deep indigo background,
+  marigold/teal accents) — cheerful without being glaring.
+- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
+  parchment-toned palette.
+- `GET /api/movies?family=true&popular=true` composes both server-side
+  filters (family applied first — see **Popular subset**); the client then
+  merges in its own local ranking state and generates categories from that
+  filtered set, so category generation (overlap rule, attribute matching)
+  only ever draws from the active subset. Switching subsets always
+  re-fetches, since all three are different pools (there's no more
+  cosmetic-only swap the way Classic⇄Neon used to be).
+- Pack labels never vary by subset — `src/lib/labelWording.js`'s
+  `formatPackLabel` only shortens "Random Five" to "Random 5"; there is no
+  more movie/film wording variance.
 - **Scoped completion/save:** the "every movie ranked" completion check (see
-  **Saved rankings**) operates on the currently-visible pool, so ranking all
-  of the family-safe subset while in Family mode triggers the save prompt
-  just like finishing the whole pool does outside it. Saving from Family
-  mode (`api.saveRanking(name, { family: true })`) snapshots and resets only
-  the family-safe subset's local Elo state — progress on movies outside
-  Family mode (e.g. R-rated movies ranked in Classic/Neon) is left untouched. This
-  keeps a Family-mode save from either being blocked by unrelated unranked
-  movies, or fabricating "ranked" data for movies that were never actually
-  compared.
+  **Saved rankings**) operates on the currently-visible subset, so ranking
+  all of Popular or Family triggers the save prompt just as finishing All
+  Movies does. Saving (`api.saveRanking(name, { family, popular })`)
+  snapshots and resets only the active subset's local Elo state — progress
+  on movies outside that subset is left untouched. This keeps a save from
+  either being blocked by unrelated unranked movies, or fabricating
+  "ranked" data for movies that were never actually compared.
 
 ## Maintaining this spec
 - When a PR implements a feature marked **NOT YET IMPLEMENTED** above (or

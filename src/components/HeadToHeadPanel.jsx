@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
-import { applyThemeWording } from '../lib/labelWording.js'
+import { formatPackLabel } from '../lib/labelWording.js'
 
 // How long the winner-slides-to-center / loser-slides-off animation plays
 // before the loser is removed from the row (see handlePick below) — must
@@ -68,7 +68,7 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
 // pairwise Elo update (no drag-to-order, no "Rank ->" confirmation step,
 // and no "Haven't Seen" skip since both movies are, by construction, ones
 // the pool has already seen and ranked).
-export function HeadToHeadPanel({ category, onPick, disabled, theme }) {
+export function HeadToHeadPanel({ category, onPick, disabled }) {
   const [first, second] = category.movies
   // Identifies this specific pack (not just a movie — the same movie can
   // reappear in the next pack) so each card can be keyed to remount cleanly
@@ -116,7 +116,7 @@ export function HeadToHeadPanel({ category, onPick, disabled, theme }) {
           <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
           <p className="rank-caption text-[11px] text-right">Click the one you'd rank higher</p>
         </div>
-        <h2 className="pack-category-label mt-1">{applyThemeWording(category.label, theme)}</h2>
+        <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
       </div>
       <div className="flex items-stretch gap-3 overflow-hidden">
         {(phase !== 'holding' || first.id === pickedId) && (
