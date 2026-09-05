@@ -10,6 +10,7 @@ const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
 const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
 const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
 const GROWN_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'grown-data')
+const POPULAR_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'popular-data')
 
 function freshDb() {
   return createDb(':memory:')
@@ -37,6 +38,18 @@ test('getMovies({ family: true }) excludes non-family-safe and unrated movies', 
 test('getMovies() without family returns the full pool', () => {
   const movies = getMovies(FAMILY_FIXTURES_DIR)
   assert.equal(movies.length, 7)
+})
+
+test('getMovies({ popular: true }) sorts by voteCount descending, treating null as 0', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { popular: true })
+  assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5', '3', '4'])
+})
+
+test('getMovies({ family: true, popular: true }) applies family first, then top-N within that scope', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { family: true, popular: true })
+  // Movie 2 (voteCount 500) is R-rated, excluded by family before the
+  // popular sort ever sees it.
+  assert.deepEqual(movies.map((m) => m.id), ['1', '5', '3', '4'])
 })
 
 test('saveRanking persists a client-computed snapshot', () => {

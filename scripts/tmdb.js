@@ -65,5 +65,6 @@ export function toEnrichedFields(details) {
     collection: details.belongs_to_collection?.name || null,
     originalLanguage: details.original_language || null,
     keywords,
+    voteCount: details.vote_count ?? null,
   }
 }

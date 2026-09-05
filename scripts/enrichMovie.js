@@ -35,5 +35,6 @@ export async function enrichMovieByTitleYear(apiKey, title, year) {
     collection: fields.collection,
     originalLanguage: fields.originalLanguage,
     keywords: fields.keywords,
+    voteCount: fields.voteCount,
   }
 }
