@@ -15,7 +15,7 @@ import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 
 const THEME_STORAGE_KEY = 'movie-ranking-theme'
-const QUEUE_SIZE = 3
+const QUEUE_SIZE = 8
 
 function initialTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY)
