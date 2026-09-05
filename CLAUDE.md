@@ -37,40 +37,10 @@ of every movie in that pool, using an Elo-style rating system.
   best-of lists, genre/decade lists, etc.) are merged in. See **Building the
   list** below.
 
-## TMDb signup steps
-1. Create a free account at themoviedb.org.
-2. Go to Settings → API → Request an API key (choose "Developer", personal use is fine).
-3. Copy the "API Read Access Token" (v4 auth) or the API key (v3) — either works.
-4. Store it in a local `.env` file as `TMDB_API_KEY=...` — **never commit this file**.
-
-## Building the list
-There is one output file, `/data/movies.json`, built by merging multiple
-sources. Movies are deduped by TMDb ID — a title appearing in more than one
-source (e.g. on both the Letterboxd export and AFI Top 100) is a single entry
-with a `sources[]` field listing every source it came from.
-
-- **Personal Letterboxd source** (`scripts/enrich.js`):
-  1. Export Letterboxd data as a zip (Settings → Import & Export) — produces
-     `films.csv`, the full watched list.
-  2. Drop the extracted CSVs into `/data/letterboxd-export/`.
-  3. Run `scripts/enrich.js`: parses `films.csv` into unique movies (deduped —
-     a rewatch can produce multiple rows for the same title); calls TMDb
-     `/search/movie?query={title}&year={year}` for `tmdb_id`, then
-     `/movie/{id}?append_to_response=credits` for director, genres, top-billed
-     cast, and poster path; upserts each into `/data/movies.json` tagged with
-     `sources: ["personal"]`. An entry with no TMDb movie match (e.g. a TV
-     series) is skipped rather than written in as a bare placeholder.
-  4. Re-run any time the user re-exports fresh Letterboxd data.
-- **Published-list sources** (`scripts/enrich-sources.js`):
-  - Each source is a hand-maintained `title, year` JSON file under
-    `/data/sources/` (e.g. `afi-top-100.source.json`), added as needed — no
-    user-facing list management, just files in the repo.
-  - `scripts/enrich-sources.js` runs every `/data/sources/*.source.json`
-    through the same TMDb enrichment as `scripts/enrich.js` and upserts each
-    into `/data/movies.json`, tagging with that source's id (e.g.
-    `sources: ["afi-top-100"]`). A movie already present from another source
-    gets the new source id appended to its `sources[]` rather than being
-    duplicated.
+> **Setup & data pipeline:** TMDb API signup and the enrichment scripts that
+> build `/data/movies.json` are documented in the `tmdb-setup` and
+> `enrich-movie-data` skills (`.claude/skills/`) rather than here, since
+> they're one-time/occasional workflows, not everyday context.
 
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
@@ -343,31 +313,6 @@ toggle with a subset picker defaulting to Popular.
   movies, or fabricating "ranked" data for movies that were never actually
   compared.
 
-## Suggested project structure
-```
-/data/letterboxd-export/     <- user drops raw Letterboxd CSVs here
-/data/sources/*.source.json  <- hand-maintained title/year lists (AFI Top 100, etc.)
-/data/movies.json            <- the one merged, enriched pool
-/scripts/enrich.js           <- Letterboxd CSV parse + TMDb enrichment (personal source)
-/scripts/enrich-sources.js   <- title/year + TMDb enrichment (published-list sources)
-/server/                     <- DigitalOcean backend (Express/Fastify + SQLite)
-/server/index.js
-/server/db.js
-/src/components/LeftPanel.jsx
-/src/components/RightPanel.jsx
-/src/components/MovieTile.jsx
-/src/components/HeadToHeadPanel.jsx  <- 2-movie pick-a-winner pack UI
-/src/components/RankButton.jsx
-/src/components/PackQueue.jsx        <- upcoming-packs queue
-/src/components/SaveRankingModal.jsx <- name/save prompt on completion
-/src/components/LoadRankingView.jsx  <- read-only saved-snapshot viewer
-/src/lib/elo.js
-/src/lib/categoryGenerator.js
-/src/lib/localRankingStore.js <- browser-local in-progress ranking state (#115)
-/src/lib/clientId.js          <- durable per-browser id, tags saved-ranking ownership
-.env                          <- TMDB_API_KEY (gitignored)
-```
-
 ## Maintaining this spec
 - When a PR implements a feature marked **NOT YET IMPLEMENTED** above (or
   closes the GitHub issue tied to one of those sections), that same PR must
@@ -403,7 +348,9 @@ for visual verification), clean up before finishing:
 - Stop any `vite`/frontend dev server processes you started.
 - Leave the `server/` backend (`node index.js`, port 3001) running if it was
   already running before you started — it's a long-lived local process, not
-  something to stop per-task.
+  something to stop per-task. Exception: if the task changed any code under
+  `server/`, restart it (kill the running process, start a fresh `node
+  index.js`) before finishing, so the running instance reflects the change.
 - Close any browser tabs opened for testing.
 - Check `git branch -a` / `git worktree list` for stray branches or worktrees
   created during the task and remove ones no longer needed (especially after a
