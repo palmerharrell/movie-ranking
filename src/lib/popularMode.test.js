@@ -3,11 +3,15 @@ import {
   selectPopular,
   selectTopByVoteCount,
   selectTopByVoteCountWithEraQuota,
+  selectTopByVoteCountWithQuotas,
+  isCanonicalSourced,
+  CANONICAL_MIN_VOTE_COUNT,
+  CANONICAL_SOURCE_IDS,
   POPULAR_POOL_SIZE,
 } from './popularMode.js'
 
-function movie(id, voteCount, year) {
-  return { id, voteCount, year }
+function movie(id, voteCount, year, extra = {}) {
+  return { id, voteCount, year, ...extra }
 }
 
 describe('selectTopByVoteCount', () => {
@@ -108,5 +112,56 @@ describe('selectTopByVoteCountWithEraQuota', () => {
     ]
     const result = selectTopByVoteCountWithEraQuota(movies, 3, 1, 1980)
     expect(result.map((m) => m.voteCount)).toEqual([100, 90, 10])
+  })
+})
+
+describe('isCanonicalSourced', () => {
+  it('requires both a canonical source id and at least CANONICAL_MIN_VOTE_COUNT votes (#207)', () => {
+    const canonicalId = CANONICAL_SOURCE_IDS[0]
+    expect(isCanonicalSourced({ voteCount: CANONICAL_MIN_VOTE_COUNT, sources: [canonicalId] })).toBe(true)
+    expect(isCanonicalSourced({ voteCount: CANONICAL_MIN_VOTE_COUNT - 1, sources: [canonicalId] })).toBe(
+      false,
+    )
+    expect(isCanonicalSourced({ voteCount: 9999, sources: ['top-comedy'] })).toBe(false)
+    expect(isCanonicalSourced({ voteCount: 9999, sources: [] })).toBe(false)
+  })
+})
+
+describe('selectTopByVoteCountWithQuotas', () => {
+  it('returns the plain top-N unchanged when no floor applies', () => {
+    const movies = [movie('a', 3), movie('b', 2), movie('c', 1)]
+    expect(selectTopByVoteCountWithQuotas(movies, 2, []).map((m) => m.id)).toEqual(['a', 'b'])
+  })
+
+  it('fills multiple independent floors', () => {
+    const movies = [
+      movie('modern-1', 100, 2010),
+      movie('modern-2', 90, 2015),
+      movie('modern-3', 80, 2020),
+      movie('best-classic', 10, 1950),
+      movie('best-canonical', 5, 2015, { sources: ['ebert-great-movies'] }),
+    ]
+    const result = selectTopByVoteCountWithQuotas(movies, 3, [
+      { matches: (m) => m.year < 1980, quota: 1 },
+      { matches: (m) => (m.sources || []).includes('ebert-great-movies'), quota: 1 },
+    ])
+    expect(result.map((m) => m.id).sort()).toEqual(['best-canonical', 'best-classic', 'modern-1'])
+  })
+
+  it('never evicts a movie already satisfying an earlier floor to satisfy a later one (#207)', () => {
+    const movies = [
+      movie('modern', 100, 2010),
+      // Satisfies the era floor and is the *only* non-canonical filler once
+      // the canonical floor also needs a slot.
+      movie('classic-filler', 50, 1950),
+      movie('best-canonical', 1, 2015, { sources: ['ebert-great-movies'] }),
+    ]
+    const result = selectTopByVoteCountWithQuotas(movies, 2, [
+      { matches: (m) => m.year < 1980, quota: 1 },
+      { matches: (m) => (m.sources || []).includes('ebert-great-movies'), quota: 1 },
+    ])
+    // classic-filler satisfies the era floor and must survive; modern (the
+    // only unprotected entry) gets evicted for the canonical addition instead.
+    expect(result.map((m) => m.id).sort()).toEqual(['best-canonical', 'classic-filler'])
   })
 })
