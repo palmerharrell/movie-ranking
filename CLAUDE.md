@@ -348,9 +348,14 @@ language entries, and 1 country entry, grouped in the picker:
   keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
   which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
-  (French/Spanish/Italian) — then caps to the same top-N-by-`voteCount` as
-  Popular via the shared `selectTopByVoteCount` (`src/lib/popularMode.js`).
-  All share Popular's palette (no bespoke palette per genre). Filtering is
+  (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (100) via
+  the shared `selectTopByVoteCount` (`src/lib/popularMode.js`) — smaller than
+  Popular's `POPULAR_POOL_SIZE` (300), since niche genre/language/country
+  subsets don't have as much depth of genuinely popular titles as Popular/
+  Family/All Movies do; sharing Popular's cap left a long tail of obscure
+  matches that users ended up skipping en masse (#165, e.g. nearly a third
+  of the Sci-Fi subset). All share Popular's palette (no bespoke palette per
+  genre). Filtering is
   by the movie's own attributes, not by which `sources[]` tag brought it
   into the pool — a Comedy added via personal import still surfaces here if
   popular enough. See **Building the list** below for how the pool is kept
@@ -360,7 +365,8 @@ language entries, and 1 country entry, grouped in the picker:
   #151) — filters by `productionCountries` including `"GB"` (unlike the
   genre/language subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
-  caps to the same top-N-by-`voteCount` as Popular via `selectTopByVoteCount`.
+  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same
+  smaller-than-Popular cap as the genre/language subsets above (#165).
   Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
   in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
   subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
