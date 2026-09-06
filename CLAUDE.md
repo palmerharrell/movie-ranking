@@ -96,7 +96,12 @@ exposed in the UI.
   single movie in place, still skippable via its own tile button (which
   re-offers the same prompt) or bypassable by picking a different pack from
   the queue. The "Rank →" button is disabled while only one movie remains,
-  since a 1-movie pack can't be meaningfully ranked. Skip is persistent
+  since a 1-movie pack can't be meaningfully ranked. Skipping also filters
+  the skipped movie out of any already-generated queued packs that include
+  it (#155, `replaceDiscardedQueuePacks` in `App.jsx`) — otherwise a movie
+  just marked "haven't seen" could resurface if that pre-generated queue
+  pack were later selected. A queued pack that drops to <=1 movie this way
+  is discarded and replaced with a freshly generated one. Skip is persistent
   (#136), not just for the active pack: a skipped movie
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
