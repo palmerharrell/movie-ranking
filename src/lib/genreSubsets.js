@@ -14,25 +14,40 @@ function isMusical(movie) {
   return (movie.keywords || []).includes('musical') || MUSICAL_TMDB_ID_EXCEPTIONS.includes(movie.tmdbId)
 }
 
+// Each entry's `genres`/`language`/`keyword` fields double as the subset's
+// own defining attribute(s) — used both to build `matches` below and (via
+// `genreSubsetExclusions`) to tell categoryGenerator.js which attribute
+// value(s) would be tautological to build a category on while this subset
+// is already active (#160), e.g. no "Science Fiction Movies" category while
+// the Sci-Fi subset is selected. A subset with an explicit `matches`
+// override (Musicals) still declares its defining `keyword` for that
+// purpose even though matching itself is more involved than a plain
+// attribute-value check.
 export const GENRE_SUBSETS = [
-  { id: 'comedy', label: 'Comedies', matches: (m) => hasAllGenres(m, ['Comedy']) },
-  { id: 'action', label: 'Action', matches: (m) => hasAllGenres(m, ['Action']) },
-  { id: 'mystery', label: 'Mysteries', matches: (m) => hasAllGenres(m, ['Mystery']) },
-  { id: 'horror', label: 'Horror', matches: (m) => hasAllGenres(m, ['Horror']) },
-  { id: 'sci-fi', label: 'Sci-Fi', matches: (m) => hasAllGenres(m, ['Science Fiction']) },
-  { id: 'fantasy', label: 'Fantasy', matches: (m) => hasAllGenres(m, ['Fantasy']) },
-  { id: 'romance', label: 'Romance', matches: (m) => hasAllGenres(m, ['Romance']) },
-  { id: 'rom-com', label: 'Rom-Com', matches: (m) => hasAllGenres(m, ['Romance', 'Comedy']) },
-  { id: 'musicals', label: 'Musicals', matches: isMusical },
-  { id: 'drama', label: 'Dramas', matches: (m) => hasAllGenres(m, ['Drama']) },
-  { id: 'adventure', label: 'Adventure', matches: (m) => hasAllGenres(m, ['Adventure']) },
-  { id: 'animation', label: 'Animation', matches: (m) => hasAllGenres(m, ['Animation']) },
-  { id: 'thriller', label: 'Thrillers', matches: (m) => hasAllGenres(m, ['Thriller']) },
-  { id: 'crime', label: 'Crime', matches: (m) => hasAllGenres(m, ['Crime']) },
-  { id: 'french', label: 'French', matches: (m) => m.originalLanguage === 'fr' },
-  { id: 'spanish', label: 'Spanish', matches: (m) => m.originalLanguage === 'es' },
-  { id: 'italian', label: 'Italian', matches: (m) => m.originalLanguage === 'it' },
-]
+  { id: 'comedy', label: 'Comedies', genres: ['Comedy'] },
+  { id: 'action', label: 'Action', genres: ['Action'] },
+  { id: 'mystery', label: 'Mysteries', genres: ['Mystery'] },
+  { id: 'horror', label: 'Horror', genres: ['Horror'] },
+  { id: 'sci-fi', label: 'Sci-Fi', genres: ['Science Fiction'] },
+  { id: 'fantasy', label: 'Fantasy', genres: ['Fantasy'] },
+  { id: 'romance', label: 'Romance', genres: ['Romance'] },
+  { id: 'rom-com', label: 'Rom-Com', genres: ['Romance', 'Comedy'] },
+  { id: 'musicals', label: 'Musicals', matches: isMusical, keyword: 'musical' },
+  { id: 'drama', label: 'Dramas', genres: ['Drama'] },
+  { id: 'adventure', label: 'Adventure', genres: ['Adventure'] },
+  { id: 'animation', label: 'Animation', genres: ['Animation'] },
+  { id: 'thriller', label: 'Thrillers', genres: ['Thriller'] },
+  { id: 'crime', label: 'Crime', genres: ['Crime'] },
+  { id: 'french', label: 'French', language: 'fr' },
+  { id: 'spanish', label: 'Spanish', language: 'es' },
+  { id: 'italian', label: 'Italian', language: 'it' },
+].map((config) => ({
+  ...config,
+  matches:
+    config.matches ??
+    ((m) =>
+      config.genres ? hasAllGenres(m, config.genres) : m.originalLanguage === config.language),
+}))
 
 export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 
@@ -51,4 +66,21 @@ export function selectGenreSubset(movies, subsetId) {
 // ResetRankingModal to build generic copy without a bespoke entry per id.
 export function genreSubsetLabel(subsetId) {
   return GENRE_SUBSETS.find((s) => s.id === subsetId)?.label ?? subsetId
+}
+
+// The category-generator attribute type/value pair(s) that would be
+// tautological to build a category on while this subset is active (#160) —
+// every movie in the subset's pool already matches it by construction, so
+// e.g. a "Science Fiction Movies" category (or "80s Sci-Fi Movies" pairing)
+// conveys no information while the Sci-Fi subset is selected. Returns []
+// for unknown/non-genre subset ids (Popular/Family/All Movies have no
+// defining attribute to exclude).
+export function genreSubsetExclusions(subsetId) {
+  const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
+  if (!config) return []
+  const exclusions = []
+  if (config.genres) exclusions.push(...config.genres.map((genre) => ({ type: 'genre', value: genre })))
+  if (config.language) exclusions.push({ type: 'language', value: config.language })
+  if (config.keyword) exclusions.push({ type: 'keyword', value: config.keyword })
+  return exclusions
 }
