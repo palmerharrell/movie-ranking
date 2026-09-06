@@ -54,6 +54,7 @@ function App() {
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
@@ -61,6 +62,11 @@ function App() {
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
+  // Guards against rapid subset switching: only the most recent subset's
+  // fetch is allowed to apply its results or clear switchingSubset, so an
+  // older switch's fetch resolving after a newer one can't clobber the
+  // newer subset's data or hide its still-in-flight loading overlay.
+  const subsetFetchId = useRef(0)
   // Set inside handleSkipMovie's setPacks updater, acted on by the effect
   // below once the resulting pack state has actually committed — see the
   // comment on handleSkipMovie for why this can't just be a synchronous
@@ -107,15 +113,34 @@ function App() {
     localStorage.setItem(SUBSET_STORAGE_KEY, subset)
   }, [subset])
 
-  // Every subset is a different pool, so always re-fetch on change.
+  // Every subset is a different pool, so always re-fetch on change. Old
+  // `movies`/`packs` stay on screen (not reset to null) while this is in
+  // flight, so `switchingSubset` drives a loading overlay over the stale
+  // pack/queue rather than the "Loading…" text used for the initial load,
+  // which would otherwise flash the previous subset's content for a beat
+  // before this settles (#175).
   useEffect(() => {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
-    api
-      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
-      .then(noteMoviesUpdate)
-      .catch((err) => setError(err.message))
-    fetchPacks(isFamily, isPopular, activeGenre).then(setPacks).catch((err) => setError(err.message))
+    setSwitchingSubset(true)
+    const fetchId = ++subsetFetchId.current
+    const isStale = () => fetchId !== subsetFetchId.current
+    Promise.all([
+      api
+        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
+        .then((updated) => {
+          if (!isStale()) noteMoviesUpdate(updated)
+        }),
+      fetchPacks(isFamily, isPopular, activeGenre).then((freshPacks) => {
+        if (!isStale()) setPacks(freshPacks)
+      }),
+    ])
+      .catch((err) => {
+        if (!isStale()) setError(err.message)
+      })
+      .finally(() => {
+        if (!isStale()) setSwitchingSubset(false)
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subset])
 
@@ -526,7 +551,7 @@ function App() {
                     <HeadToHeadPanel
                       category={category}
                       onPick={handleHeadToHeadPick}
-                      disabled={busy}
+                      disabled={busy || switchingSubset}
                     />
                   ) : (
                     <RightPanel
@@ -538,7 +563,7 @@ function App() {
                       awaitingLastSkipConfirm={awaitingLastSkipConfirm}
                       onConfirmSkipLast={handleConfirmSkipLast}
                       onDeclineSkipLast={handleDeclineSkipLast}
-                      disabled={busy}
+                      disabled={busy || switchingSubset}
                     />
                   )
                 ) : error ? (
@@ -556,7 +581,7 @@ function App() {
                   <div className="mt-4">
                     <RankButton
                       onClick={handleRank}
-                      disabled={!category || busy || category.movies.length < 2}
+                      disabled={!category || busy || switchingSubset || category.movies.length < 2}
                     />
                   </div>
                 )}
@@ -569,7 +594,7 @@ function App() {
                 <div className="w-full xl:w-72 xl:shrink-0">
                   <PackQueue
                     queue={queue}
-                    disabled={busy}
+                    disabled={busy || switchingSubset}
                     onSelect={handleSelectQueued}
                     className="mt-4 flex flex-col gap-2 xl:mt-0"
                   />
