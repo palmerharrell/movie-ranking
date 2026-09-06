@@ -323,6 +323,16 @@ function App() {
   // not-yet-selected queue pack. A queued pack that drops to <=1 movie is
   // unusable, so it's handed to replaceDiscardedQueuePacks above.
   function handleSkipMovie(movieId) {
+    // The pack is already down to its one remaining movie and awaiting the
+    // "skip this one too?" decision (#156) — clicking that same movie's own
+    // tile button in this state re-offers the prompt rather than executing
+    // an unconfirmed skip (#195). Without this guard, filtering it out here
+    // would drop `remaining` to 0 and hit the discard-empty branch below,
+    // silently marking it skipped with no confirmation at all.
+    if (category.movies.length === 1 && category.movies[0].id === movieId) {
+      setAwaitingLastSkipConfirm(true)
+      return
+    }
     const skipIndex = category.movies.findIndex((m) => m.id === movieId)
     const skippedMovieRecord = category.movies[skipIndex]
     setPacks((prev) => {
@@ -446,12 +456,16 @@ function App() {
     discardActivePack()
   }
 
-  // "No"/dismiss on the prompt: leave the pack as-is, with just its one
-  // remaining movie still displayed (and still skippable via its own tile
-  // button, which re-triggers this same flow). The user can also move on
-  // without deciding by picking a different pack from the queue.
+  // "No" on the prompt (#195): leave the lone remaining movie unskipped, but
+  // don't strand the user on a pack that can't be ranked (Rank → is disabled
+  // below 2 movies) — discard it and advance to the next queued pack, the
+  // same way declining a full-empty pack already does. Mirrors "Yes"
+  // (handleConfirmSkipLast) in advancing the queue; the only difference is
+  // this one never calls api.markSkipped.
   function handleDeclineSkipLast() {
     setAwaitingLastSkipConfirm(false)
+    setSkippedMovies([])
+    discardActivePack()
   }
 
   async function handleSaveRanking(name) {
