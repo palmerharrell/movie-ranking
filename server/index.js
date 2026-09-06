@@ -37,13 +37,14 @@ app.get('/api/movies', (req, res) => {
   const family = req.query.family === 'true'
   const popular = req.query.popular === 'true'
   const genre = req.query.genre || null
-  const movies = getMovies(DATA_DIR, { family, popular, genre })
+  const pg13 = req.query.pg13 === 'true'
+  const movies = getMovies(DATA_DIR, { family, popular, genre, pg13 })
   if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
 })
 
 app.post('/api/rankings', (req, res) => {
-  const { name, entries, clientId, subset } = req.body
+  const { name, entries, clientId, subset, pg13 } = req.body
   if (typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'name is required' })
   }
@@ -51,14 +52,15 @@ app.post('/api/rankings', (req, res) => {
     return res.status(400).json({ error: 'entries must be a non-empty array' })
   }
   try {
-    res.json(saveRanking(db, name.trim(), entries, { ownerClientId: clientId, subset }))
+    res.json(saveRanking(db, name.trim(), entries, { ownerClientId: clientId, subset, pg13 }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
 })
 
 app.get('/api/rankings', (req, res) => {
-  res.json(listSavedRankings(db, { subset: req.query.subset || null }))
+  const pg13 = req.query.pg13 === undefined ? undefined : req.query.pg13 === 'true'
+  res.json(listSavedRankings(db, { subset: req.query.subset || null, pg13 }))
 })
 
 app.get('/api/rankings/:id', (req, res) => {
