@@ -75,8 +75,6 @@ export const GENRE_SUBSETS = [
 
 export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 
-export const COUNTRY_SUBSET_IDS = ['british']
-
 // Filters to movies matching the subset's own attributes (genre/keyword/
 // language) — not by which sources[] tag got a movie into the pool, so a
 // Comedy added via personal import still surfaces here if popular enough,
