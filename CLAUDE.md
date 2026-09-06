@@ -402,13 +402,17 @@ language entries, and 1 country entry, grouped in the picker:
   and `src/assets/film-reel-bg.png`.
 - **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
   genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
-  `isFamilyGenre`/`selectFamilySubset` (#152). This is a curation filter,
-  not an MPAA safety guarantee: a Family-genre movie can still carry any
-  `mpaaRating`, including `PG-13` or, in principle, something TMDb
-  miscategorizes — there is no rating floor layered underneath it. (This
+  `isFamilyGenre`/`selectFamilySubset` (#152). The genre tag alone isn't a
+  safety guarantee — a Family-genre movie can still carry any `mpaaRating`,
+  including `PG-13` or, in principle, something TMDb miscategorizes — so
+  Family always additionally applies the PG-13-and-under filter (see **PG-13
+  and under toggle** below) on top of the genre curation, regardless of the
+  toggle's own on/off state (#200). (This
   replaced an earlier `mpaaRating`-based G/PG/PG-13 filter, `isFamilySafe`,
   which offered that safety guarantee but not genre-based curation; #152
-  deliberately traded one for the other.) Caps to the same
+  deliberately traded one for the other, and #200 brought the rating floor
+  back as an unconditional addition to the genre curation rather than a
+  replacement for it.) Caps to the same
   top-N-by-`voteCount` as Popular and the other genre/language subsets, via
   `selectFamilySubset`. Shares Popular's dark, moody palette, same as every
   genre/language/country subset below — it previously had its own bespoke
@@ -538,11 +542,21 @@ language entries, and 1 country entry, grouped in the picker:
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
 
-## PG-13 and under toggle (#193)
+## PG-13 and under toggle (#193, #200)
 A global checkbox in the banner, next to the subset picker (`pg13` state in
 `App.jsx`, persisted in its own `localStorage` key — unlike the subset
 picker's own key, it survives subset switches rather than being tied to
-one) — labeled "PG-13 & Under." When on, it restricts whichever subset is
+one) — labeled "PG-13 & Under." Family always applies this filter
+regardless of the checkbox's own state (#200, see **Movie subsets** above) —
+while Family is active, the checkbox itself shows checked and disabled (with
+a tooltip explaining why) rather than actually flipping the underlying
+`pg13` preference, so switching to a different subset immediately reveals
+whatever the user had it set to beforehand. `App.jsx`'s `effectivePg13`
+(`isFamily || pg13`) is what every filter/fetch/save/load call and the
+checkbox's own `checked` prop actually use; the raw `pg13` state is what's
+read/written to `localStorage` and passed to `setPg13` by the checkbox's
+`onChange`, so it never gets silently overwritten by Family forcing it on.
+When on, it restricts whichever subset is
 active to movies with `mpaaRating` of `G`, `PG`, or `PG-13`
 (`src/lib/pg13Mode.js`'s `isPg13OrUnder`/`selectPg13OrUnder`), excluding `R`
 and `NC-17` outright. A movie with a `null` `mpaaRating` (no US
