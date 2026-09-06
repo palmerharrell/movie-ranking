@@ -340,31 +340,24 @@ function App() {
     setAwaitingLastSkipConfirm(false)
   }
 
-  // Un-skips a movie from the Skipped view (#137) — distinct from
-  // handleUndoSkip above, which only reverses a skip while the pack it
-  // happened in is still active. This one works on any persistently-skipped
-  // movie regardless of which pack (if any) is currently active, putting it
-  // back in the pool for future pack generation and the ranked-progress
-  // denominator (mergeWithLocalState/isFullyRanked both key off `skipped`).
-  function handleUnskipFromView(movieId) {
-    api.unmarkSkipped(movieId)
-    setMovies((prev) => {
-      const updated = prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m))
-      wasFullyRanked.current = isFullyRanked(updated)
-      return updated
-    })
-  }
-
-  // "Clear All" on the Skipped view: un-skips every currently-skipped movie
-  // in the visible pool at once.
-  function handleClearAllSkipped() {
-    const skippedIds = movies.filter((m) => m.skipped).map((m) => m.id)
-    for (const id of skippedIds) api.unmarkSkipped(id)
-    setMovies((prev) => {
-      const updated = prev.map((m) => (skippedIds.includes(m.id) ? { ...m, skipped: false } : m))
-      wasFullyRanked.current = isFullyRanked(updated)
-      return updated
-    })
+  // Un-skipping/clearing happens inside the Skipped view (#137) against the
+  // *unfiltered* pool (skip state isn't scoped to a subset), so this just
+  // re-fetches the active subset's movies afterward and routes the result
+  // through noteMoviesUpdate — the same completion-detection path a normal
+  // Rank click uses — rather than patching `movies`/`wasFullyRanked`
+  // ad hoc, which previously could complete the pool without ever showing
+  // the completion modal (and then permanently suppress it, since the ref
+  // was already flipped to `true` with no modal shown). Also closes the
+  // Skipped view itself if that completes the pool, since the completion
+  // modal renders on top of it.
+  function handleSkippedViewChange() {
+    api
+      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
+      .then((updated) => {
+        noteMoviesUpdate(updated)
+        if (isFullyRanked(updated)) setShowSkippedView(false)
+      })
+      .catch((err) => setError(err.message))
   }
 
   // "Yes" on the inline "skip this one too?" prompt (#156): skip the last
@@ -593,13 +586,8 @@ function App() {
         />
       )}
       {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}
-      {showSkippedView && movies && (
-        <SkippedView
-          movies={movies}
-          onUnskip={handleUnskipFromView}
-          onClearAll={handleClearAllSkipped}
-          onClose={() => setShowSkippedView(false)}
-        />
+      {showSkippedView && (
+        <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
       )}
     </div>
   )
