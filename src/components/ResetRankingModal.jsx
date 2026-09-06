@@ -3,8 +3,8 @@ import { genreSubsetLabel } from '../lib/genreSubsets.js'
 
 const FIXED_COPY = {
   family: {
-    title: 'Reset the family-friendly ranking?',
-    body: 'This clears all progress on the family-friendly movies without saving it — the rest of your pool is untouched. This cannot be undone.',
+    title: 'Reset the Family ranking?',
+    body: 'This clears all progress on the Family movies without saving it — the rest of your pool is untouched. This cannot be undone.',
   },
   all: {
     title: 'Reset the ranking?',

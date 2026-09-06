@@ -1,5 +1,6 @@
 import { generateCategory } from './categoryGenerator.js'
 import { genreSubsetExclusions } from './genreSubsets.js'
+import { familySubsetExclusions } from './familyMode.js'
 import {
   mergeWithLocalState,
   applyRankToLocalState,
@@ -49,9 +50,11 @@ export async function getMovies({ family, popular, genre } = {}) {
 
 // Skipped ("haven't seen") movies are excluded from the eligible pool
 // entirely (#136), not just from the pack they were skipped in. When `genre`
-// names an active genre/language subset, its own defining attribute(s) are
-// excluded from category generation (#160) — every movie in this pool
-// already matches it, so a category built on it would be tautological.
+// names an active genre/language subset, or `family` is active, its own
+// defining attribute(s) are excluded from category generation (#160) —
+// every movie in this pool already matches it, so a category built on it
+// would be tautological (e.g. no "Family Movies" category while the Family
+// subset, itself Family-genre-filtered per #152, is active).
 export async function getCategory({ family, popular, genre } = {}) {
   const movies = await getMovies({ family, popular, genre })
   const eligible = movies.filter((m) => !m.skipped)
@@ -59,7 +62,10 @@ export async function getCategory({ family, popular, genre } = {}) {
   return generateCategory(eligible, {
     isRanked: (m) => m.timesRanked > 0,
     totalRankedCount: rankedCount,
-    excludedAttributes: genre ? genreSubsetExclusions(genre) : [],
+    excludedAttributes: [
+      ...(family ? familySubsetExclusions() : []),
+      ...(genre ? genreSubsetExclusions(genre) : []),
+    ],
   })
 }
 
@@ -85,7 +91,7 @@ export function unmarkAllSkipped(movieIds) {
   unmarkAllSkippedLocal(movieIds)
 }
 
-// Unfiltered — a pack built in Family mode still only contains family-safe
+// Unfiltered — a pack built in Family mode still only contains Family-genre
 // movies, but the returned pool reflects every movie's state (mirrors the
 // pre-#115 server response, which was always unfiltered).
 export async function rankPack(movieIds) {

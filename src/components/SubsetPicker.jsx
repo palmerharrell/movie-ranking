@@ -2,7 +2,7 @@ import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS } from '../lib/genreSubsets.js'
 
 const GENERAL_SUBSETS = [
   { id: 'popular', label: 'Popular' },
-  { id: 'family', label: 'Family (PG-13)' },
+  { id: 'family', label: 'Family' },
   { id: 'all', label: 'All Movies' },
 ]
 

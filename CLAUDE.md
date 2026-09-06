@@ -50,7 +50,9 @@ Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
-certification for it — see **Movie subsets**. `studio` is the movie's
+certification for it. Not currently used to drive any subset filter — the
+Family subset (see **Movie subsets**) is genre-based, not rating-based
+(#152) — kept as general metadata for potential future use. `studio` is the movie's
 production company if it matches a curated allowlist of notable studios
 (`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
 TMDb lists several production companies per movie, most too obscure to be a
@@ -224,7 +226,7 @@ exposed in the UI.
   resets that scope's local ranking state back to defaults (`eloRating =
   1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
   full-pool save resets the whole pool; a Family-mode save resets only the
-  family-safe subset, leaving progress on the rest of the pool untouched.
+  Family subset, leaving progress on the rest of the pool untouched.
   This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
   "2027 Redo") without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
@@ -265,15 +267,15 @@ exposed in the UI.
     - `saved_rankings(id, name, created_at, data, owner_client_id)` —
       completed snapshots; `data` is the JSON-serialized
       `{movieId, eloRating, timesRanked}[]` at save time — only the movies
-      actually in scope for that save (the whole pool, or just the
-      family-safe subset for a Family-mode save). `owner_client_id` is the
+      actually in scope for that save (the whole pool, or just the Family
+      subset for a Family-mode save). `owner_client_id` is the
       creating browser's client id — reserved for a future edit/re-rank
       feature restricted to the ranking's creator (#115); not yet enforced by
       any endpoint.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
-      `?family=true` restricts to the family-safe subset (see **Family
-      mode**). The client merges this with its own local ranking state.
+      `?family=true` restricts to the Family subset (see **Movie subsets**).
+      The client merges this with its own local ranking state.
     - `POST /api/rankings` — body: `{name, family, entries, clientId}`, where
       `entries` is the `{movieId, eloRating, timesRanked}[]` the browser
       gathered from its own local ranking state; the server just persists it
@@ -315,17 +317,30 @@ entries, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody palette.
-- **Family (PG-13)** (`subset: 'family'`) — movies whose `mpaaRating` is `G`,
-  `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
-  with no confirmed US certification (`mpaaRating: null`) is excluded, not
-  assumed safe. Warm "storybook night" palette (deep indigo background,
-  marigold/teal accents) — cheerful without being glaring.
+- **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
+  genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
+  `isFamilyGenre`/`selectFamilySubset` (#152). This is a curation filter,
+  not an MPAA safety guarantee: a Family-genre movie can still carry any
+  `mpaaRating`, including `PG-13` or, in principle, something TMDb
+  miscategorizes — there is no rating floor layered underneath it. (This
+  replaced an earlier `mpaaRating`-based G/PG/PG-13 filter, `isFamilySafe`,
+  which offered that safety guarantee but not genre-based curation; #152
+  deliberately traded one for the other.) Caps to the same
+  top-N-by-`voteCount` as Popular and the other genre/language subsets, via
+  `selectFamilySubset`. Warm "storybook night" palette (deep indigo
+  background, marigold/teal accents) — cheerful without being glaring.
 - **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
   parchment-toned palette.
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
   Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
-  Italian. Each filters the pool by the movie's own genre(s) (`genres[]`,
+  Italian. TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
+  — it's the defining attribute of the general **Family** subset above
+  instead, so a second "Family" entry in the picker's Genres group would be
+  redundant (this was previously framed as avoiding a naming collision with
+  the old MPAA-based Family subset, #150; now that Family means this genre,
+  it's the same subset, not a collision to avoid). Each filters the pool by
+  the movie's own genre(s) (`genres[]`,
   matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`),
   keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
