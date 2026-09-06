@@ -29,10 +29,15 @@ test('getMovies returns null when movies.json does not exist', () => {
   assert.equal(getMovies(EMPTY_FIXTURES_DIR), null)
 })
 
-test('getMovies({ family: true }) excludes non-family-safe and unrated movies', () => {
+test('getMovies({ family: true }) restricts to movies with the TMDb Family genre (#152)', () => {
   const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true })
-  assert.equal(movies.length, 5)
-  assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+  assert.equal(movies.length, 4)
+  assert.ok(movies.every((m) => m.genres.includes('Family')))
+})
+
+test('getMovies({ family: true }) has no MPAA safety floor — an R-rated Family-genre movie still qualifies (#152)', () => {
+  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true })
+  assert.ok(movies.some((m) => m.id === '2' && m.mpaaRating === 'R'))
 })
 
 test('getMovies() without family returns the full pool', () => {
@@ -47,9 +52,15 @@ test('getMovies({ popular: true }) sorts by voteCount descending, treating null 
 
 test('getMovies({ family: true, popular: true }) applies family first, then top-N within that scope', () => {
   const movies = getMovies(POPULAR_FIXTURES_DIR, { family: true, popular: true })
-  // Movie 2 (voteCount 500) is R-rated, excluded by family before the
-  // popular sort ever sees it.
-  assert.deepEqual(movies.map((m) => m.id), ['1', '5', '3', '4'])
+  // Movie 5 has no Family genre, excluded by family before the popular sort
+  // ever sees it — despite its G rating, which would have qualified it
+  // under the old MPAA-based filter.
+  assert.deepEqual(movies.map((m) => m.id), ['2', '1', '4'])
+})
+
+test('getMovies({ family: true }) alone also caps to the top-N by voteCount, same as the other genre subsets (#150)', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { family: true })
+  assert.deepEqual(movies.map((m) => m.id), ['2', '1', '4'])
 })
 
 test('getMovies({ genre: "comedy" }) filters to that genre, sorted by voteCount descending (#150)', () => {
