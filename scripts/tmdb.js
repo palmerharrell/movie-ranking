@@ -73,5 +73,6 @@ export function toEnrichedFields(details) {
     originalLanguage: details.original_language || null,
     keywords,
     voteCount: details.vote_count ?? null,
+    productionCountries: (details.production_countries || []).map((c) => c.iso_3166_1),
   }
 }

@@ -45,7 +45,7 @@ of every movie in that pool, using an Elo-style rating system.
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
 mpaaRating, studio, collection, originalLanguage, keywords[], voteCount,
-sources[]`.
+productionCountries[], sources[]`.
 Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
@@ -63,7 +63,10 @@ keyword tags that match a curated allowlist (`KEYWORD_LABELS` in
 mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 `voteCount` is TMDb's `vote_count` from `/movie/{id}` — a stable "how
 mainstream/well-known is this" proxy, used to build the Popular subset (see
-below) — or `null` if TMDb has no vote data for it.
+below) — or `null` if TMDb has no vote data for it. `productionCountries[]`
+is TMDb's `production_countries` from `/movie/{id}`, as ISO 3166-1 country
+codes (e.g. `["US", "GB"]`) — used to build the British subset (see **Movie
+subsets**); can be empty if TMDb has no production-country data for it.
 
 ## Popular subset (#104)
 `GET /api/movies` also accepts `?popular=true` (composable with
@@ -296,14 +299,14 @@ exposed in the UI.
 - **Banner:** app title, subset picker, and a "Load Ranking" entry point for
   browsing saved snapshots (see **Saved rankings**).
 
-## Movie subsets (#104, #146, #150)
+## Movie subsets (#104, #146, #150, #151)
 There are no more cosmetic-only "themes" — the banner's picker
 (`src/components/SubsetPicker.jsx`, a grouped `<select>`) chooses which
 **subset of the pool** to rank, and each subset carries its own visual
 identity (a `data-theme` value with its own CSS custom-property palette in
 `src/index.css`) purely as a side effect of which subset is active, not as
 an independent choice. Three general entries plus 14 genre/language
-entries, grouped in the picker:
+entries plus 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody palette.
@@ -330,6 +333,20 @@ entries, grouped in the picker:
   popular enough. See **Building the list** below for how the pool is kept
   stocked with genuinely popular movies per subset, not just whatever we'd
   already collected.
+- **British** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`, `id: 'british'`,
+  #151) — filters by `productionCountries` including `"GB"` (unlike the
+  genre/language subsets above, "British" isn't derivable from `genres[]`/
+  `originalLanguage`, so it gets its own field — see **Data model**), then
+  caps to the same top-N-by-`voteCount` as Popular via `selectTopByVoteCount`.
+  Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
+  in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
+  subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
+  (`scripts/discoverTopMovies.js`'s `top-british` target, confirmed live
+  against TMDb during planning) merged in via `scripts/enrich-sources.js`,
+  same discover-fetch pattern as the genre/language subsets. Existing pool
+  entries enriched before `productionCountries` existed are backfilled via
+  `scripts/refreshEnrichedFields.js` (same one-off backfill script used for
+  `voteCount` in #104 and the `musical` keyword in #150).
 - `GET /api/movies?family=true&popular=true&genre=comedy` composes
   server-side filters (family applied first, then one top-N strategy —
   `genre` and `popular` are alternate strategies, only one ever applies);

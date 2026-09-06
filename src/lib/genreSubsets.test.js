@@ -53,6 +53,16 @@ describe('selectGenreSubset', () => {
     expect(selectGenreSubset(movies, 'french').map((m) => m.id)).toEqual(['fr'])
   })
 
+  it('matches by productionCountries including GB for the british subset', () => {
+    const movies = [
+      movie({ id: 'gb', productionCountries: ['GB'] }),
+      movie({ id: 'gb-and-us', productionCountries: ['US', 'GB'] }),
+      movie({ id: 'us-only', productionCountries: ['US'] }),
+      movie({ id: 'no-countries' }),
+    ]
+    expect(selectGenreSubset(movies, 'british').map((m) => m.id)).toEqual(['gb', 'gb-and-us'])
+  })
+
   it('caps to the shared top-N-by-voteCount, sorted descending', () => {
     const movies = [
       movie({ id: 'low', genres: ['Horror'], voteCount: 1 }),
@@ -106,5 +116,9 @@ describe('genreSubsetExclusions', () => {
 
   it('returns an empty array for an unknown subset id', () => {
     expect(genreSubsetExclusions('not-a-real-subset')).toEqual([])
+  })
+
+  it('returns an empty array for british (no genre/language/keyword attribute to exclude)', () => {
+    expect(genreSubsetExclusions('british')).toEqual([])
   })
 })
