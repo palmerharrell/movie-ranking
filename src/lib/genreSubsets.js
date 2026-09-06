@@ -1,4 +1,5 @@
 import { selectTopByVoteCount } from './popularMode.js'
+import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
 
 // Tune later — not a hard requirement from #165, just a starting cutoff.
 // Smaller than POPULAR_POOL_SIZE: niche genre/language/country subsets don't
@@ -58,6 +59,12 @@ export const GENRE_SUBSETS = [
   { id: 'spanish', label: 'Spanish', language: 'es' },
   { id: 'italian', label: 'Italian', language: 'it' },
   { id: 'british', label: 'British', matches: isBritish, country: 'GB' },
+  // The only subset that includes Marvel/DC movies (#181) — every other
+  // subset below excludes them via selectGenreSubset/selectPopular (#180).
+  // Broader than isMarvelOrDc: TMDb's `superhero` keyword folds in other
+  // comic adaptations (Hellboy, Kick-Ass, etc.) too, per #181's "other
+  // comic book movies are allowed here too."
+  { id: 'comicbook', label: 'Comic Book', matches: isComicBook, keyword: 'superhero' },
 ].map((config) => ({
   ...config,
   matches:
@@ -75,11 +82,15 @@ export const COUNTRY_SUBSET_IDS = ['british']
 // Comedy added via personal import still surfaces here if popular enough,
 // not only ones fetched via the top-comedy discover source (#150). Then
 // caps to GENRE_SUBSET_POOL_SIZE — smaller than Popular's cap since these
-// niche subsets run shallower on genuinely popular titles (#165).
+// niche subsets run shallower on genuinely popular titles (#165). Every
+// subset except Comic Book itself also excludes Marvel/DC movies (#180) —
+// Comic Book is the one place they're still rankable (#181).
 export function selectGenreSubset(movies, subsetId) {
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return movies
-  return selectTopByVoteCount(movies.filter(config.matches), GENRE_SUBSET_POOL_SIZE)
+  const matched = movies.filter(config.matches)
+  const scoped = subsetId === 'comicbook' ? matched : matched.filter((m) => !isMarvelOrDc(m))
+  return selectTopByVoteCount(scoped, GENRE_SUBSET_POOL_SIZE)
 }
 
 // Display label for any genre/language subset id — used by SaveRankingModal/

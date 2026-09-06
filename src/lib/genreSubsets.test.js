@@ -78,6 +78,26 @@ describe('selectGenreSubset', () => {
     expect(selectGenreSubset(movies, 'not-a-real-subset')).toBe(movies)
   })
 
+  it('excludes Marvel/DC movies from a non-comicbook subset even if they match its attribute (#180)', () => {
+    const movies = [
+      movie({ id: 'dc-action', genres: ['Action'], studio: 'Warner Bros. Pictures', collection: 'Batman Collection' }),
+      movie({ id: 'plain-action', genres: ['Action'] }),
+    ]
+    expect(selectGenreSubset(movies, 'action').map((m) => m.id)).toEqual(['plain-action'])
+  })
+
+  it('comicbook matches Marvel/DC movies and other superhero-keyword movies, but not plain genre matches (#181)', () => {
+    const movies = [
+      movie({ id: 'marvel', studio: 'Marvel Studios' }),
+      movie({ id: 'other-superhero', keywords: ['superhero'] }),
+      movie({ id: 'plain-action', genres: ['Action'] }),
+    ]
+    expect(selectGenreSubset(movies, 'comicbook').map((m) => m.id).sort()).toEqual([
+      'marvel',
+      'other-superhero',
+    ])
+  })
+
   it('caps to GENRE_SUBSET_POOL_SIZE, which is smaller than Popular\'s POPULAR_POOL_SIZE (#165)', () => {
     expect(GENRE_SUBSET_POOL_SIZE).toBeLessThan(POPULAR_POOL_SIZE)
     const movies = Array.from({ length: GENRE_SUBSET_POOL_SIZE + 50 }, (_, i) =>
