@@ -13,9 +13,15 @@ describe('isPg13OrUnder', () => {
     expect(isPg13OrUnder({ mpaaRating: 'NC-17' })).toBe(false)
   })
 
-  it('rejects a movie with no US certification (#193)', () => {
-    expect(isPg13OrUnder({ mpaaRating: null })).toBe(false)
+  it('rejects a post-1968 movie with no US certification (#193)', () => {
+    expect(isPg13OrUnder({ mpaaRating: null, year: 1968 })).toBe(false)
+    expect(isPg13OrUnder({ mpaaRating: null, year: 2020 })).toBe(false)
     expect(isPg13OrUnder({})).toBe(false)
+  })
+
+  it('accepts a pre-1968 movie with no US certification, since the ratings system did not exist yet (#193)', () => {
+    expect(isPg13OrUnder({ mpaaRating: null, year: 1967 })).toBe(true)
+    expect(isPg13OrUnder({ mpaaRating: null, year: 1953 })).toBe(true)
   })
 })
 

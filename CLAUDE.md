@@ -483,7 +483,18 @@ active to movies with `mpaaRating` of `G`, `PG`, or `PG-13`
 (`src/lib/pg13Mode.js`'s `isPg13OrUnder`/`selectPg13OrUnder`), excluding `R`
 and `NC-17` outright. A movie with a `null` `mpaaRating` (no US
 certification on file — see **Data model**) is also excluded while the
-toggle is on, since there's no way to verify it actually qualifies. Unlike
+toggle is on, since there's no way to verify it actually qualifies — with
+one exception: a movie released before November 1, 1968 (when the MPAA
+ratings system launched) predates the concept of a US certification
+entirely, so a `null` rating on one of those isn't a signal about its
+content (mainstream releases from that era were essentially
+G/PG-equivalent under the Hays Code) — it's just an artifact of the rating
+system not existing yet. Those pre-1968 `null`-rating movies are included
+rather than excluded (`MPAA_RATINGS_START_YEAR` in `pg13Mode.js`); a
+`null`-rating movie from 1968 onward is still excluded, since a missing
+certification is more likely meaningful once the system exists (an unrated
+cut, or a foreign/indie release TMDb has no US certification data for).
+Unlike
 Popular/Family/genre/language/country, this isn't a subset of its own — it's
 an additional filter layered on top of whichever subset is active, the same
 composable shape as the Popular/genre top-N strategies but applied as a
