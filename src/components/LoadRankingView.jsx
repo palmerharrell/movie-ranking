@@ -4,17 +4,18 @@ import { subsetLabel } from '../lib/genreSubsets.js'
 import { ResultsScreen } from './ResultsScreen.jsx'
 
 // Saved rankings are scoped to the subset they were saved from (#186
-// follow-up), so this only ever lists — and lets you load — snapshots that
-// match the currently active subset.
-export function LoadRankingView({ subset, onClose }) {
+// follow-up) and to whether the PG-13-and-under toggle (#193) was active, so
+// this only ever lists — and lets you load — snapshots that match the
+// currently active subset+toggle combination.
+export function LoadRankingView({ subset, pg13, onClose }) {
   const [rankings, setRankings] = useState(null)
   const [selected, setSelected] = useState(null)
   const [error, setError] = useState(null)
-  const label = subsetLabel(subset)
+  const label = pg13 ? `${subsetLabel(subset)} (PG-13 & Under)` : subsetLabel(subset)
 
   useEffect(() => {
-    api.getSavedRankings(subset).then(setRankings).catch((err) => setError(err.message))
-  }, [subset])
+    api.getSavedRankings(subset, pg13).then(setRankings).catch((err) => setError(err.message))
+  }, [subset, pg13])
 
   function handleSelect(id) {
     setError(null)

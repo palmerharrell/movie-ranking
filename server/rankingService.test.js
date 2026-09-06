@@ -73,6 +73,28 @@ test('getMovies({ genre }) takes precedence over popular when both are set', () 
   assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5'])
 })
 
+test('getMovies({ pg13: true }) restricts to G/PG/PG-13, excluding R and null ratings (#193)', () => {
+  const movies = getMovies(FAMILY_FIXTURES_DIR, { pg13: true })
+  assert.deepEqual(movies.map((m) => m.id), ['1', '3', '4', '5'])
+})
+
+test('getMovies({ family: true, pg13: true }) applies family first, then pg13, within that scope (#193)', () => {
+  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true, pg13: true })
+  // Movie 2 is Family-genre but R-rated — excluded by pg13 despite passing
+  // the family filter.
+  assert.ok(!movies.some((m) => m.id === '2'))
+  assert.ok(movies.every((m) => m.genres.includes('Family')))
+  assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
+test('getMovies({ pg13: true, popular: true }) composes with a top-N strategy (#193)', () => {
+  const movies = getMovies(POPULAR_FIXTURES_DIR, { pg13: true, popular: true })
+  // Movie 2 has the highest voteCount but is R-rated, so pg13 excludes it
+  // before the popular top-N sort ever sees it.
+  assert.ok(!movies.some((m) => m.id === '2'))
+  assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
 test('saveRanking persists a client-computed snapshot', () => {
   const db = freshDb()
   const { id, name } = saveRanking(db, 'My First Ranking', fullPoolEntries())
@@ -136,6 +158,31 @@ test('listSavedRankings({ subset }) excludes snapshots saved before subset track
 
   const list = listSavedRankings(db, { subset: 'all' })
   assert.equal(list.length, 0)
+})
+
+test('saveRanking stamps the snapshot with whether the pg13 toggle was active (#193)', () => {
+  const db = freshDb()
+  saveRanking(db, 'PG-13 Run', fullPoolEntries(), { pg13: true })
+  saveRanking(db, 'Unfiltered Run', fullPoolEntries(), { pg13: false })
+
+  const list = listSavedRankings(db)
+  assert.equal(list.find((r) => r.name === 'PG-13 Run').pg13, true)
+  assert.equal(list.find((r) => r.name === 'Unfiltered Run').pg13, false)
+})
+
+test('listSavedRankings({ pg13 }) restricts to snapshots saved with that toggle state, independent of subset (#193)', () => {
+  const db = freshDb()
+  saveRanking(db, 'Family PG-13', fullPoolEntries(), { subset: 'family', pg13: true })
+  saveRanking(db, 'Family Unfiltered', fullPoolEntries(), { subset: 'family', pg13: false })
+  saveRanking(db, 'All PG-13', fullPoolEntries(), { subset: 'all', pg13: true })
+
+  const pg13Only = listSavedRankings(db, { pg13: true })
+  assert.equal(pg13Only.length, 2)
+  assert.ok(pg13Only.every((r) => r.pg13 === true))
+
+  const familyPg13Only = listSavedRankings(db, { subset: 'family', pg13: true })
+  assert.equal(familyPg13Only.length, 1)
+  assert.equal(familyPg13Only[0].name, 'Family PG-13')
 })
 
 test('getSavedRankingMovies returns snapshot-time state sorted by eloRating descending', () => {
