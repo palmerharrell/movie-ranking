@@ -458,7 +458,7 @@ function App() {
     // Let a failure here propagate to the modal, which shows it inline.
     // { family, popular } scopes the snapshot + reset to the active subset,
     // leaving the rest of the pool's progress untouched.
-    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre })
+    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre, subset })
     setShowSaveModal(false)
     setShowResultsScreen(false)
     setSkippedMovies([])
@@ -678,7 +678,7 @@ function App() {
           subset={subset}
         />
       )}
-      {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}
+      {showLoadView && <LoadRankingView subset={subset} onClose={() => setShowLoadView(false)} />}
       {showSkippedView && (
         <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
       )}

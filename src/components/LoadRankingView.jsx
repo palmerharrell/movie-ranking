@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
+import { subsetLabel } from '../lib/genreSubsets.js'
 import { ResultsScreen } from './ResultsScreen.jsx'
 
-export function LoadRankingView({ onClose }) {
+// Saved rankings are scoped to the subset they were saved from (#186
+// follow-up), so this only ever lists — and lets you load — snapshots that
+// match the currently active subset.
+export function LoadRankingView({ subset, onClose }) {
   const [rankings, setRankings] = useState(null)
   const [selected, setSelected] = useState(null)
   const [error, setError] = useState(null)
+  const label = subsetLabel(subset)
 
   useEffect(() => {
-    api.getSavedRankings().then(setRankings).catch((err) => setError(err.message))
-  }, [])
+    api.getSavedRankings(subset).then(setRankings).catch((err) => setError(err.message))
+  }, [subset])
 
   function handleSelect(id) {
     setError(null)
@@ -35,7 +40,7 @@ export function LoadRankingView({ onClose }) {
     <div className="modal-overlay">
       <div className="modal-card modal-card-wide">
         <div className="flex items-center justify-between">
-          <p className="modal-eyebrow text-[11px] font-medium uppercase">Saved Rankings</p>
+          <p className="modal-eyebrow text-[11px] font-medium uppercase">Load {label} Ranking</p>
           <button type="button" onClick={onClose} className="modal-close" aria-label="Close">
             ×
           </button>
@@ -53,7 +58,7 @@ export function LoadRankingView({ onClose }) {
           <>
             {rankings.length === 0 ? (
               <p className="mt-3 text-sm" style={{ color: 'var(--text-low)' }}>
-                No saved rankings yet.
+                No saved {label} rankings yet.
               </p>
             ) : (
               <ul className="mt-3 flex flex-col gap-2">

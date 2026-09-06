@@ -239,15 +239,24 @@ exposed in the UI.
   "2027 Redo") without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
   deployment**), reserved for a future feature restricting edits/re-ranks to
-  the ranking's creator (#115) — not yet enforced anywhere.
-- **Load:** a "Load Ranking" entry point lists saved snapshots by
-  name/date/movie count; opening one displays it via the same tiered Results
-  screen shown on live completion (#107, `ResultsScreen.jsx` reused by
-  `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and 26-100
-  tiers, and anything outside the snapshot's top 100) — only the movies that
-  were actually part of that saved run, not the current full pool —
-  read-only (no Save Ranking button; a "Back to list" link replaces it), and
-  it does not affect or restore live ranking state.
+  the ranking's creator (#115) — not yet enforced anywhere. It's also
+  stamped with the subset id it was saved from (`saved_rankings.subset` in
+  the backend's SQLite table — see **Online deployment**), so a save made
+  while, say, Sci-Fi was active is tagged `'sci-fi'`.
+- **Load:** a "Load Ranking" entry point lists saved snapshots scoped to the
+  *currently active* subset only — `GET /api/rankings?subset=<id>` filters
+  server-side, and `LoadRankingView.jsx`'s dialog title reads "Load
+  \<Subset\> Ranking" (e.g. "Load Sci-Fi Ranking") so the scoping is visible,
+  not just implicit; switching the active subset (closing and reopening the
+  dialog) shows that subset's own saves instead. Snapshots saved before this
+  scoping existed have no `subset` and are excluded from every filtered
+  list. Listed by name/date/movie count; opening one displays it via the
+  same tiered Results screen shown on live completion (#107,
+  `ResultsScreen.jsx` reused by `LoadRankingView.jsx` with `readOnly` — Top
+  10 grid, 11-25 and 26-100 tiers, and anything outside the snapshot's top
+  100) — only the movies that were actually part of that saved run, not the
+  current full pool — read-only (no Save Ranking button; a "Back to list"
+  link replaces it), and it does not affect or restore live ranking state.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
@@ -272,25 +281,30 @@ exposed in the UI.
   across sessions and devices, plus serving the pool's static metadata —
   everything else stays static or lives client-side.
   - Storage: SQLite (`better-sqlite3`) is enough at this scale:
-    - `saved_rankings(id, name, created_at, data, owner_client_id)` —
+    - `saved_rankings(id, name, created_at, data, owner_client_id, subset)` —
       completed snapshots; `data` is the JSON-serialized
       `{movieId, eloRating, timesRanked}[]` at save time — only the movies
       actually in scope for that save (the whole pool, or just the Family
       subset for a Family-mode save). `owner_client_id` is the
       creating browser's client id — reserved for a future edit/re-rank
       feature restricted to the ranking's creator (#115); not yet enforced by
-      any endpoint.
+      any endpoint. `subset` is the picker's subset id the save was made
+      from (`'popular'`, `'family'`, `'all'`, or a genre/language/country
+      id) — lets `GET /api/rankings` filter to one subset (see **Saved
+      rankings**); `null` for snapshots saved before this column existed.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
       `?family=true` restricts to the Family subset (see **Movie subsets**).
       The client merges this with its own local ranking state.
-    - `POST /api/rankings` — body: `{name, family, entries, clientId}`, where
+    - `POST /api/rankings` — body: `{name, subset, entries, clientId}`, where
       `entries` is the `{movieId, eloRating, timesRanked}[]` the browser
       gathered from its own local ranking state; the server just persists it
-      tagged with `clientId` as `owner_client_id`. The browser resets its own
-      local state for that scope after a successful save.
+      tagged with `clientId` as `owner_client_id` and `subset` as-is. The
+      browser resets its own local state for that scope after a successful
+      save.
     - `GET /api/rankings` — list of saved snapshots (`id`, `name`,
-      `createdAt`, `movieCount`)
+      `createdAt`, `movieCount`, `subset`); `?subset=<id>` restricts to
+      snapshots saved from that subset (see **Saved rankings**)
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
       snapshot-time `eloRating`, limited to the movies that were part of
       that save), sorted descending, for read-only display
