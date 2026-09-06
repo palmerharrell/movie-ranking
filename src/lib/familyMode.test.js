@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isFamilyGenre, selectFamilySubset } from './familyMode.js'
+import { isFamilyGenre, selectFamilySubset, familySubsetExclusions } from './familyMode.js'
 
 describe('isFamilyGenre', () => {
   it('accepts a movie tagged with the Family genre', () => {
@@ -28,5 +28,11 @@ describe('selectFamilySubset', () => {
       { id: '3', genres: ['Drama'], voteCount: 1000 },
     ]
     expect(selectFamilySubset(movies).map((m) => m.id)).toEqual(['2', '1'])
+  })
+})
+
+describe('familySubsetExclusions', () => {
+  it('excludes the Family genre, mirroring genreSubsetExclusions (#160)', () => {
+    expect(familySubsetExclusions()).toEqual([{ type: 'genre', value: 'Family' }])
   })
 })
