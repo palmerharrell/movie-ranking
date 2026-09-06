@@ -62,6 +62,11 @@ function App() {
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
+  // Guards against rapid subset switching: only the most recent subset's
+  // fetch is allowed to apply its results or clear switchingSubset, so an
+  // older switch's fetch resolving after a newer one can't clobber the
+  // newer subset's data or hide its still-in-flight loading overlay.
+  const subsetFetchId = useRef(0)
   // Set inside handleSkipMovie's setPacks updater, acted on by the effect
   // below once the resulting pack state has actually committed — see the
   // comment on handleSkipMovie for why this can't just be a synchronous
@@ -118,12 +123,24 @@ function App() {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     setSwitchingSubset(true)
+    const fetchId = ++subsetFetchId.current
+    const isStale = () => fetchId !== subsetFetchId.current
     Promise.all([
-      api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre }).then(noteMoviesUpdate),
-      fetchPacks(isFamily, isPopular, activeGenre).then(setPacks),
+      api
+        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
+        .then((updated) => {
+          if (!isStale()) noteMoviesUpdate(updated)
+        }),
+      fetchPacks(isFamily, isPopular, activeGenre).then((freshPacks) => {
+        if (!isStale()) setPacks(freshPacks)
+      }),
     ])
-      .catch((err) => setError(err.message))
-      .finally(() => setSwitchingSubset(false))
+      .catch((err) => {
+        if (!isStale()) setError(err.message)
+      })
+      .finally(() => {
+        if (!isStale()) setSwitchingSubset(false)
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subset])
 
