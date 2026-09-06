@@ -37,11 +37,27 @@ async function main() {
     process.exit(1)
   }
 
-  const sourceFiles = fs.existsSync(SOURCES_DIR)
+  // Optional sourceId args (e.g. `node scripts/enrich-sources.js
+  // top-british`) restrict the run to just those source files instead of
+  // every *.source.json — useful when only one new discover-fetch source
+  // (#151) needs merging and re-enriching the other ~50 sources' several
+  // thousand already-merged entries would just burn TMDb quota for no
+  // change (upsertSourceMovie never overwrites an existing entry's fields
+  // on a source-only match anyway).
+  const requestedSourceIds = process.argv.slice(2)
+  const allSourceFiles = fs.existsSync(SOURCES_DIR)
     ? fs.readdirSync(SOURCES_DIR).filter((f) => f.endsWith('.source.json'))
     : []
+  const sourceFiles =
+    requestedSourceIds.length > 0
+      ? allSourceFiles.filter((f) => requestedSourceIds.includes(sourceIdFromFilename(f)))
+      : allSourceFiles
   if (sourceFiles.length === 0) {
-    console.error(`No *.source.json files found in ${SOURCES_DIR}.`)
+    console.error(
+      requestedSourceIds.length > 0
+        ? `No matching *.source.json files found for: ${requestedSourceIds.join(', ')}`
+        : `No *.source.json files found in ${SOURCES_DIR}.`,
+    )
     process.exit(1)
   }
 

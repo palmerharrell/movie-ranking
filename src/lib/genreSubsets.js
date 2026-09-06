@@ -14,6 +14,14 @@ function isMusical(movie) {
   return (movie.keywords || []).includes('musical') || MUSICAL_TMDB_ID_EXCEPTIONS.includes(movie.tmdbId)
 }
 
+// "British" isn't derivable from genres[]/originalLanguage the way the
+// other subsets below are — it's TMDb's production_countries (#151),
+// captured separately since a movie's country of production is a distinct
+// fact from its original language (many British films are in English).
+function isBritish(movie) {
+  return (movie.productionCountries || []).includes('GB')
+}
+
 // Each entry's `genres`/`language`/`keyword` fields double as the subset's
 // own defining attribute(s) — used both to build `matches` below and (via
 // `genreSubsetExclusions`) to tell categoryGenerator.js which attribute
@@ -41,6 +49,7 @@ export const GENRE_SUBSETS = [
   { id: 'french', label: 'French', language: 'fr' },
   { id: 'spanish', label: 'Spanish', language: 'es' },
   { id: 'italian', label: 'Italian', language: 'it' },
+  { id: 'british', label: 'British', matches: isBritish, country: 'GB' },
 ].map((config) => ({
   ...config,
   matches:
@@ -50,6 +59,8 @@ export const GENRE_SUBSETS = [
 }))
 
 export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
+
+export const COUNTRY_SUBSET_IDS = ['british']
 
 // Filters to movies matching the subset's own attributes (genre/keyword/
 // language) — not by which sources[] tag got a movie into the pool, so a
@@ -82,5 +93,9 @@ export function genreSubsetExclusions(subsetId) {
   if (config.genres) exclusions.push(...config.genres.map((genre) => ({ type: 'genre', value: genre })))
   if (config.language) exclusions.push({ type: 'language', value: config.language })
   if (config.keyword) exclusions.push({ type: 'keyword', value: config.keyword })
+  // No 'country' attribute type exists in categoryGenerator.js yet, so this
+  // is inert today — kept so British doesn't silently reintroduce the #160
+  // tautology bug if a country-based category attribute is ever added.
+  if (config.country) exclusions.push({ type: 'country', value: config.country })
   return exclusions
 }

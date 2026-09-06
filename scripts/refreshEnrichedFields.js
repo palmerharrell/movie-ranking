@@ -12,8 +12,9 @@ const OUTPUT_FILE = path.join(ROOT, 'data', 'movies.json')
 
 // One-time refresh for movies.json entries enriched before a
 // getMovieDetails-derived field existed or a curated allowlist
-// (NOTABLE_STUDIOS/KEYWORD_LABELS) changed — e.g. `voteCount` (#104) and the
-// `musical`/`rock musical` keywords (#150). enrich-sources.js never
+// (NOTABLE_STUDIOS/KEYWORD_LABELS) changed — e.g. `voteCount` (#104), the
+// `musical`/`rock musical` keywords (#150), and `productionCountries`
+// (#151). enrich-sources.js never
 // overwrites an existing entry's fields on a source-only match
 // (mergeSourceMovie.js's upsertSourceMovie), so a movie already in the pool
 // before an allowlist change would otherwise never pick it up. Unlike
@@ -56,6 +57,7 @@ async function main() {
       originalLanguage: fields.originalLanguage,
       keywords: fields.keywords,
       voteCount: fields.voteCount,
+      productionCountries: fields.productionCountries,
     })
     if ((i + 1) % 20 === 0) console.log(`  ${i + 1}/${pool.length}`)
   }
