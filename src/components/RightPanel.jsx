@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -23,6 +24,7 @@ export function RightPanel({
   disabled,
 }) {
   const sensors = useSensors(useSensor(PointerSensor))
+  const tilesListRef = useRef(null)
 
   function handleDragEnd(event) {
     const { active, over } = event
@@ -31,6 +33,23 @@ export function RightPanel({
     const oldIndex = category.movies.findIndex((m) => m.id === active.id)
     const newIndex = category.movies.findIndex((m) => m.id === over.id)
     onReorder(arrayMove(category.movies, oldIndex, newIndex))
+  }
+
+  // Moving the tapped Skip button's own `blur()` (see #125) isn't enough on
+  // touch: mobile browsers assign focus as part of a click's *default
+  // action*, which for a synthesized touch click can run after our onClick
+  // handler returns — silently undoing an immediate blur — and then, once
+  // the tile is removed from the DOM, the browser falls back to focusing
+  // whatever ends up in that same DOM position (another tile's Skip
+  // button). Deferring to a macrotask (setTimeout) guarantees this runs
+  // after any such native default action, so we can deterministically move
+  // focus to a stable, intentional target (the tile list container, not a
+  // moving tile) instead of leaving it to the browser's fallback.
+  function handleSkip(movieId) {
+    onSkip(movieId)
+    setTimeout(() => {
+      tilesListRef.current?.focus({ preventScroll: true })
+    }, 0)
   }
 
   return (
@@ -53,13 +72,13 @@ export function RightPanel({
           items={category.movies.map((m) => m.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex flex-col gap-2">
+          <div ref={tilesListRef} tabIndex={-1} className="flex flex-col gap-2 outline-none">
             {category.movies.map((movie, index) => (
               <MovieTile
                 key={movie.id}
                 movie={movie}
                 rank={index + 1}
-                onSkip={onSkip}
+                onSkip={handleSkip}
                 disabled={disabled}
               />
             ))}
