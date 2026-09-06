@@ -9,6 +9,7 @@ import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
+import { SkippedView } from './components/SkippedView.jsx'
 import * as api from './lib/api.js'
 import { selectFamilySubset } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -57,6 +58,7 @@ function App() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
+  const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   // Set inside handleSkipMovie's setPacks updater, acted on by the effect
@@ -338,6 +340,26 @@ function App() {
     setAwaitingLastSkipConfirm(false)
   }
 
+  // Un-skipping/clearing happens inside the Skipped view (#137) against the
+  // *unfiltered* pool (skip state isn't scoped to a subset), so this just
+  // re-fetches the active subset's movies afterward and routes the result
+  // through noteMoviesUpdate — the same completion-detection path a normal
+  // Rank click uses — rather than patching `movies`/`wasFullyRanked`
+  // ad hoc, which previously could complete the pool without ever showing
+  // the completion modal (and then permanently suppress it, since the ref
+  // was already flipped to `true` with no modal shown). Also closes the
+  // Skipped view itself if that completes the pool, since the completion
+  // modal renders on top of it.
+  function handleSkippedViewChange() {
+    api
+      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
+      .then((updated) => {
+        noteMoviesUpdate(updated)
+        if (isFullyRanked(updated)) setShowSkippedView(false)
+      })
+      .catch((err) => setError(err.message))
+  }
+
   // "Yes" on the inline "skip this one too?" prompt (#156): skip the last
   // remaining movie the same way any other tile-skip does, then discard the
   // now-empty pack and advance, mirroring the old auto-discard behavior.
@@ -429,6 +451,13 @@ function App() {
             </button>
             <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
               Load Ranking
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSkippedView(true)}
+              className="banner-button"
+            >
+              Skipped
             </button>
             <SubsetPicker subset={subset} onChange={setSubset} />
           </div>
@@ -557,6 +586,9 @@ function App() {
         />
       )}
       {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}
+      {showSkippedView && (
+        <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
+      )}
     </div>
   )
 }

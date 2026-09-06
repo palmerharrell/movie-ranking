@@ -7,6 +7,7 @@ import {
   resetLocalState,
   markSkipped as markSkippedLocal,
   unmarkSkipped as unmarkSkippedLocal,
+  unmarkAllSkipped as unmarkAllSkippedLocal,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
@@ -74,6 +75,20 @@ export function markSkipped(movieId) {
 
 export function unmarkSkipped(movieId) {
   unmarkSkippedLocal(movieId)
+}
+
+// Every persistently-skipped movie across the whole pool, regardless of
+// which subset is currently active — skip state isn't scoped to a subset
+// (#136), so the Skipped view (#137) needs the unfiltered pool rather than
+// whatever subset the rest of the app is currently showing.
+export async function getSkippedMovies() {
+  const movies = await getMovies()
+  return movies.filter((m) => m.skipped)
+}
+
+// Un-skips every given movie in one batched write (#137's "Clear all").
+export function unmarkAllSkipped(movieIds) {
+  unmarkAllSkippedLocal(movieIds)
 }
 
 // Unfiltered — a pack built in Family mode still only contains Family-genre
