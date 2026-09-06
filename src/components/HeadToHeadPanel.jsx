@@ -109,9 +109,9 @@ export function HeadToHeadPanel({ category, onPick, disabled }) {
   return (
     <div className="pack-card">
       <div className="mb-3">
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-3">
           <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
-          <p className="rank-caption text-[11px] text-right">Click the one you'd rank higher</p>
+          <p className="rank-caption text-[11px] md:text-right">Click the one you'd rank higher</p>
         </div>
         <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
       </div>

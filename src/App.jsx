@@ -550,11 +550,11 @@ function App() {
           <div className="flex items-center gap-3">
             <h1 className="app-title text-[22px] md:text-[30px]">Movie Ranking</h1>
           </div>
-          <div className="flex items-center">
+          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 md:flex-nowrap md:gap-x-3">
             <button
               type="button"
               onClick={() => setShowStandingsDrawer(true)}
-              className="banner-button mr-2 md:hidden"
+              className="banner-button md:hidden"
             >
               Standings
             </button>
@@ -568,7 +568,7 @@ function App() {
             >
               Skipped
             </button>
-            <label className="pg13-toggle ml-3.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]">
+            <label className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] md:ml-1.5">
               <input
                 type="checkbox"
                 checked={pg13}

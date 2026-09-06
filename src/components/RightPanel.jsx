@@ -58,10 +58,10 @@ export function RightPanel({
   return (
     <div className="pack-card">
       <div className="mb-3">
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-3">
           <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
           {category.movies.length > 1 && (
-            <p className="rank-caption text-[11px] text-right">
+            <p className="rank-caption text-[11px] md:text-right">
               Drag to reorder, click Rank to set order and go to next list
             </p>
           )}
