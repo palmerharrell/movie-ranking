@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=Baloo+2:wght@600;800&family=Bungee&family=Monoton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=Bungee&family=Monoton&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -55,31 +55,6 @@ body {
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
-[data-theme='family'] {
-  color-scheme: dark;
-  --bg-page: #241a3d;
-  --bg-overlay:
-    radial-gradient(45% 40% at 10% 0%, rgba(255, 179, 71, 0.16), transparent 60%),
-    radial-gradient(45% 40% at 95% 15%, rgba(79, 214, 196, 0.14), transparent 60%),
-    radial-gradient(50% 45% at 50% 110%, rgba(255, 107, 149, 0.12), transparent 60%);
-  --surface: #322753;
-  --surface-border: rgba(255, 179, 71, 0.28);
-  --surface-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --accent: #ffb347;
-  --accent-hover: #ffc670;
-  --accent-deep: #f2993a;
-  --accent2: #4fd6c4;
-  --accent-line: rgba(255, 179, 71, 0.3);
-  --text-high: #fdf3e7;
-  --text-mid: #e7dcf0;
-  --text-low: #9186ad;
-  --text-credit: #c9bcd9;
-  --poster-placeholder: repeating-linear-gradient(135deg, #2c2149 0 5px, #362a5c 5px 10px);
-  --font-display: 'Baloo 2', sans-serif;
-  --font-ui: 'DM Sans', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-}
-
 /* ===================== App shell ===================== */
 
 .app-shell {
@@ -87,6 +62,18 @@ body {
   background-image: var(--bg-overlay);
   font-family: var(--font-ui);
   color: var(--text-mid);
+}
+
+/* Large, low-opacity film-reel watermark (its faintness is baked into the
+   asset's own alpha channel, not applied via CSS opacity, since opacity
+   would also fade the gradient layer stacked behind it) — only under the
+   Neon/popular theme, whose teal tint the asset was recolored to match; the
+   warm All Movies theme keeps its own plain background. */
+.app-shell[data-theme='popular'] {
+  background-image: var(--film-reel-bg-url), var(--bg-overlay);
+  background-repeat: no-repeat, no-repeat;
+  background-position: bottom -80px right -60px, 0 0;
+  background-size: 900px auto, auto;
 }
 
 /* Banner */
@@ -98,7 +85,7 @@ body {
 
 .app-title {
   font-family: var(--font-display);
-  color: var(--text-high);
+  color: var(--accent);
 }
 
 [data-theme='all'] .app-title {
@@ -111,22 +98,44 @@ body {
   letter-spacing: 0.01em;
 }
 
-[data-theme='family'] .app-title {
-  font-weight: 800;
+.app-title-icon {
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* Matches the app icons' own baked-in navy background (see
+   src/assets/film-reel-bg.png / public/*.png generation) so the title
+   text's background reads as one continuous bar with the icons flanking
+   it, rather than two separate squares either side of plain page
+   background. Hardcoded rather than var(--bg-page) since the icon PNGs
+   themselves are always this same navy regardless of active theme. */
+.app-title-badge {
+  background: #0b1224;
 }
 
 /* Subset picker */
 
+.subset-select-wrap {
+  position: relative;
+  display: inline-block;
+}
+
 .subset-select {
+  width: 130px;
   height: 37px;
   box-sizing: border-box;
-  padding: 6px 28px 6px 12px;
+  padding: 6px 34px 6px 12px;
   border: 1px solid var(--surface-border);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
   color: var(--text-mid);
   font-family: var(--font-mono);
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .subset-select:hover,
@@ -140,10 +149,18 @@ body {
   border-radius: 999px;
 }
 
-[data-theme='family'] .subset-select {
-  border-radius: 999px;
-  border-color: var(--surface-border);
-  background: rgba(0, 0, 0, 0.2);
+.subset-select-arrow {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  color: var(--text-mid);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.subset-select-wrap:hover .subset-select-arrow {
+  color: var(--text-high);
 }
 
 .subset-select option,
@@ -250,18 +267,6 @@ body {
   border-color: rgba(240, 79, 140, 0.4);
 }
 
-[data-theme='family'] .standings-row.top-1 {
-  background-image: linear-gradient(90deg, rgba(255, 179, 71, 0.16), transparent);
-}
-
-[data-theme='family'] .standings-row.top-2 {
-  background-image: linear-gradient(90deg, rgba(255, 179, 71, 0.11), transparent);
-}
-
-[data-theme='family'] .standings-row.top-3 {
-  background-image: linear-gradient(90deg, rgba(255, 179, 71, 0.06), transparent);
-}
-
 .standings-rank {
   color: var(--text-low);
   font-family: var(--font-ui);
@@ -287,25 +292,12 @@ body {
   font-weight: 700;
 }
 
-[data-theme='family'] .standings-row.top-1 .standings-rank,
-[data-theme='family'] .standings-row.top-2 .standings-rank,
-[data-theme='family'] .standings-row.top-3 .standings-rank {
-  color: var(--accent-deep);
-  font-family: var(--font-display);
-  font-weight: 800;
-}
 
 .poster-placeholder {
   background-image: var(--poster-placeholder);
 }
 
 /* Pack column */
-
-.pack-eyebrow {
-  font-family: var(--font-mono);
-  color: var(--accent);
-  letter-spacing: 0.17em;
-}
 
 .undo-skip {
   font-family: var(--font-mono);
@@ -329,7 +321,7 @@ body {
 
 .pack-category-label {
   font-family: var(--font-display);
-  color: var(--text-high);
+  color: var(--accent);
 }
 
 [data-theme='all'] .pack-category-label {
@@ -341,11 +333,6 @@ body {
 [data-theme='popular'] .pack-category-label {
   font-weight: 400;
   font-size: 24px;
-}
-
-[data-theme='family'] .pack-category-label {
-  font-weight: 800;
-  font-size: 26px;
 }
 
 .pack-card {
@@ -387,10 +374,37 @@ body {
   padding: 12px 18px 16px;
 }
 
-.queue-eyebrow {
-  font-family: var(--font-mono);
-  color: var(--text-low);
-  letter-spacing: 0.17em;
+.queue-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  color: var(--text-mid);
+}
+
+.queue-menu-button:hover:not(:disabled),
+.queue-menu-button[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--text-high);
+}
+
+.queue-menu-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.queue-menu-dropdown {
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .queue-pack-card {
@@ -501,22 +515,6 @@ body {
   background: #ff6ba1;
 }
 
-[data-theme='family'] .rank-button {
-  border-radius: 999px;
-  background-image: linear-gradient(180deg, var(--accent-hover), var(--accent-deep));
-  color: #241a3d;
-  box-shadow: 0 8px 24px rgba(255, 179, 71, 0.3);
-}
-
-[data-theme='family'] .rank-button:hover:not(:disabled) {
-  background-image: linear-gradient(180deg, #ffc670, var(--accent));
-}
-
-.rank-caption {
-  font-family: var(--font-mono);
-  color: var(--text-low);
-}
-
 /* Modals (Save/Load Ranking) */
 
 .modal-overlay {
@@ -587,10 +585,6 @@ body {
 }
 
 [data-theme='popular'] .modal-button-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
-[data-theme='family'] .modal-button-primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
@@ -766,5 +760,55 @@ body {
 
 .banner-button:hover {
   border-color: var(--accent);
+  color: var(--text-high);
+}
+
+/* Banner menu (Standings/Load Ranking/Skipped, consolidated into one
+   icon-only dropdown — see BannerMenu.jsx) */
+
+.banner-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  color: var(--text-mid);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.banner-menu-button:hover,
+.banner-menu-button[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--text-high);
+}
+
+.banner-menu-dropdown {
+  display: flex;
+  min-width: 160px;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.banner-menu-item {
+  padding: 8px 10px;
+  border-radius: 5px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-mid);
+}
+
+.banner-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-high);
 }

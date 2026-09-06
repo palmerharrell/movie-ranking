@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
+import { QueueMenu } from './QueueMenu.jsx'
 import { formatPackLabel } from '../lib/labelWording.js'
 
 // How long the winner-slides-to-center / loser-slides-off animation plays
@@ -65,7 +66,7 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
 // pairwise Elo update (no drag-to-order, no "Rank ->" confirmation step,
 // and no "Haven't Seen" skip since both movies are, by construction, ones
 // the pool has already seen and ranked).
-export function HeadToHeadPanel({ category, onPick, disabled }) {
+export function HeadToHeadPanel({ category, onPick, disabled, queue, onSelectQueued }) {
   const [first, second] = category.movies
   // Identifies this specific pack (not just a movie — the same movie can
   // reappear in the next pack) so each card can be keyed to remount cleanly
@@ -108,12 +109,9 @@ export function HeadToHeadPanel({ category, onPick, disabled }) {
 
   return (
     <div className="pack-card">
-      <div className="mb-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
-          <p className="rank-caption text-[11px] text-right">Click the one you'd rank higher</p>
-        </div>
-        <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <h2 className="pack-category-label">{formatPackLabel(category.label)}</h2>
+        <QueueMenu queue={queue} disabled={disabled} onSelect={onSelectQueued} />
       </div>
       <div className="flex items-stretch gap-3 overflow-hidden">
         {(phase !== 'holding' || first.id === pickedId) && (
