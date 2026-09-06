@@ -97,6 +97,16 @@ export function genreSubsetLabel(subsetId) {
   return GENRE_SUBSETS.find((s) => s.id === subsetId)?.label ?? subsetId
 }
 
+const GENERAL_SUBSET_LABELS = { popular: 'Popular', family: 'Family', all: 'All' }
+
+// Display label for any subset id — general (Popular/Family/All) or
+// genre/language/country — used by SaveRankingModal/ResetRankingModal/
+// LoadRankingView so none of them need their own popular/family special
+// case layered on top of genreSubsetLabel's per-genre fallback.
+export function subsetLabel(subsetId) {
+  return GENERAL_SUBSET_LABELS[subsetId] ?? genreSubsetLabel(subsetId)
+}
+
 // The category-generator attribute type/value pair(s) that would be
 // tautological to build a category on while this subset is active (#160) —
 // every movie in the subset's pool already matches it by construction, so

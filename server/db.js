@@ -14,12 +14,16 @@ export function createDb(dbPath) {
       name TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       data TEXT NOT NULL,
-      owner_client_id TEXT
+      owner_client_id TEXT,
+      subset TEXT
     )
   `)
   const columns = db.prepare('PRAGMA table_info(saved_rankings)').all()
   if (!columns.some((c) => c.name === 'owner_client_id')) {
     db.exec('ALTER TABLE saved_rankings ADD COLUMN owner_client_id TEXT')
+  }
+  if (!columns.some((c) => c.name === 'subset')) {
+    db.exec('ALTER TABLE saved_rankings ADD COLUMN subset TEXT')
   }
   return db
 }
@@ -27,35 +31,45 @@ export function createDb(dbPath) {
 // Snapshots `entries` ({movieId, eloRating, timesRanked}[]) as a named,
 // timestamped ranking, tagged with the browser's client id (see
 // src/lib/clientId.js) so a future edit/re-rank feature can restrict changes
-// to the ranking's creator. Returns the new snapshot's id.
-export function createSavedRanking(db, name, entries, ownerClientId) {
+// to the ranking's creator, and with the subset id it was saved from (#186
+// follow-up) so the Load dialog can filter to the active subset. `subset` is
+// null for rankings saved before that tracking existed.
+export function createSavedRanking(db, name, entries, ownerClientId, subset) {
   const result = db
-    .prepare('INSERT INTO saved_rankings (name, data, owner_client_id) VALUES (?, ?, ?)')
-    .run(name, JSON.stringify(entries), ownerClientId ?? null)
+    .prepare('INSERT INTO saved_rankings (name, data, owner_client_id, subset) VALUES (?, ?, ?, ?)')
+    .run(name, JSON.stringify(entries), ownerClientId ?? null, subset ?? null)
   return result.lastInsertRowid
 }
 
-// { id, name, createdAt, movieCount }[] for every saved snapshot, newest
-// first. movieCount surfaces whether a snapshot is a full-pool or a
-// partial (e.g. Family-scoped) ranking.
-export function listSavedRankings(db) {
-  const rows = db
-    .prepare('SELECT id, name, created_at, data FROM saved_rankings ORDER BY created_at DESC, id DESC')
-    .all()
+// { id, name, createdAt, movieCount, subset }[] for saved snapshots, newest
+// first — restricted to one subset when `subset` is given. movieCount
+// surfaces whether a snapshot is a full-pool or a partial (e.g.
+// Family-scoped) ranking.
+export function listSavedRankings(db, { subset } = {}) {
+  const rows = subset
+    ? db
+        .prepare(
+          'SELECT id, name, created_at, data, subset FROM saved_rankings WHERE subset = ? ORDER BY created_at DESC, id DESC',
+        )
+        .all(subset)
+    : db
+        .prepare('SELECT id, name, created_at, data, subset FROM saved_rankings ORDER BY created_at DESC, id DESC')
+        .all()
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
     createdAt: r.created_at,
     movieCount: JSON.parse(r.data).length,
+    subset: r.subset,
   }))
 }
 
-// A saved snapshot's { id, name, createdAt, entries, ownerClientId } —
-// entries is the {movieId, eloRating, timesRanked}[] captured at save time —
-// or null if the id doesn't exist.
+// A saved snapshot's { id, name, createdAt, entries, ownerClientId, subset }
+// — entries is the {movieId, eloRating, timesRanked}[] captured at save
+// time — or null if the id doesn't exist.
 export function getSavedRanking(db, id) {
   const row = db
-    .prepare('SELECT id, name, created_at, data, owner_client_id FROM saved_rankings WHERE id = ?')
+    .prepare('SELECT id, name, created_at, data, owner_client_id, subset FROM saved_rankings WHERE id = ?')
     .get(id)
   if (!row) return null
   return {
@@ -64,5 +78,6 @@ export function getSavedRanking(db, id) {
     createdAt: row.created_at,
     entries: JSON.parse(row.data),
     ownerClientId: row.owner_client_id,
+    subset: row.subset,
   }
 }

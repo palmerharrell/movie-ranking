@@ -111,6 +111,33 @@ test('listSavedRankings reports movieCount so partial saves are distinguishable'
   assert.equal(list[0].movieCount, 5)
 })
 
+test('saveRanking stamps the snapshot with the given subset id', () => {
+  const db = freshDb()
+  saveRanking(db, 'Sci-Fi Run', fullPoolEntries(), { subset: 'sci-fi' })
+
+  const list = listSavedRankings(db)
+  assert.equal(list[0].subset, 'sci-fi')
+})
+
+test('listSavedRankings({ subset }) restricts to snapshots saved from that subset', () => {
+  const db = freshDb()
+  saveRanking(db, 'All Run', fullPoolEntries(), { subset: 'all' })
+  saveRanking(db, 'Family Run', fullPoolEntries(), { subset: 'family' })
+  saveRanking(db, 'Another Family Run', fullPoolEntries(), { subset: 'family' })
+
+  const list = listSavedRankings(db, { subset: 'family' })
+  assert.equal(list.length, 2)
+  assert.ok(list.every((r) => r.subset === 'family'))
+})
+
+test('listSavedRankings({ subset }) excludes snapshots saved before subset tracking existed', () => {
+  const db = freshDb()
+  saveRanking(db, 'Legacy Run', fullPoolEntries())
+
+  const list = listSavedRankings(db, { subset: 'all' })
+  assert.equal(list.length, 0)
+})
+
 test('getSavedRankingMovies returns snapshot-time state sorted by eloRating descending', () => {
   const db = freshDb()
   const entries = [

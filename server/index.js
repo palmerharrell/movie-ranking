@@ -43,7 +43,7 @@ app.get('/api/movies', (req, res) => {
 })
 
 app.post('/api/rankings', (req, res) => {
-  const { name, entries, clientId } = req.body
+  const { name, entries, clientId, subset } = req.body
   if (typeof name !== 'string' || name.trim().length === 0) {
     return res.status(400).json({ error: 'name is required' })
   }
@@ -51,14 +51,14 @@ app.post('/api/rankings', (req, res) => {
     return res.status(400).json({ error: 'entries must be a non-empty array' })
   }
   try {
-    res.json(saveRanking(db, name.trim(), entries, { ownerClientId: clientId }))
+    res.json(saveRanking(db, name.trim(), entries, { ownerClientId: clientId, subset }))
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
 })
 
 app.get('/api/rankings', (req, res) => {
-  res.json(listSavedRankings(db))
+  res.json(listSavedRankings(db, { subset: req.query.subset || null }))
 })
 
 app.get('/api/rankings/:id', (req, res) => {

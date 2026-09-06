@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { genreSubsetLabel } from '../lib/genreSubsets.js'
+import { subsetLabel } from '../lib/genreSubsets.js'
 
 const FIXED_COPY = {
   family: {
@@ -16,7 +16,7 @@ const FIXED_COPY = {
 // rather than a bespoke entry per id — there are too many to hand-write.
 function copyFor(subset) {
   if (FIXED_COPY[subset]) return FIXED_COPY[subset]
-  const label = subset === 'popular' ? 'Popular' : genreSubsetLabel(subset)
+  const label = subsetLabel(subset)
   return {
     title: `Every movie in ${label} has been ranked`,
     body: `Give this ranking a name to save it. Saving resets just the ${label} movies so you can start a fresh ${label} ranking run — the rest of your pool is untouched.`,
