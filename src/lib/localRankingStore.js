@@ -54,6 +54,14 @@ export function unmarkSkipped(movieId) {
   writeSkippedIds(ids)
 }
 
+// Batched form of unmarkSkipped — one read/write instead of one pair per id.
+// Used by the Skipped view's "Clear all" (#137).
+export function unmarkAllSkipped(movieIds) {
+  const ids = readSkippedIds()
+  for (const movieId of movieIds) ids.delete(movieId)
+  writeSkippedIds(ids)
+}
+
 // Merges the pool's static metadata with this browser's local Elo state and
 // skipped-ids set, defaulting movies never ranked in this browser to 1000/0
 // and never skipped to false.

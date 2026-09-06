@@ -106,12 +106,18 @@ exposed in the UI.
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
   pack generation and from the ranked-progress denominator (see **Progress
-  tracking**), until un-skipped. The only way to undo a skip today is the
-  in-pack "undo" while that pack is still active (`onUndoSkip`) — a
-  dedicated "Skipped" view for browsing/un-skipping/clearing the whole list
-  later is tracked separately (#137, **NOT YET IMPLEMENTED**). Skipped state
-  survives Reset/Save (it's a fact about the viewer, not about a ranking
-  run — see **Saved rankings**).
+  tracking**), until un-skipped. Besides the in-pack "undo" while that pack
+  is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
+  `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
+  banner next to "Load Ranking") lists every persistently-skipped movie
+  (poster/title/year, matching the Standings row styling) with a per-movie
+  "Un-skip" button and a "Clear All" action that un-skips everything at
+  once — both call `api.unmarkSkipped`/`localRankingStore.js`'s
+  `unmarkSkipped` directly, independent of whether the pack that skip
+  happened in is still active, so a skip can be reversed at any time, not
+  just immediately after it happens. Skipped state survives Reset/Save
+  (it's a fact about the viewer, not about a ranking run — see **Saved
+  rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
   transitively linked — approximate (Elo doesn't guarantee strict
   transitivity) but converges toward a consistent full ranking as more of the
@@ -293,8 +299,10 @@ exposed in the UI.
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, subset picker, and a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**).
+- **Banner:** app title, subset picker, a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**), and a "Skipped" entry
+  point for browsing/un-skipping persistently-skipped movies (#137, see
+  **Skip ("Haven't Seen")**).
 
 ## Movie subsets (#104, #146, #150)
 There are no more cosmetic-only "themes" — the banner's picker
