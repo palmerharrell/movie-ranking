@@ -115,6 +115,11 @@ function App() {
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
   const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) ? subset : null
+  // Family always applies the PG-13-and-under filter (#200), regardless of
+  // the toggle's own state — the toggle itself just reflects that visually
+  // (forced on and disabled — see the checkbox below) without touching the
+  // user's underlying `pg13` preference, so leaving Family restores it.
+  const effectivePg13 = isFamily || pg13
 
   // Mirrors the server's getMovies filter pipeline (server/rankingService.js)
   // exactly: family filter, then the pg13 toggle (#193), then one top-N
@@ -124,7 +129,7 @@ function App() {
   // what re-derives "the currently-visible subset" from it client-side.
   function computeVisibleMovies(updatedMovies) {
     let result = isFamily ? updatedMovies.filter(isFamilyGenre) : updatedMovies
-    if (pg13) result = selectPg13OrUnder(result)
+    if (effectivePg13) result = selectPg13OrUnder(result)
     if (activeGenre) return selectGenreSubset(result, activeGenre)
     if (isPopular || isFamily) return selectPopular(result)
     return result
@@ -173,11 +178,11 @@ function App() {
     const isStale = () => fetchId !== subsetFetchId.current
     Promise.all([
       api
-        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
         .then((updated) => {
           if (!isStale()) noteMoviesUpdate(updated)
         }),
-      fetchPacks(isFamily, isPopular, activeGenre, pg13).then((freshPacks) => {
+      fetchPacks(isFamily, isPopular, activeGenre, effectivePg13).then((freshPacks) => {
         if (!isStale()) setPacks(freshPacks)
       }),
     ])
@@ -223,7 +228,7 @@ function App() {
       // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -244,7 +249,7 @@ function App() {
       const loserId = category.movies.find((m) => m.id !== winnerId).id
       const updatedMovies = await api.rankPack([winnerId, loserId])
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -265,7 +270,7 @@ function App() {
         .filter((_, i) => i !== queueIndex)
         .map((p) => p.label)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         remainingLabels,
       )
       setPacks((prev) => {
@@ -288,7 +293,7 @@ function App() {
     setBusy(true)
     try {
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       setPacks((prev) => [...prev.slice(1), freshPack])
@@ -315,7 +320,7 @@ function App() {
           ...replacements.map((r) => r.fresh.label),
         ]
         const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
           avoidLabels,
         )
         replacements.push({ old: pack, fresh: freshPack })
@@ -466,7 +471,7 @@ function App() {
   // modal renders on top of it.
   function handleSkippedViewChange() {
     api
-      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
       .then((updated) => {
         noteMoviesUpdate(updated)
         if (isFullyRanked(updated)) setShowSkippedView(false)
@@ -509,7 +514,7 @@ function App() {
     // Let a failure here propagate to the modal, which shows it inline.
     // { family, popular } scopes the snapshot + reset to the active subset,
     // leaving the rest of the pool's progress untouched.
-    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre, pg13, subset })
+    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13, subset })
     setShowSaveModal(false)
     setShowResultsScreen(false)
     setSkippedMovies([])
@@ -518,8 +523,8 @@ function App() {
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, pg13),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -534,7 +539,7 @@ function App() {
 
   async function handleResetRanking() {
     // Let a failure here propagate to the modal, which shows it inline.
-    await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+    await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
     setShowResetModal(false)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
@@ -542,8 +547,8 @@ function App() {
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, pg13),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -586,11 +591,15 @@ function App() {
               onSkipped={() => setShowSkippedView(true)}
             />
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
-            <label className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]">
+            <label
+              className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]"
+              title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
+            >
               PG-13 &amp; Under
               <input
                 type="checkbox"
-                checked={pg13}
+                checked={effectivePg13}
+                disabled={isFamily}
                 onChange={(event) => setPg13(event.target.checked)}
               />
             </label>
@@ -713,7 +722,7 @@ function App() {
           onSave={handleSaveRanking}
           onDismiss={() => setShowSaveModal(false)}
           subset={subset}
-          pg13={pg13}
+          pg13={effectivePg13}
         />
       )}
       {showResetModal && (
@@ -721,11 +730,11 @@ function App() {
           onConfirm={handleResetRanking}
           onDismiss={() => setShowResetModal(false)}
           subset={subset}
-          pg13={pg13}
+          pg13={effectivePg13}
         />
       )}
       {showLoadView && (
-        <LoadRankingView subset={subset} pg13={pg13} onClose={() => setShowLoadView(false)} />
+        <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
         <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
