@@ -11,26 +11,6 @@ body {
 
 /* ===================== Subset tokens ===================== */
 
-[data-theme='all'] {
-  --bg-page: #2a1216;
-  --bg-overlay: radial-gradient(120% 90% at 50% -20%, rgba(224, 178, 90, 0.16), transparent 60%);
-  --surface: #3a1a21;
-  --surface-border: rgba(224, 178, 90, 0.35);
-  --surface-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --accent: #e0b25a;
-  --accent-hover: #f0c771;
-  --accent-deep: #d9a746;
-  --accent-line: rgba(224, 178, 90, 0.3);
-  --text-high: #f6ead6;
-  --text-mid: #e8dccd;
-  --text-low: #8a7770;
-  --text-credit: #c7b6a8;
-  --poster-placeholder: repeating-linear-gradient(135deg, #3b1a21 0 5px, #452027 5px 10px);
-  --font-display: 'Playfair Display', serif;
-  --font-ui: 'DM Sans', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-}
-
 [data-theme='popular'] {
   --bg-page: #0b1224;
   --bg-overlay:
@@ -57,23 +37,17 @@ body {
 
 /* ===================== App shell ===================== */
 
+/* The film-reel watermark's faintness is baked into the asset's own alpha
+   channel, not applied via CSS opacity, since opacity would also fade the
+   gradient layer stacked behind it. */
 .app-shell {
   background-color: var(--bg-page);
-  background-image: var(--bg-overlay);
-  font-family: var(--font-ui);
-  color: var(--text-mid);
-}
-
-/* Large, low-opacity film-reel watermark (its faintness is baked into the
-   asset's own alpha channel, not applied via CSS opacity, since opacity
-   would also fade the gradient layer stacked behind it) — only under the
-   Neon/popular theme, whose teal tint the asset was recolored to match; the
-   warm All Movies theme keeps its own plain background. */
-.app-shell[data-theme='popular'] {
   background-image: var(--film-reel-bg-url), var(--bg-overlay);
   background-repeat: no-repeat, no-repeat;
   background-position: bottom -80px right -60px, 0 0;
   background-size: 900px auto, auto;
+  font-family: var(--font-ui);
+  color: var(--text-mid);
 }
 
 /* Banner */
@@ -86,10 +60,6 @@ body {
 .app-title {
   font-family: var(--font-display);
   color: var(--accent);
-}
-
-[data-theme='all'] .app-title {
-  font-weight: 800;
 }
 
 [data-theme='popular'] .app-title {
@@ -143,10 +113,6 @@ body {
   border-color: var(--accent);
   color: var(--text-high);
   outline: none;
-}
-
-[data-theme='all'] .subset-select {
-  border-radius: 999px;
 }
 
 .subset-select-arrow {
@@ -241,25 +207,9 @@ body {
   border: 1px solid transparent;
 }
 
-[data-theme='all'] .standings-row.ranked {
-  background-color: rgba(224, 178, 90, 0.05);
-}
-
 [data-theme='popular'] .standings-row.ranked {
   background: rgba(63, 210, 199, 0.07);
   border-color: rgba(63, 210, 199, 0.25);
-}
-
-[data-theme='all'] .standings-row.top-1 {
-  background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.16), transparent);
-}
-
-[data-theme='all'] .standings-row.top-2 {
-  background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.12), transparent);
-}
-
-[data-theme='all'] .standings-row.top-3 {
-  background-image: linear-gradient(90deg, rgba(224, 178, 90, 0.07), transparent);
 }
 
 [data-theme='popular'] .standings-row.top-1 {
@@ -270,15 +220,6 @@ body {
 .standings-rank {
   color: var(--text-low);
   font-family: var(--font-ui);
-}
-
-[data-theme='all'] .standings-row.top-1 .standings-rank,
-[data-theme='all'] .standings-row.top-2 .standings-rank,
-[data-theme='all'] .standings-row.top-3 .standings-rank {
-  color: var(--accent);
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 700;
 }
 
 [data-theme='popular'] .standings-row.top-1 .standings-rank {
@@ -322,12 +263,6 @@ body {
 .pack-category-label {
   font-family: var(--font-display);
   color: var(--accent);
-}
-
-[data-theme='all'] .pack-category-label {
-  font-style: italic;
-  font-weight: 600;
-  font-size: 26px;
 }
 
 [data-theme='popular'] .pack-category-label {
@@ -493,17 +428,6 @@ body {
   font-family: var(--font-ui);
 }
 
-[data-theme='all'] .rank-button {
-  border-radius: 999px;
-  background-image: linear-gradient(180deg, #f0c771, #d9a746);
-  color: #2a1216;
-  box-shadow: 0 8px 24px rgba(224, 178, 90, 0.3);
-}
-
-[data-theme='all'] .rank-button:hover:not(:disabled) {
-  background-image: linear-gradient(180deg, #f8d68d, #e5b65a);
-}
-
 [data-theme='popular'] .rank-button {
   border-radius: 8px;
   background: #f04f8c;
@@ -580,11 +504,7 @@ body {
   color: var(--bg-page);
 }
 
-[data-theme='all'] .modal-button-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
-[data-theme='popular'] .modal-button-primary:hover:not(:disabled) {
+.modal-button-primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 

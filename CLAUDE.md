@@ -391,10 +391,11 @@ language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody "Neon" palette (navy background, teal/pink accents) —
-  shared by every subset below except All Movies. The app icons flanking
-  the title, and the large low-opacity film-reel watermark behind the app
-  shell, are recolored to this palette's navy/teal (see **UI layout**) and
-  only appear under it — the source art lives outside the repo (the
+  shared by every other subset, All Movies included (#211). The app icons
+  flanking the title, and the large low-opacity film-reel watermark behind
+  the app shell, are recolored to this palette's navy/teal (see **UI
+  layout**) and appear under every subset now that it's the only palette —
+  the source art lives outside the repo (the
   original clip-art master), recolored via a one-off Pillow script (not
   checked in) into `public/favicon.svg`, `public/apple-touch-icon.png`,
   `public/pwa-192.png`, `public/pwa-512.png`, `public/pwa-maskable-512.png`,
@@ -414,9 +415,12 @@ language entries, and 1 country entry, grouped in the picker:
   "storybook night" palette (deep indigo background, marigold/teal accents),
   but that made it the only genre-shaped subset with a distinct visual
   identity, which read as inconsistent; removed in favor of one shared look
-  for every subset except All Movies.
-- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
-  parchment-toned palette.
+  across every subset.
+- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Shares
+  Popular's dark, moody palette like every other subset (#211) — it
+  previously had its own bespoke warm/parchment-toned palette, which made it
+  the last subset with a distinct visual identity; removed for the same
+  reason Family's bespoke palette was, above.
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
   Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
