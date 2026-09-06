@@ -53,6 +53,13 @@ function App() {
   // packs[0] is the active pack; packs[1..] is the upcoming queue.
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
+  // Set when a subset-switch fetch fails while stale (previous-subset)
+  // movies/packs are still on screen — see the effect below and #178.
+  // Kept separate from `error` because the full-page error branches key off
+  // `movies`/`category` being falsy, which isn't true during a subset
+  // switch; this instead drives an inline banner alongside the stale
+  // content, with a retry action.
+  const [subsetSwitchError, setSubsetSwitchError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
@@ -113,16 +120,18 @@ function App() {
     localStorage.setItem(SUBSET_STORAGE_KEY, subset)
   }, [subset])
 
-  // Every subset is a different pool, so always re-fetch on change. Old
-  // `movies`/`packs` stay on screen (not reset to null) while this is in
-  // flight, so `switchingSubset` drives a loading overlay over the stale
-  // pack/queue rather than the "Loading…" text used for the initial load,
-  // which would otherwise flash the previous subset's content for a beat
-  // before this settles (#175).
-  useEffect(() => {
-    setSkippedMovies([])
-    setAwaitingLastSkipConfirm(false)
+  // Fetches the active subset's movies/packs. Used both by the effect below
+  // on subset change and by the banner's Retry action after a failure —
+  // retrying re-runs this without touching skip/prompt state, since those
+  // were already reset by the switch that triggered the failed attempt.
+  // A failure while `movies`/`category` are still populated (a subset
+  // switch, since old data stays on screen — see #175) surfaces as an
+  // inline banner (`subsetSwitchError`) instead of the full-page error
+  // branches, which only render when `movies`/`category` are falsy (#178).
+  function loadSubset() {
+    const hadMovies = movies !== null
     setSwitchingSubset(true)
+    setSubsetSwitchError(null)
     const fetchId = ++subsetFetchId.current
     const isStale = () => fetchId !== subsetFetchId.current
     Promise.all([
@@ -136,11 +145,28 @@ function App() {
       }),
     ])
       .catch((err) => {
-        if (!isStale()) setError(err.message)
+        if (isStale()) return
+        if (hadMovies) {
+          setSubsetSwitchError(err.message)
+        } else {
+          setError(err.message)
+        }
       })
       .finally(() => {
         if (!isStale()) setSwitchingSubset(false)
       })
+  }
+
+  // Every subset is a different pool, so always re-fetch on change. Old
+  // `movies`/`packs` stay on screen (not reset to null) while this is in
+  // flight, so `switchingSubset` drives a loading overlay over the stale
+  // pack/queue rather than the "Loading…" text used for the initial load,
+  // which would otherwise flash the previous subset's content for a beat
+  // before this settles (#175).
+  useEffect(() => {
+    setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
+    loadSubset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subset])
 
@@ -503,6 +529,25 @@ function App() {
             <SubsetPicker subset={subset} onChange={setSubset} />
           </div>
         </header>
+
+        {subsetSwitchError && (
+          <div className="mx-4 mt-2 flex shrink-0 items-center justify-between gap-3 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300 md:mx-8">
+            <span>Couldn't switch subsets: {subsetSwitchError}</span>
+            <div className="flex shrink-0 items-center gap-3">
+              <button type="button" onClick={loadSubset} className="underline">
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubsetSwitchError(null)}
+                aria-label="Dismiss"
+                className="text-base leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[340px_1fr]">
           {showStandingsDrawer && (
