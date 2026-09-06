@@ -60,6 +60,7 @@ function App() {
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   const pendingSkipDiscard = useRef(false)
+  const pendingQueueDiscards = useRef([])
   const [skippedMovies, setSkippedMovies] = useState([])
 
   const category = packs?.[0] ?? null
@@ -188,11 +189,30 @@ function App() {
     const skippedMovieRecord = category.movies[skipIndex]
     setPacks((prev) => {
       const remaining = prev[0].movies.filter((m) => m.id !== movieId)
+      const activePack = { ...prev[0], movies: remaining }
       if (remaining.length <= 1) {
         pendingSkipDiscard.current = true
-        return [...prev]
       }
-      return [{ ...prev[0], movies: remaining }, ...prev.slice(1)]
+      // Queued packs were pre-generated and may already include the
+      // now-skipped movie (#155) — filtering it out here (rather than
+      // waiting until that pack is promoted to active) keeps a skipped
+      // movie from surfacing again just because it was already baked into
+      // a not-yet-selected queue pack. A pack that drops to <=1 movie is
+      // unusable, so queue it up for the effect below to replace.
+      const discards = []
+      const updatedQueue = prev.slice(1).map((pack) => {
+        if (!pack.movies.some((m) => m.id === movieId)) return pack
+        const packRemaining = pack.movies.filter((m) => m.id !== movieId)
+        if (packRemaining.length <= 1) {
+          discards.push(pack)
+          return pack
+        }
+        return { ...pack, movies: packRemaining }
+      })
+      if (discards.length > 0) {
+        pendingQueueDiscards.current = discards
+      }
+      return [activePack, ...updatedQueue]
     })
     // If the pack is about to be discarded (< 2 movies left), there's
     // nothing left to undo back into — the pendingSkipDiscard effect below
@@ -237,6 +257,40 @@ function App() {
           queue.slice(1).map((p) => p.label),
         )
         setPacks((prev) => [...prev.slice(1), freshPack])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setBusy(false)
+      }
+    })()
+  })
+
+  // Replaces any queued pack that a skip (#155, see handleSkipMovie above)
+  // dropped to <=1 movie. Matched by object identity rather than index/label
+  // since packs shift position as the queue advances and labels can repeat.
+  useEffect(() => {
+    if (pendingQueueDiscards.current.length === 0) return
+    const toReplace = pendingQueueDiscards.current
+    pendingQueueDiscards.current = []
+
+    ;(async () => {
+      setBusy(true)
+      try {
+        const replacements = []
+        for (const pack of toReplace) {
+          const avoidLabels = [
+            ...packs.filter((p) => !toReplace.includes(p)).map((p) => p.label),
+            ...replacements.map((r) => r.fresh.label),
+          ]
+          const freshPack = await fetchCategoryAvoidingDuplicateLabel(
+            () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
+            avoidLabels,
+          )
+          replacements.push({ old: pack, fresh: freshPack })
+        }
+        setPacks((prev) =>
+          prev.map((p) => replacements.find((r) => r.old === p)?.fresh ?? p),
+        )
       } catch (err) {
         setError(err.message)
       } finally {
