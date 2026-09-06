@@ -1,4 +1,8 @@
-import { selectTopByVoteCount } from './popularMode.js'
+import {
+  selectTopByVoteCountWithEraQuota,
+  CLASSIC_ERA_CUTOFF_YEAR,
+  CLASSIC_ERA_QUOTA,
+} from './popularMode.js'
 import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
 
 // Tune later — not a hard requirement from #165, just a starting cutoff.
@@ -88,7 +92,12 @@ export function selectGenreSubset(movies, subsetId) {
   if (!config) return movies
   const matched = movies.filter(config.matches)
   const scoped = subsetId === 'comicbook' ? matched : matched.filter((m) => !isMarvelOrDc(m))
-  return selectTopByVoteCount(scoped, GENRE_SUBSET_POOL_SIZE)
+  return selectTopByVoteCountWithEraQuota(
+    scoped,
+    GENRE_SUBSET_POOL_SIZE,
+    CLASSIC_ERA_QUOTA,
+    CLASSIC_ERA_CUTOFF_YEAR,
+  )
 }
 
 // Display label for any genre/language subset id — used by SaveRankingModal/

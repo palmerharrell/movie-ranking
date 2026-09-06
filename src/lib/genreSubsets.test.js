@@ -105,6 +105,16 @@ describe('selectGenreSubset', () => {
     )
     expect(selectGenreSubset(movies, 'horror')).toHaveLength(GENRE_SUBSET_POOL_SIZE)
   })
+
+  it('reserves room for classic-era movies even when modern entries would otherwise fill the whole cap (#203)', () => {
+    const modern = Array.from({ length: GENRE_SUBSET_POOL_SIZE }, (_, i) =>
+      movie({ id: `modern${i}`, genres: ['Horror'], voteCount: 1000 + i, year: 2010 }),
+    )
+    const classic = movie({ id: 'best-classic', genres: ['Horror'], voteCount: 5, year: 1950 })
+    const result = selectGenreSubset([...modern, classic], 'horror')
+    expect(result).toHaveLength(GENRE_SUBSET_POOL_SIZE)
+    expect(result.map((m) => m.id)).toContain('best-classic')
+  })
 })
 
 describe('genreSubsetLabel', () => {
