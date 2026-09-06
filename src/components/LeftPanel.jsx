@@ -35,10 +35,14 @@ function StandingsRow({ movie, rank, isLast }) {
 }
 
 export function LeftPanel({ movies, onReset }) {
-  const sorted = sortMovies(movies)
-  const rankedCount = movies.filter((m) => m.timesRanked >= 1).length
+  // Skipped ("haven't seen") movies are excluded from pack generation and
+  // the progress denominator (#136) — the Standings list itself should
+  // match, rather than still showing them at their default rank (#174).
+  const eligibleMovies = movies.filter((m) => !m.skipped)
+  const sorted = sortMovies(eligibleMovies)
+  const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
   const skippedCount = movies.filter((m) => m.skipped).length
-  const eligibleCount = sorted.length - skippedCount
+  const eligibleCount = eligibleMovies.length
 
   return (
     <div className="flex h-full flex-col">
