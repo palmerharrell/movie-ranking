@@ -59,6 +59,19 @@ describe('markSkipped / unmarkSkipped', () => {
     expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '2').skipped).toBe(false)
   })
 
+  it('clears eloRating/timesRanked for a movie ranked then skipped (#169)', () => {
+    applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
+    expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '1').timesRanked).toBe(1)
+
+    markSkipped('1')
+
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').eloRating).toBe(1000)
+    expect(byId.get('1').timesRanked).toBe(0)
+    expect(byId.get('1').skipped).toBe(true)
+  })
+
   it('survives resetLocalState (skip is independent of elo/timesRanked reset)', () => {
     markSkipped('1')
     applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))

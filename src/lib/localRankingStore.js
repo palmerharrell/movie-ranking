@@ -40,10 +40,16 @@ function writeSkippedIds(ids) {
 
 // Marks a movie "haven't seen" (#136) — permanently excluded from future
 // pack generation and from the ranked-progress denominator, until un-skipped.
+// Also clears any existing eloRating/timesRanked for it (#169): a movie
+// ranked and later skipped shouldn't keep stale rating data lingering in the
+// Standings — skipping it removes it from the ranking, not just from future
+// packs. Un-skipping afterward correctly starts it back at defaults rather
+// than restoring the old rating, since that data is now gone.
 export function markSkipped(movieId) {
   const ids = readSkippedIds()
   ids.add(movieId)
   writeSkippedIds(ids)
+  resetLocalState([movieId])
 }
 
 // Reverses markSkipped — used by the in-pack "undo skip" action, while the
