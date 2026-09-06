@@ -83,10 +83,21 @@ exposed in the UI.
 - **Skip ("Haven't Seen"):** each tile has a button to remove that movie from
   the active pack without ranking it (its `eloRating`/`timesRanked` are
   untouched). Ranking proceeds normally as long as 2+ movies remain. If a
-  skip would drop the pack to 1 movie, the app discards the pack (without
-  submitting any ranking data) and advances to the next pack instead —
-  mirroring "Rank →"'s queue-advance behavior, just without the Elo update.
-  Skip is persistent (#136), not just for the active pack: a skipped movie
+  skip would drop the pack to its last movie, the app does not silently
+  discard the pack — a lone remaining movie was never itself declined, so
+  treating it the same as an explicit skip would be presumptuous (#156).
+  Instead the pack stays active with that one movie still displayed, and an
+  inline prompt asks whether to skip it too
+  (`awaitingLastSkipConfirm`/`handleConfirmSkipLast`/`handleDeclineSkipLast`
+  in `App.jsx`, rendered by `RightPanel.jsx`): confirming skips it and then
+  discards the (now-empty) pack without submitting any ranking data,
+  advancing to the next pack — mirroring "Rank →"'s queue-advance behavior,
+  just without the Elo update; declining dismisses the prompt and leaves the
+  single movie in place, still skippable via its own tile button (which
+  re-offers the same prompt) or bypassable by picking a different pack from
+  the queue. The "Rank →" button is disabled while only one movie remains,
+  since a 1-movie pack can't be meaningfully ranked. Skip is persistent
+  (#136), not just for the active pack: a skipped movie
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
   pack generation and from the ranked-progress denominator (see **Progress

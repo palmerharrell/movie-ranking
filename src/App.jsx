@@ -59,8 +59,11 @@ function App() {
   const [showLoadView, setShowLoadView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
-  const pendingSkipDiscard = useRef(false)
   const [skippedMovies, setSkippedMovies] = useState([])
+  // True once a skip has dropped the active pack to its last remaining
+  // movie — see handleSkipMovie. While true, RightPanel shows an inline
+  // "skip this one too?" prompt instead of the Rank button (#156).
+  const [awaitingLastSkipConfirm, setAwaitingLastSkipConfirm] = useState(false)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -99,6 +102,7 @@ function App() {
   // Every subset is a different pool, so always re-fetch on change.
   useEffect(() => {
     setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
     api
       .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
       .then(noteMoviesUpdate)
@@ -114,6 +118,7 @@ function App() {
   async function handleRank() {
     setBusy(true)
     setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
     try {
       const movieIds = category.movies.map((m) => m.id)
       // Sequential: the fresh pack's overlap calculation reads timesRanked
@@ -156,6 +161,7 @@ function App() {
   async function handleSelectQueued(queueIndex) {
     setBusy(true)
     setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
     try {
       const remainingLabels = queue
         .filter((_, i) => i !== queueIndex)
@@ -177,34 +183,59 @@ function App() {
     }
   }
 
+  // Discards the active pack without submitting any ranking data and
+  // promotes/refills from the queue — used both when the pack empties out
+  // entirely and when the user confirms skipping the last remaining movie.
+  async function discardActivePack() {
+    setBusy(true)
+    try {
+      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
+        queue.slice(1).map((p) => p.label),
+      )
+      setPacks((prev) => [...prev.slice(1), freshPack])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // Derive `remaining` from `prev` (not the render-time `category` closure)
   // so two near-simultaneous skip clicks can't have the second overwrite
-  // the first's result. Since the setState updater runs during React's
-  // update processing (not synchronously here), the decision to discard the
-  // pack is recorded in a ref and acted on from an effect once the state
-  // update has actually committed.
+  // the first's result.
+  //
+  // If a skip would drop the pack to its last movie, it's no longer
+  // immediately discarded (#156) — a 1-movie pack can't meaningfully be
+  // ranked, but silently discarding it without asking meant a movie that
+  // was never actually declined got treated the same as one the user
+  // explicitly skipped. Instead the pack keeps that last movie displayed
+  // and RightPanel shows an inline "skip this one too?" prompt
+  // (handleConfirmSkipLast / handleDeclineSkipLast below) — a skip to 0
+  // movies (declining, then skipping the last one via its own tile button)
+  // still discards immediately, since there's nothing left to show.
   function handleSkipMovie(movieId) {
     const skipIndex = category.movies.findIndex((m) => m.id === movieId)
     const skippedMovieRecord = category.movies[skipIndex]
+    let remainingCount = 0
     setPacks((prev) => {
       const remaining = prev[0].movies.filter((m) => m.id !== movieId)
-      if (remaining.length <= 1) {
-        pendingSkipDiscard.current = true
-        return [...prev]
-      }
+      remainingCount = remaining.length
       return [{ ...prev[0], movies: remaining }, ...prev.slice(1)]
     })
-    // If the pack is about to be discarded (< 2 movies left), there's
-    // nothing left to undo back into — the pendingSkipDiscard effect below
-    // replaces the whole pack.
-    const willDiscard = category.movies.length <= 2
-    setSkippedMovies((prev) =>
-      willDiscard ? [] : [...prev, { movie: skippedMovieRecord, index: skipIndex }],
-    )
+    setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
     // just for this pack. handleUndoSkip below reverses it.
     api.markSkipped(movieId)
     setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: true } : m)))
+
+    if (remainingCount === 1) {
+      setAwaitingLastSkipConfirm(true)
+    } else if (remainingCount === 0) {
+      setSkippedMovies([])
+      setAwaitingLastSkipConfirm(false)
+      discardActivePack()
+    }
   }
 
   // Any movie skipped from the active pack can be restored, as long as that
@@ -221,29 +252,30 @@ function App() {
     setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
     api.unmarkSkipped(movieId)
     setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m)))
+    // Undoing a skip brings the pack back above 1 movie, so the "skip this
+    // one too?" prompt (if showing) no longer applies.
+    setAwaitingLastSkipConfirm(false)
   }
 
-  useEffect(() => {
-    if (!pendingSkipDiscard.current) return
-    pendingSkipDiscard.current = false
+  // "Yes" on the inline "skip this one too?" prompt (#156): skip the last
+  // remaining movie the same way any other tile-skip does, then discard the
+  // now-empty pack and advance, mirroring the old auto-discard behavior.
+  function handleConfirmSkipLast() {
+    const lastMovie = category.movies[0]
+    setAwaitingLastSkipConfirm(false)
+    api.markSkipped(lastMovie.id)
+    setMovies((prev) => prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true } : m)))
     setSkippedMovies([])
+    discardActivePack()
+  }
 
-    // Fewer than 2 movies left to rank — move on without collecting ranking data.
-    ;(async () => {
-      setBusy(true)
-      try {
-        const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre }),
-          queue.slice(1).map((p) => p.label),
-        )
-        setPacks((prev) => [...prev.slice(1), freshPack])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setBusy(false)
-      }
-    })()
-  })
+  // "No"/dismiss on the prompt: leave the pack as-is, with just its one
+  // remaining movie still displayed (and still skippable via its own tile
+  // button, which re-triggers this same flow). The user can also move on
+  // without deciding by picking a different pack from the queue.
+  function handleDeclineSkipLast() {
+    setAwaitingLastSkipConfirm(false)
+  }
 
   async function handleSaveRanking(name) {
     // Let a failure here propagate to the modal, which shows it inline.
@@ -253,6 +285,7 @@ function App() {
     setShowSaveModal(false)
     setShowResultsScreen(false)
     setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
 
     try {
@@ -276,6 +309,7 @@ function App() {
     await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre })
     setShowResetModal(false)
     setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
 
     try {
@@ -375,6 +409,9 @@ function App() {
                       onSkip={handleSkipMovie}
                       skippedMovies={skippedMovies}
                       onUndoSkip={handleUndoSkip}
+                      awaitingLastSkipConfirm={awaitingLastSkipConfirm}
+                      onConfirmSkipLast={handleConfirmSkipLast}
+                      onDeclineSkipLast={handleDeclineSkipLast}
                       disabled={busy}
                     />
                   )
@@ -391,7 +428,10 @@ function App() {
                 )}
                 {category?.type !== HEAD_TO_HEAD_TYPE && (
                   <div className="mt-4">
-                    <RankButton onClick={handleRank} disabled={!category || busy} />
+                    <RankButton
+                      onClick={handleRank}
+                      disabled={!category || busy || category.movies.length < 2}
+                    />
                   </div>
                 )}
               </div>

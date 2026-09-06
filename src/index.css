@@ -303,6 +303,12 @@ body {
   color: var(--text-high);
 }
 
+.last-skip-prompt {
+  border-color: var(--surface-border);
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--text-high);
+}
+
 .pack-category-label {
   font-family: var(--font-display);
   color: var(--text-high);
