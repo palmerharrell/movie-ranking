@@ -112,7 +112,10 @@ export async function rankPack(movieIds) {
   return mergeWithLocalState(staticMovies)
 }
 
-export async function saveRanking(name, { family, popular, genre } = {}) {
+// `subset` is the picker's own subset id ('popular', 'family', 'all', or a
+// genre/language/country id) — stamped on the snapshot so the Load dialog
+// can later filter to just the active subset (see getSavedRankings).
+export async function saveRanking(name, { family, popular, genre, subset } = {}) {
   const movies = await getMovies({ family, popular, genre })
   const eligible = movies.filter((m) => !m.skipped)
   if (eligible.length === 0 || eligible.some((m) => m.timesRanked < 1)) {
@@ -127,9 +130,7 @@ export async function saveRanking(name, { family, popular, genre } = {}) {
     method: 'POST',
     body: JSON.stringify({
       name,
-      family: !!family,
-      popular: !!popular,
-      genre: genre || null,
+      subset: subset || null,
       entries,
       clientId: getOrCreateClientId(),
     }),
@@ -143,8 +144,11 @@ export async function resetRanking({ family, popular, genre } = {}) {
   resetLocalState(movies.map((m) => m.id))
 }
 
-export function getSavedRankings() {
-  return request('/api/rankings')
+// Restricted to snapshots saved from the given subset id — the Load dialog
+// only ever wants the active subset's own saves (#186 follow-up).
+export function getSavedRankings(subset) {
+  const qs = subset ? `?subset=${encodeURIComponent(subset)}` : ''
+  return request(`/api/rankings${qs}`)
 }
 
 export function getSavedRanking(id) {

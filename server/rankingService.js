@@ -45,18 +45,21 @@ export function getMovies(dataDir, { family = false, popular = false, genre = nu
 // Persists a client-computed ranking snapshot — `entries` is the
 // {movieId, eloRating, timesRanked}[] the browser gathered from its own
 // local ranking state — tagged with that browser's client id so a future
-// edit/re-rank feature can restrict changes to the ranking's creator.
-export function saveRanking(db, name, entries, { ownerClientId } = {}) {
+// edit/re-rank feature can restrict changes to the ranking's creator, and
+// with the subset id it was saved from so the Load dialog can filter to the
+// active subset.
+export function saveRanking(db, name, entries, { ownerClientId, subset } = {}) {
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new Error('entries must be a non-empty array')
   }
-  const id = createSavedRanking(db, name, entries, ownerClientId ?? null)
+  const id = createSavedRanking(db, name, entries, ownerClientId ?? null, subset ?? null)
   return { id, name }
 }
 
-// { id, name, createdAt, movieCount }[] for every saved snapshot, newest first.
-export function listSavedRankings(db) {
-  return listSavedRankingsFromDb(db)
+// { id, name, createdAt, movieCount, subset }[] for saved snapshots, newest
+// first — restricted to one subset when `subset` is given.
+export function listSavedRankings(db, { subset } = {}) {
+  return listSavedRankingsFromDb(db, { subset })
 }
 
 // A saved snapshot's static metadata + snapshot-time eloRating/timesRanked,
