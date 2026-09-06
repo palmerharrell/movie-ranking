@@ -68,6 +68,9 @@ function App() {
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
+  // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
+  // (#182/#183) — fetched once since it's independent of the active subset.
+  const [allMoviesCount, setAllMoviesCount] = useState(null)
   const wasFullyRanked = useRef(false)
   // Guards against rapid subset switching: only the most recent subset's
   // fetch is allowed to apply its results or clear switchingSubset, so an
@@ -119,6 +122,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(SUBSET_STORAGE_KEY, subset)
   }, [subset])
+
+  useEffect(() => {
+    api.getMovies().then((allMovies) => setAllMoviesCount(allMovies.length))
+  }, [])
 
   // Fetches the active subset's movies/packs. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
@@ -526,7 +533,7 @@ function App() {
             >
               Skipped
             </button>
-            <SubsetPicker subset={subset} onChange={setSubset} />
+            <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
           </div>
         </header>
 
