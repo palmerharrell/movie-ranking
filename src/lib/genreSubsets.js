@@ -93,5 +93,9 @@ export function genreSubsetExclusions(subsetId) {
   if (config.genres) exclusions.push(...config.genres.map((genre) => ({ type: 'genre', value: genre })))
   if (config.language) exclusions.push({ type: 'language', value: config.language })
   if (config.keyword) exclusions.push({ type: 'keyword', value: config.keyword })
+  // No 'country' attribute type exists in categoryGenerator.js yet, so this
+  // is inert today — kept so British doesn't silently reintroduce the #160
+  // tautology bug if a country-based category attribute is ever added.
+  if (config.country) exclusions.push({ type: 'country', value: config.country })
   return exclusions
 }

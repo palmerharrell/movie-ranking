@@ -305,8 +305,8 @@ There are no more cosmetic-only "themes" — the banner's picker
 **subset of the pool** to rank, and each subset carries its own visual
 identity (a `data-theme` value with its own CSS custom-property palette in
 `src/index.css`) purely as a side effect of which subset is active, not as
-an independent choice. Three general entries plus 14 genre/language
-entries plus 1 country entry, grouped in the picker:
+an independent choice. Three general entries plus 14 genre entries, 3
+language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody palette.

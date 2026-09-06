@@ -118,7 +118,7 @@ describe('genreSubsetExclusions', () => {
     expect(genreSubsetExclusions('not-a-real-subset')).toEqual([])
   })
 
-  it('returns an empty array for british (no genre/language/keyword attribute to exclude)', () => {
-    expect(genreSubsetExclusions('british')).toEqual([])
+  it('returns the country attribute for british', () => {
+    expect(genreSubsetExclusions('british')).toEqual([{ type: 'country', value: 'GB' }])
   })
 })
