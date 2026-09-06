@@ -45,12 +45,14 @@ of every movie in that pool, using an Elo-style rating system.
 ## Data model (`movies.json`)
 Each movie: `id, title, year, decade, director, genres[], cast[], posterUrl,
 mpaaRating, studio, collection, originalLanguage, keywords[], voteCount,
-sources[]`.
+productionCountries[], sources[]`.
 Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
-certification for it — see **Movie subsets**. `studio` is the movie's
+certification for it. Not currently used to drive any subset filter — the
+Family subset (see **Movie subsets**) is genre-based, not rating-based
+(#152) — kept as general metadata for potential future use. `studio` is the movie's
 production company if it matches a curated allowlist of notable studios
 (`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
 TMDb lists several production companies per movie, most too obscure to be a
@@ -63,7 +65,10 @@ keyword tags that match a curated allowlist (`KEYWORD_LABELS` in
 mostly one-off per movie, so only allowlisted tags are kept (can be empty).
 `voteCount` is TMDb's `vote_count` from `/movie/{id}` — a stable "how
 mainstream/well-known is this" proxy, used to build the Popular subset (see
-below) — or `null` if TMDb has no vote data for it.
+below) — or `null` if TMDb has no vote data for it. `productionCountries[]`
+is TMDb's `production_countries` from `/movie/{id}`, as ISO 3166-1 country
+codes (e.g. `["US", "GB"]`) — used to build the British subset (see **Movie
+subsets**); can be empty if TMDb has no production-country data for it.
 
 ## Popular subset (#104)
 `GET /api/movies` also accepts `?popular=true` (composable with
@@ -83,19 +88,41 @@ exposed in the UI.
 - **Skip ("Haven't Seen"):** each tile has a button to remove that movie from
   the active pack without ranking it (its `eloRating`/`timesRanked` are
   untouched). Ranking proceeds normally as long as 2+ movies remain. If a
-  skip would drop the pack to 1 movie, the app discards the pack (without
-  submitting any ranking data) and advances to the next pack instead —
-  mirroring "Rank →"'s queue-advance behavior, just without the Elo update.
-  Skip is persistent (#136), not just for the active pack: a skipped movie
+  skip would drop the pack to its last movie, the app does not silently
+  discard the pack — a lone remaining movie was never itself declined, so
+  treating it the same as an explicit skip would be presumptuous (#156).
+  Instead the pack stays active with that one movie still displayed, and an
+  inline prompt asks whether to skip it too
+  (`awaitingLastSkipConfirm`/`handleConfirmSkipLast`/`handleDeclineSkipLast`
+  in `App.jsx`, rendered by `RightPanel.jsx`): confirming skips it and then
+  discards the (now-empty) pack without submitting any ranking data,
+  advancing to the next pack — mirroring "Rank →"'s queue-advance behavior,
+  just without the Elo update; declining dismisses the prompt and leaves the
+  single movie in place, still skippable via its own tile button (which
+  re-offers the same prompt) or bypassable by picking a different pack from
+  the queue. The "Rank →" button is disabled while only one movie remains,
+  since a 1-movie pack can't be meaningfully ranked. Skipping also filters
+  the skipped movie out of any already-generated queued packs that include
+  it (#155, `replaceDiscardedQueuePacks` in `App.jsx`) — otherwise a movie
+  just marked "haven't seen" could resurface if that pre-generated queue
+  pack were later selected. A queued pack that drops to <=1 movie this way
+  is discarded and replaced with a freshly generated one. Skip is persistent
+  (#136), not just for the active pack: a skipped movie
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
   pack generation and from the ranked-progress denominator (see **Progress
-  tracking**), until un-skipped. The only way to undo a skip today is the
-  in-pack "undo" while that pack is still active (`onUndoSkip`) — a
-  dedicated "Skipped" view for browsing/un-skipping/clearing the whole list
-  later is tracked separately (#137, **NOT YET IMPLEMENTED**). Skipped state
-  survives Reset/Save (it's a fact about the viewer, not about a ranking
-  run — see **Saved rankings**).
+  tracking**), until un-skipped. Besides the in-pack "undo" while that pack
+  is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
+  `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
+  banner next to "Load Ranking") lists every persistently-skipped movie
+  (poster/title/year, matching the Standings row styling) with a per-movie
+  "Un-skip" button and a "Clear All" action that un-skips everything at
+  once — both call `api.unmarkSkipped`/`localRankingStore.js`'s
+  `unmarkSkipped` directly, independent of whether the pack that skip
+  happened in is still active, so a skip can be reversed at any time, not
+  just immediately after it happens. Skipped state survives Reset/Save
+  (it's a fact about the viewer, not about a ranking run — see **Saved
+  rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
   transitively linked — approximate (Elo doesn't guarantee strict
   transitivity) but converges toward a consistent full ranking as more of the
@@ -202,7 +229,7 @@ exposed in the UI.
   resets that scope's local ranking state back to defaults (`eloRating =
   1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
   full-pool save resets the whole pool; a Family-mode save resets only the
-  family-safe subset, leaving progress on the rest of the pool untouched.
+  Family subset, leaving progress on the rest of the pool untouched.
   This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
   "2027 Redo") without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
@@ -243,15 +270,15 @@ exposed in the UI.
     - `saved_rankings(id, name, created_at, data, owner_client_id)` —
       completed snapshots; `data` is the JSON-serialized
       `{movieId, eloRating, timesRanked}[]` at save time — only the movies
-      actually in scope for that save (the whole pool, or just the
-      family-safe subset for a Family-mode save). `owner_client_id` is the
+      actually in scope for that save (the whole pool, or just the Family
+      subset for a Family-mode save). `owner_client_id` is the
       creating browser's client id — reserved for a future edit/re-rank
       feature restricted to the ranking's creator (#115); not yet enforced by
       any endpoint.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
-      `?family=true` restricts to the family-safe subset (see **Family
-      mode**). The client merges this with its own local ranking state.
+      `?family=true` restricts to the Family subset (see **Movie subsets**).
+      The client merges this with its own local ranking state.
     - `POST /api/rankings` — body: `{name, family, entries, clientId}`, where
       `entries` is the `{movieId, eloRating, timesRanked}[]` the browser
       gathered from its own local ranking state; the server just persists it
@@ -277,31 +304,46 @@ exposed in the UI.
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, subset picker, and a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**).
+- **Banner:** app title, subset picker, a "Load Ranking" entry point for
+  browsing saved snapshots (see **Saved rankings**), and a "Skipped" entry
+  point for browsing/un-skipping persistently-skipped movies (#137, see
+  **Skip ("Haven't Seen")**).
 
-## Movie subsets (#104, #146, #150)
+## Movie subsets (#104, #146, #150, #151)
 There are no more cosmetic-only "themes" — the banner's picker
 (`src/components/SubsetPicker.jsx`, a grouped `<select>`) chooses which
 **subset of the pool** to rank, and each subset carries its own visual
 identity (a `data-theme` value with its own CSS custom-property palette in
 `src/index.css`) purely as a side effect of which subset is active, not as
-an independent choice. Three general entries plus 14 genre/language
-entries, grouped in the picker:
+an independent choice. Three general entries plus 14 genre entries, 3
+language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody palette.
-- **Family (PG-13)** (`subset: 'family'`) — movies whose `mpaaRating` is `G`,
-  `PG`, or `PG-13` — see `src/lib/familyMode.js`'s `isFamilySafe`. A movie
-  with no confirmed US certification (`mpaaRating: null`) is excluded, not
-  assumed safe. Warm "storybook night" palette (deep indigo background,
-  marigold/teal accents) — cheerful without being glaring.
+- **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
+  genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
+  `isFamilyGenre`/`selectFamilySubset` (#152). This is a curation filter,
+  not an MPAA safety guarantee: a Family-genre movie can still carry any
+  `mpaaRating`, including `PG-13` or, in principle, something TMDb
+  miscategorizes — there is no rating floor layered underneath it. (This
+  replaced an earlier `mpaaRating`-based G/PG/PG-13 filter, `isFamilySafe`,
+  which offered that safety guarantee but not genre-based curation; #152
+  deliberately traded one for the other.) Caps to the same
+  top-N-by-`voteCount` as Popular and the other genre/language subsets, via
+  `selectFamilySubset`. Warm "storybook night" palette (deep indigo
+  background, marigold/teal accents) — cheerful without being glaring.
 - **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
   parchment-toned palette.
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
   Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
-  Italian. Each filters the pool by the movie's own genre(s) (`genres[]`,
+  Italian. TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
+  — it's the defining attribute of the general **Family** subset above
+  instead, so a second "Family" entry in the picker's Genres group would be
+  redundant (this was previously framed as avoiding a naming collision with
+  the old MPAA-based Family subset, #150; now that Family means this genre,
+  it's the same subset, not a collision to avoid). Each filters the pool by
+  the movie's own genre(s) (`genres[]`,
   matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`),
   keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
@@ -314,6 +356,20 @@ entries, grouped in the picker:
   popular enough. See **Building the list** below for how the pool is kept
   stocked with genuinely popular movies per subset, not just whatever we'd
   already collected.
+- **British** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`, `id: 'british'`,
+  #151) — filters by `productionCountries` including `"GB"` (unlike the
+  genre/language subsets above, "British" isn't derivable from `genres[]`/
+  `originalLanguage`, so it gets its own field — see **Data model**), then
+  caps to the same top-N-by-`voteCount` as Popular via `selectTopByVoteCount`.
+  Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
+  in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
+  subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
+  (`scripts/discoverTopMovies.js`'s `top-british` target, confirmed live
+  against TMDb during planning) merged in via `scripts/enrich-sources.js`,
+  same discover-fetch pattern as the genre/language subsets. Existing pool
+  entries enriched before `productionCountries` existed are backfilled via
+  `scripts/refreshEnrichedFields.js` (same one-off backfill script used for
+  `voteCount` in #104 and the `musical` keyword in #150).
 - `GET /api/movies?family=true&popular=true&genre=comedy` composes
   server-side filters (family applied first, then one top-N strategy —
   `genre` and `popular` are alternate strategies, only one ever applies);

@@ -33,9 +33,18 @@ const DISCOVER_TARGETS = [
   { sourceId: 'top-animation', params: { with_genres: '16' } },
   { sourceId: 'top-thriller', params: { with_genres: '53' } },
   { sourceId: 'top-crime', params: { with_genres: '80' } },
+  // Backs the Family subset (#152) — genre-based, not the old
+  // mpaaRating-based filter. 10751 confirmed live against TMDb's
+  // /genre/movie/list during planning, same as every other id above.
+  { sourceId: 'top-family', params: { with_genres: '10751' } },
   { sourceId: 'top-french', params: { with_original_language: 'fr' } },
   { sourceId: 'top-spanish', params: { with_original_language: 'es' } },
   { sourceId: 'top-italian', params: { with_original_language: 'it' } },
+  // with_origin_country=GB confirmed live against TMDb's /discover/movie
+  // during planning (#151) — returns real UK (co-)productions (Inception,
+  // the Harry Potter series, etc.) sorted by vote_count, same as the other
+  // discover targets above.
+  { sourceId: 'top-british', params: { with_origin_country: 'GB' } },
 ]
 
 function yearFromReleaseDate(releaseDate) {

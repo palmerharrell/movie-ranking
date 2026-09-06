@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -20,9 +21,13 @@ export function RightPanel({
   onSkip,
   skippedMovies,
   onUndoSkip,
+  awaitingLastSkipConfirm,
+  onConfirmSkipLast,
+  onDeclineSkipLast,
   disabled,
 }) {
   const sensors = useSensors(useSensor(PointerSensor))
+  const tilesListRef = useRef(null)
 
   function handleDragEnd(event) {
     const { active, over } = event
@@ -33,14 +38,33 @@ export function RightPanel({
     onReorder(arrayMove(category.movies, oldIndex, newIndex))
   }
 
+  // Moving the tapped Skip button's own `blur()` (see #125) isn't enough on
+  // touch: mobile browsers assign focus as part of a click's *default
+  // action*, which for a synthesized touch click can run after our onClick
+  // handler returns — silently undoing an immediate blur — and then, once
+  // the tile is removed from the DOM, the browser falls back to focusing
+  // whatever ends up in that same DOM position (another tile's Skip
+  // button). Deferring to a macrotask (setTimeout) guarantees this runs
+  // after any such native default action, so we can deterministically move
+  // focus to a stable, intentional target (the tile list container, not a
+  // moving tile) instead of leaving it to the browser's fallback.
+  function handleSkip(movieId) {
+    onSkip(movieId)
+    setTimeout(() => {
+      tilesListRef.current?.focus({ preventScroll: true })
+    }, 0)
+  }
+
   return (
     <div className="pack-card">
       <div className="mb-3">
         <div className="flex items-baseline justify-between gap-3">
           <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
-          <p className="rank-caption text-[11px] text-right">
-            Drag to reorder, click Rank to set order and go to next list
-          </p>
+          {category.movies.length > 1 && (
+            <p className="rank-caption text-[11px] text-right">
+              Drag to reorder, click Rank to set order and go to next list
+            </p>
+          )}
         </div>
         <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
       </div>
@@ -53,19 +77,42 @@ export function RightPanel({
           items={category.movies.map((m) => m.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex flex-col gap-2">
+          <div ref={tilesListRef} tabIndex={-1} className="flex flex-col gap-2 outline-none">
             {category.movies.map((movie, index) => (
               <MovieTile
                 key={movie.id}
                 movie={movie}
                 rank={index + 1}
-                onSkip={onSkip}
+                onSkip={handleSkip}
                 disabled={disabled}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+      {awaitingLastSkipConfirm && category.movies.length === 1 && (
+        <div className="last-skip-prompt mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm">
+          <p>Skip &ldquo;{category.movies[0].title}&rdquo; too?</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onDeclineSkipLast}
+              disabled={disabled}
+              className="modal-button-secondary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Not yet
+            </button>
+            <button
+              type="button"
+              onClick={onConfirmSkipLast}
+              disabled={disabled}
+              className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Skip it
+            </button>
+          </div>
+        </div>
+      )}
       {skippedMovies.length > 0 && (
         <div className="mt-3 flex flex-col gap-1">
           {skippedMovies.map(({ movie }) => (

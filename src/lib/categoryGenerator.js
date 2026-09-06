@@ -82,6 +82,16 @@ function matchesAttribute(movie, type, value) {
   return attributeValues(movie, type).includes(value)
 }
 
+// Whether a candidate attribute type/value pick is one of the active
+// subset's own defining attributes (#160) — e.g. genre="Science Fiction"
+// while the Sci-Fi subset is selected, or language="fr" for French. Such a
+// pick would be tautological (every movie in the pool already matches it),
+// whether used standalone or as one half of a pair, so tryBuildCategory
+// excludes it from the candidate values it draws from.
+function isExcludedPick(type, value, excludedAttributes) {
+  return excludedAttributes.some((e) => e.type === type && e.value === value)
+}
+
 function randomItem(array, random) {
   return array[Math.floor(random() * array.length)]
 }
@@ -106,14 +116,18 @@ function labelFor(picks) {
 
 // Picks a random single attribute, or a random pair of two different
 // attribute types, and returns the movies matching all picked values —
-// or null if fewer than 5 movies match.
-export function tryBuildCategory(movies, random) {
+// or null if fewer than 5 movies match. `excludedAttributes` (#160) keeps
+// the active subset's own defining attribute value out of the candidate
+// pool, whether picked solo or as one half of a pair.
+export function tryBuildCategory(movies, random, excludedAttributes = []) {
   const usePair = random() < 0.5
   const types = shuffle(ATTRIBUTE_TYPES, random)
   const picks = []
 
   const firstType = types[0]
-  const firstPool = movies.flatMap((m) => attributeValues(m, firstType))
+  const firstPool = movies
+    .flatMap((m) => attributeValues(m, firstType))
+    .filter((value) => !isExcludedPick(firstType, value, excludedAttributes))
   if (firstPool.length === 0) return null
   picks.push({ type: firstType, value: randomItem(firstPool, random) })
 
@@ -122,7 +136,9 @@ export function tryBuildCategory(movies, random) {
     const remaining = movies.filter((m) =>
       matchesAttribute(m, picks[0].type, picks[0].value),
     )
-    const secondPool = remaining.flatMap((m) => attributeValues(m, secondType))
+    const secondPool = remaining
+      .flatMap((m) => attributeValues(m, secondType))
+      .filter((value) => !isExcludedPick(secondType, value, excludedAttributes))
     if (secondPool.length > 0) {
       picks.push({ type: secondType, value: randomItem(secondPool, random) })
     }
@@ -206,6 +222,11 @@ function toughChoicePack(movies, selectOptions) {
 // previous pack for this list. `totalRankedCount` is the number of such
 // movies in the whole list (used for the overlap-eligibility threshold).
 // `random` defaults to Math.random but can be injected for deterministic tests.
+// `excludedAttributes` (#160) is an array of `{type, value}` pairs — when the
+// caller is already scoped to a genre/language subset (e.g. Sci-Fi), it
+// passes that subset's own defining attribute(s) here so tryBuildCategory
+// never builds a category (solo or paired) that's tautological within the
+// current pool.
 //
 // Most packs are attribute-based, but a "Random Five" pack — sampled from
 // the whole pool with no attribute filter — gets thrown in occasionally
@@ -217,7 +238,12 @@ function toughChoicePack(movies, selectOptions) {
 // is checked first, drawn from just the top 10.
 export function generateCategory(
   movies,
-  { isRanked = () => false, totalRankedCount = 0, random = Math.random } = {},
+  {
+    isRanked = () => false,
+    totalRankedCount = 0,
+    random = Math.random,
+    excludedAttributes = [],
+  } = {},
 ) {
   const selectOptions = { isRanked, random, totalRankedCount }
 
@@ -237,7 +263,7 @@ export function generateCategory(
   }
 
   for (let attempt = 0; attempt < MAX_CATEGORY_ATTEMPTS; attempt++) {
-    const category = tryBuildCategory(movies, random)
+    const category = tryBuildCategory(movies, random, excludedAttributes)
     if (!category) continue
     const pack = selectFivePack(category.movies, selectOptions)
     if (pack.length === 5) {

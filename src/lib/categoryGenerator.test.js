@@ -168,6 +168,97 @@ describe('generateCategory', () => {
     }
   })
 
+  it('never builds a solo category on an excluded attribute value (#160)', () => {
+    // All movies share genre "Science Fiction" (like a Sci-Fi subset pool),
+    // plus varying decade/director/cast so other attributes remain available.
+    const movies = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + i,
+      decade: i < 5 ? '80s' : '90s',
+      director: i % 2 === 0 ? 'director-A' : 'director-B',
+      genres: ['Science Fiction'],
+      cast: ['Actor X'],
+    }))
+    const excludedAttributes = [{ type: 'genre', value: 'Science Fiction' }]
+
+    for (let seed = 0; seed < 300; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed), excludedAttributes)
+      if (!result) continue
+      for (const pick of result.picks) {
+        expect(pick.type === 'genre' && pick.value === 'Science Fiction').toBe(false)
+      }
+    }
+  })
+
+  it('never builds a paired category using an excluded attribute as either half (#160)', () => {
+    const movies = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + i,
+      decade: i < 5 ? '80s' : '90s',
+      director: i % 2 === 0 ? 'director-A' : 'director-B',
+      genres: ['Science Fiction'],
+      cast: ['Actor X'],
+    }))
+    const excludedAttributes = [{ type: 'genre', value: 'Science Fiction' }]
+
+    let sawPair = false
+    for (let seed = 0; seed < 300; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed), excludedAttributes)
+      if (!result || result.picks.length < 2) continue
+      sawPair = true
+      const usesExcluded = result.picks.some(
+        (p) => p.type === 'genre' && p.value === 'Science Fiction',
+      )
+      expect(usesExcluded).toBe(false)
+    }
+    expect(sawPair).toBe(true) // sanity check: pairs did get built (on decade/director/etc)
+  })
+
+  it('still allows other single/paired categories while excluding the subset attribute (#160)', () => {
+    const movies = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + i,
+      decade: i < 5 ? '80s' : '90s',
+      director: i % 2 === 0 ? 'director-A' : 'director-B',
+      genres: ['Science Fiction'],
+      cast: ['Actor X'],
+    }))
+    const excludedAttributes = [{ type: 'genre', value: 'Science Fiction' }]
+
+    const seenTypes = new Set()
+    for (let seed = 0; seed < 300; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed), excludedAttributes)
+      if (!result) continue
+      result.picks.forEach((p) => seenTypes.add(p.type))
+    }
+    expect(seenTypes.has('decade')).toBe(true)
+    expect(seenTypes.has('director')).toBe(true)
+  })
+
+  it('excludes a language subset attribute the same way (#160)', () => {
+    const movies = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + i,
+      decade: i < 5 ? '80s' : '90s',
+      director: i % 2 === 0 ? 'director-A' : 'director-B',
+      genres: ['Drama'],
+      originalLanguage: 'fr',
+    }))
+    const excludedAttributes = [{ type: 'language', value: 'fr' }]
+
+    for (let seed = 0; seed < 300; seed++) {
+      const result = tryBuildCategory(movies, seededRandom(seed), excludedAttributes)
+      if (!result) continue
+      for (const pick of result.picks) {
+        expect(pick.type === 'language' && pick.value === 'fr').toBe(false)
+      }
+    }
+  })
+
   it('formats each allowed pair type as specified', () => {
     const movie = {
       year: 1999,

@@ -1,10 +1,13 @@
 import { generateCategory } from './categoryGenerator.js'
+import { genreSubsetExclusions } from './genreSubsets.js'
+import { familySubsetExclusions } from './familyMode.js'
 import {
   mergeWithLocalState,
   applyRankToLocalState,
   resetLocalState,
   markSkipped as markSkippedLocal,
   unmarkSkipped as unmarkSkippedLocal,
+  unmarkAllSkipped as unmarkAllSkippedLocal,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
@@ -46,7 +49,12 @@ export async function getMovies({ family, popular, genre } = {}) {
 }
 
 // Skipped ("haven't seen") movies are excluded from the eligible pool
-// entirely (#136), not just from the pack they were skipped in.
+// entirely (#136), not just from the pack they were skipped in. When `genre`
+// names an active genre/language subset, or `family` is active, its own
+// defining attribute(s) are excluded from category generation (#160) —
+// every movie in this pool already matches it, so a category built on it
+// would be tautological (e.g. no "Family Movies" category while the Family
+// subset, itself Family-genre-filtered per #152, is active).
 export async function getCategory({ family, popular, genre } = {}) {
   const movies = await getMovies({ family, popular, genre })
   const eligible = movies.filter((m) => !m.skipped)
@@ -54,6 +62,10 @@ export async function getCategory({ family, popular, genre } = {}) {
   return generateCategory(eligible, {
     isRanked: (m) => m.timesRanked > 0,
     totalRankedCount: rankedCount,
+    excludedAttributes: [
+      ...(family ? familySubsetExclusions() : []),
+      ...(genre ? genreSubsetExclusions(genre) : []),
+    ],
   })
 }
 
@@ -65,7 +77,21 @@ export function unmarkSkipped(movieId) {
   unmarkSkippedLocal(movieId)
 }
 
-// Unfiltered — a pack built in Family mode still only contains family-safe
+// Every persistently-skipped movie across the whole pool, regardless of
+// which subset is currently active — skip state isn't scoped to a subset
+// (#136), so the Skipped view (#137) needs the unfiltered pool rather than
+// whatever subset the rest of the app is currently showing.
+export async function getSkippedMovies() {
+  const movies = await getMovies()
+  return movies.filter((m) => m.skipped)
+}
+
+// Un-skips every given movie in one batched write (#137's "Clear all").
+export function unmarkAllSkipped(movieIds) {
+  unmarkAllSkippedLocal(movieIds)
+}
+
+// Unfiltered — a pack built in Family mode still only contains Family-genre
 // movies, but the returned pool reflects every movie's state (mirrors the
 // pre-#115 server response, which was always unfiltered).
 export async function rankPack(movieIds) {

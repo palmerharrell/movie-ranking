@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { selectGenreSubset, genreSubsetLabel, GENRE_SUBSETS } from './genreSubsets.js'
+import {
+  selectGenreSubset,
+  genreSubsetLabel,
+  genreSubsetExclusions,
+  GENRE_SUBSETS,
+} from './genreSubsets.js'
 
 function movie(overrides) {
   return { id: 'm', genres: [], keywords: [], voteCount: 0, ...overrides }
@@ -48,6 +53,16 @@ describe('selectGenreSubset', () => {
     expect(selectGenreSubset(movies, 'french').map((m) => m.id)).toEqual(['fr'])
   })
 
+  it('matches by productionCountries including GB for the british subset', () => {
+    const movies = [
+      movie({ id: 'gb', productionCountries: ['GB'] }),
+      movie({ id: 'gb-and-us', productionCountries: ['US', 'GB'] }),
+      movie({ id: 'us-only', productionCountries: ['US'] }),
+      movie({ id: 'no-countries' }),
+    ]
+    expect(selectGenreSubset(movies, 'british').map((m) => m.id)).toEqual(['gb', 'gb-and-us'])
+  })
+
   it('caps to the shared top-N-by-voteCount, sorted descending', () => {
     const movies = [
       movie({ id: 'low', genres: ['Horror'], voteCount: 1 }),
@@ -76,5 +91,34 @@ describe('GENRE_SUBSETS', () => {
   it('has a unique id per entry', () => {
     const ids = GENRE_SUBSETS.map((s) => s.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('genreSubsetExclusions', () => {
+  it('returns the genre attribute for a single-genre subset', () => {
+    expect(genreSubsetExclusions('sci-fi')).toEqual([{ type: 'genre', value: 'Science Fiction' }])
+  })
+
+  it('returns both genre attributes for a two-genre subset (rom-com)', () => {
+    expect(genreSubsetExclusions('rom-com')).toEqual([
+      { type: 'genre', value: 'Romance' },
+      { type: 'genre', value: 'Comedy' },
+    ])
+  })
+
+  it('returns the language attribute for a language subset', () => {
+    expect(genreSubsetExclusions('french')).toEqual([{ type: 'language', value: 'fr' }])
+  })
+
+  it('returns the keyword attribute for musicals', () => {
+    expect(genreSubsetExclusions('musicals')).toEqual([{ type: 'keyword', value: 'musical' }])
+  })
+
+  it('returns an empty array for an unknown subset id', () => {
+    expect(genreSubsetExclusions('not-a-real-subset')).toEqual([])
+  })
+
+  it('returns the country attribute for british', () => {
+    expect(genreSubsetExclusions('british')).toEqual([{ type: 'country', value: 'GB' }])
   })
 })

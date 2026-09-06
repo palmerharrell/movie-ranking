@@ -1,13 +1,16 @@
-import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS } from '../lib/genreSubsets.js'
+import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS, COUNTRY_SUBSET_IDS } from '../lib/genreSubsets.js'
 
 const GENERAL_SUBSETS = [
   { id: 'popular', label: 'Popular' },
-  { id: 'family', label: 'Family (PG-13)' },
+  { id: 'family', label: 'Family' },
   { id: 'all', label: 'All Movies' },
 ]
 
-const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter((g) => !LANGUAGE_SUBSET_IDS.includes(g.id))
+const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter(
+  (g) => !LANGUAGE_SUBSET_IDS.includes(g.id) && !COUNTRY_SUBSET_IDS.includes(g.id),
+)
 const LANGUAGE_SUBSETS = GENRE_SUBSETS.filter((g) => LANGUAGE_SUBSET_IDS.includes(g.id))
+const COUNTRY_SUBSETS = GENRE_SUBSETS.filter((g) => COUNTRY_SUBSET_IDS.includes(g.id))
 
 export function SubsetPicker({ subset, onChange }) {
   return (
@@ -32,6 +35,13 @@ export function SubsetPicker({ subset, onChange }) {
       </optgroup>
       <optgroup label="Language">
         {LANGUAGE_SUBSETS.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.label}
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Country">
+        {COUNTRY_SUBSETS.map((s) => (
           <option key={s.id} value={s.id}>
             {s.label}
           </option>

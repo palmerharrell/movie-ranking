@@ -3,8 +3,8 @@ import { genreSubsetLabel } from '../lib/genreSubsets.js'
 
 const FIXED_COPY = {
   family: {
-    title: 'Every family-friendly movie has been ranked',
-    body: 'Give this ranking a name to save it. Saving resets just the family-friendly movies so you can start a fresh family ranking run — the rest of your pool is untouched.',
+    title: 'Every movie in Family has been ranked',
+    body: 'Give this ranking a name to save it. Saving resets just the Family movies so you can start a fresh Family ranking run — the rest of your pool is untouched.',
   },
   all: {
     title: 'Every movie has been ranked',
