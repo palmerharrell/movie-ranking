@@ -38,13 +38,20 @@ describe('selectGenreSubset', () => {
     expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual(['has-keyword'])
   })
 
-  it('musicals includes the hardcoded Coco/Sister Act exceptions even without the keyword', () => {
+  it('musicals includes the hardcoded exceptions even without the keyword (#150/#205)', () => {
     const movies = [
       movie({ id: 'coco', tmdbId: 354912, keywords: [] }),
       movie({ id: 'sister-act', tmdbId: 2005, keywords: [] }),
+      movie({ id: 'flower-drum-song', tmdbId: 25105, keywords: [] }),
+      movie({ id: 'thoroughly-modern-millie', tmdbId: 32489, keywords: [] }),
       movie({ id: 'unrelated', tmdbId: 999, keywords: [] }),
     ]
-    expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual(['coco', 'sister-act'])
+    expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual([
+      'coco',
+      'sister-act',
+      'flower-drum-song',
+      'thoroughly-modern-millie',
+    ])
   })
 
   it('matches by originalLanguage for language subsets', () => {

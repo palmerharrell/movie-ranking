@@ -13,11 +13,12 @@ import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
 // Sci-Fi subset).
 export const GENRE_SUBSET_POOL_SIZE = 100
 
-// Coco and Sister Act are real musicals TMDb doesn't tag with the `musical`
-// keyword (confirmed live against TMDb's API during planning, #150) — a
-// small curated exception, same spirit as NOTABLE_STUDIOS/KEYWORD_LABELS in
+// Coco, Sister Act, Flower Drum Song (1961), and Thoroughly Modern Millie
+// (1967) are real musicals TMDb doesn't tag with the `musical` keyword
+// (confirmed live against TMDb's API during planning, #150/#205) — a small
+// curated exception, same spirit as NOTABLE_STUDIOS/KEYWORD_LABELS in
 // curatedAttributes.js.
-const MUSICAL_TMDB_ID_EXCEPTIONS = [354912, 2005]
+const MUSICAL_TMDB_ID_EXCEPTIONS = [354912, 2005, 25105, 32489]
 
 function hasAllGenres(movie, genres) {
   return genres.every((g) => (movie.genres || []).includes(g))
