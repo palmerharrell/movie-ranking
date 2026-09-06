@@ -17,8 +17,6 @@ const HOLD_DURATION_MS = 1600
 // says which half of the row this card started in, since the direction to
 // slide depends on that.
 function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
-  const cast = movie.cast?.slice(0, 3) ?? []
-
   const slideStyle =
     slide === 'winner'
       ? {
@@ -52,10 +50,9 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
             ({movie.year})
           </span>
         </p>
-        {(cast.length > 0 || movie.director) && (
+        {movie.director && (
           <div className="movie-tile-credits mt-1 space-y-0.5 text-[11px]">
-            {cast.length > 0 && <p className="truncate">Starring: {cast.join(', ')}</p>}
-            {movie.director && <p className="truncate">Directed by: {movie.director}</p>}
+            <p className="truncate">Directed by: {movie.director}</p>
           </div>
         )}
       </div>
