@@ -9,6 +9,7 @@ import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
+import { SkippedView } from './components/SkippedView.jsx'
 import * as api from './lib/api.js'
 import { isFamilySafe } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -57,6 +58,7 @@ function App() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
+  const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const wasFullyRanked = useRef(false)
   // Set inside handleSkipMovie's setPacks updater, acted on by the effect
@@ -338,6 +340,33 @@ function App() {
     setAwaitingLastSkipConfirm(false)
   }
 
+  // Un-skips a movie from the Skipped view (#137) — distinct from
+  // handleUndoSkip above, which only reverses a skip while the pack it
+  // happened in is still active. This one works on any persistently-skipped
+  // movie regardless of which pack (if any) is currently active, putting it
+  // back in the pool for future pack generation and the ranked-progress
+  // denominator (mergeWithLocalState/isFullyRanked both key off `skipped`).
+  function handleUnskipFromView(movieId) {
+    api.unmarkSkipped(movieId)
+    setMovies((prev) => {
+      const updated = prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m))
+      wasFullyRanked.current = isFullyRanked(updated)
+      return updated
+    })
+  }
+
+  // "Clear All" on the Skipped view: un-skips every currently-skipped movie
+  // in the visible pool at once.
+  function handleClearAllSkipped() {
+    const skippedIds = movies.filter((m) => m.skipped).map((m) => m.id)
+    for (const id of skippedIds) api.unmarkSkipped(id)
+    setMovies((prev) => {
+      const updated = prev.map((m) => (skippedIds.includes(m.id) ? { ...m, skipped: false } : m))
+      wasFullyRanked.current = isFullyRanked(updated)
+      return updated
+    })
+  }
+
   // "Yes" on the inline "skip this one too?" prompt (#156): skip the last
   // remaining movie the same way any other tile-skip does, then discard the
   // now-empty pack and advance, mirroring the old auto-discard behavior.
@@ -429,6 +458,13 @@ function App() {
             </button>
             <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
               Load Ranking
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSkippedView(true)}
+              className="banner-button"
+            >
+              Skipped
             </button>
             <SubsetPicker subset={subset} onChange={setSubset} />
           </div>
@@ -557,6 +593,14 @@ function App() {
         />
       )}
       {showLoadView && <LoadRankingView onClose={() => setShowLoadView(false)} />}
+      {showSkippedView && movies && (
+        <SkippedView
+          movies={movies}
+          onUnskip={handleUnskipFromView}
+          onClearAll={handleClearAllSkipped}
+          onClose={() => setShowSkippedView(false)}
+        />
+      )}
     </div>
   )
 }
