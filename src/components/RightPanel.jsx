@@ -94,21 +94,25 @@ export function RightPanel({
         <div className="last-skip-prompt mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm">
           <p>Skip &ldquo;{category.movies[0].title}&rdquo; too?</p>
           <div className="flex gap-2">
+            {/* No is the default (#194): primary styling and autoFocus, since
+                declining is the non-destructive choice — it doesn't touch the
+                movie's ranking data, unlike Yes. */}
             <button
               type="button"
               onClick={onDeclineSkipLast}
               disabled={disabled}
-              className="modal-button-secondary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              autoFocus
+              className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Not yet
+              No
             </button>
             <button
               type="button"
               onClick={onConfirmSkipLast}
               disabled={disabled}
-              className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="modal-button-secondary text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Skip it
+              Yes
             </button>
           </div>
         </div>

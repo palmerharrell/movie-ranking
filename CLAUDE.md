@@ -92,15 +92,20 @@ exposed in the UI.
   discard the pack — a lone remaining movie was never itself declined, so
   treating it the same as an explicit skip would be presumptuous (#156).
   Instead the pack stays active with that one movie still displayed, and an
-  inline prompt asks whether to skip it too
+  inline prompt with explicit Yes/No buttons — No is the default, both
+  visually (primary styling) and for keyboard use (autofocused) since it's
+  the non-destructive choice (#194) — asks whether to skip it too
   (`awaitingLastSkipConfirm`/`handleConfirmSkipLast`/`handleDeclineSkipLast`
-  in `App.jsx`, rendered by `RightPanel.jsx`): confirming skips it and then
+  in `App.jsx`, rendered by `RightPanel.jsx`). Neither answer leaves the user
+  stranded on an unrankable 1-movie pack (#195): Yes skips it and then
   discards the (now-empty) pack without submitting any ranking data,
-  advancing to the next pack — mirroring "Rank →"'s queue-advance behavior,
-  just without the Elo update; declining dismisses the prompt and leaves the
-  single movie in place, still skippable via its own tile button (which
-  re-offers the same prompt) or bypassable by picking a different pack from
-  the queue. The "Rank →" button is disabled while only one movie remains,
+  advancing to the next pack; No leaves the movie itself unskipped but still
+  discards the pack and advances the same way — mirroring "Rank →"'s
+  queue-advance behavior, just without the Elo update either way. Clicking
+  that lone movie's own tile skip button while the prompt is showing
+  re-offers the same prompt rather than executing an unconfirmed skip,
+  since that tile *is* the movie the prompt is already asking about. The
+  "Rank →" button is disabled while only one movie remains,
   since a 1-movie pack can't be meaningfully ranked. Skipping also filters
   the skipped movie out of any already-generated queued packs that include
   it (#155, `replaceDiscardedQueuePacks` in `App.jsx`) — otherwise a movie
