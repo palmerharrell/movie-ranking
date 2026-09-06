@@ -1,4 +1,12 @@
-import { selectTopByVoteCount, POPULAR_POOL_SIZE } from './popularMode.js'
+import { selectTopByVoteCount } from './popularMode.js'
+
+// Tune later — not a hard requirement from #165, just a starting cutoff.
+// Smaller than POPULAR_POOL_SIZE: niche genre/language/country subsets don't
+// have as much depth of genuinely popular titles as Popular/Family/All
+// Movies do, so sharing the same 300-movie cap left a long tail of obscure
+// matches users ended up skipping en masse (#165, e.g. nearly a third of the
+// Sci-Fi subset).
+export const GENRE_SUBSET_POOL_SIZE = 100
 
 // Coco and Sister Act are real musicals TMDb doesn't tag with the `musical`
 // keyword (confirmed live against TMDb's API during planning, #150) — a
@@ -66,11 +74,12 @@ export const COUNTRY_SUBSET_IDS = ['british']
 // language) — not by which sources[] tag got a movie into the pool, so a
 // Comedy added via personal import still surfaces here if popular enough,
 // not only ones fetched via the top-comedy discover source (#150). Then
-// caps to the same top-N-by-voteCount used by Popular.
+// caps to GENRE_SUBSET_POOL_SIZE — smaller than Popular's cap since these
+// niche subsets run shallower on genuinely popular titles (#165).
 export function selectGenreSubset(movies, subsetId) {
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return movies
-  return selectTopByVoteCount(movies.filter(config.matches), POPULAR_POOL_SIZE)
+  return selectTopByVoteCount(movies.filter(config.matches), GENRE_SUBSET_POOL_SIZE)
 }
 
 // Display label for any genre/language subset id — used by SaveRankingModal/

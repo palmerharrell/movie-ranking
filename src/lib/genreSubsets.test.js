@@ -4,7 +4,9 @@ import {
   genreSubsetLabel,
   genreSubsetExclusions,
   GENRE_SUBSETS,
+  GENRE_SUBSET_POOL_SIZE,
 } from './genreSubsets.js'
+import { POPULAR_POOL_SIZE } from './popularMode.js'
 
 function movie(overrides) {
   return { id: 'm', genres: [], keywords: [], voteCount: 0, ...overrides }
@@ -74,6 +76,14 @@ describe('selectGenreSubset', () => {
   it('returns the input unchanged for an unknown subset id', () => {
     const movies = [movie({ id: 'a' })]
     expect(selectGenreSubset(movies, 'not-a-real-subset')).toBe(movies)
+  })
+
+  it('caps to GENRE_SUBSET_POOL_SIZE, which is smaller than Popular\'s POPULAR_POOL_SIZE (#165)', () => {
+    expect(GENRE_SUBSET_POOL_SIZE).toBeLessThan(POPULAR_POOL_SIZE)
+    const movies = Array.from({ length: GENRE_SUBSET_POOL_SIZE + 50 }, (_, i) =>
+      movie({ id: `m${i}`, genres: ['Horror'], voteCount: i }),
+    )
+    expect(selectGenreSubset(movies, 'horror')).toHaveLength(GENRE_SUBSET_POOL_SIZE)
   })
 })
 
