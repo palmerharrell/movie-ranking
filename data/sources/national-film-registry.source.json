@@ -1,0 +1,3746 @@
+[
+  {
+    "title": "12 Angry Men",
+    "year": 1957
+  },
+  {
+    "title": "13 Lakes",
+    "year": 2004
+  },
+  {
+    "title": "20,000 Leagues Under the Sea",
+    "year": 1916
+  },
+  {
+    "title": "2001: A Space Odyssey",
+    "year": 1968
+  },
+  {
+    "title": "3:10 to Yuma",
+    "year": 1957
+  },
+  {
+    "title": "4 Little Girls",
+    "year": 1997
+  },
+  {
+    "title": "42nd Street",
+    "year": 1933
+  },
+  {
+    "title": "The 7th Voyage of Sinbad",
+    "year": 1958
+  },
+  {
+    "title": "Ace in the Hole",
+    "year": 1951
+  },
+  {
+    "title": "Adam's Rib",
+    "year": 1949
+  },
+  {
+    "title": "The Adventures of Robin Hood",
+    "year": 1938
+  },
+  {
+    "title": "The African Queen",
+    "year": 1951
+  },
+  {
+    "title": "Airplane!",
+    "year": 1980
+  },
+  {
+    "title": "Alien",
+    "year": 1979
+  },
+  {
+    "title": "All About Eve",
+    "year": 1950
+  },
+  {
+    "title": "All My Babies... A Midwife's Own Story",
+    "year": 1953
+  },
+  {
+    "title": "All Quiet on the Western Front",
+    "year": 1930
+  },
+  {
+    "title": "All That Heaven Allows",
+    "year": 1955
+  },
+  {
+    "title": "All That Jazz",
+    "year": 1979
+  },
+  {
+    "title": "All the King's Men",
+    "year": 1949
+  },
+  {
+    "title": "All the President's Men",
+    "year": 1976
+  },
+  {
+    "title": "Allures",
+    "year": 1961
+  },
+  {
+    "title": "Amadeus",
+    "year": 1984
+  },
+  {
+    "title": "America America",
+    "year": 1963
+  },
+  {
+    "title": "American Graffiti",
+    "year": 1973
+  },
+  {
+    "title": "An American in Paris",
+    "year": 1951
+  },
+  {
+    "title": "Anatomy of a Murder",
+    "year": 1959
+  },
+  {
+    "title": "Animal House",
+    "year": 1978
+  },
+  {
+    "title": "Annie Hall",
+    "year": 1977
+  },
+  {
+    "title": "Antonia: A Portrait of the Woman",
+    "year": 1974
+  },
+  {
+    "title": "The Apartment",
+    "year": 1960
+  },
+  {
+    "title": "Apocalypse Now",
+    "year": 1979
+  },
+  {
+    "title": "Appalachian Spring",
+    "year": 1944
+  },
+  {
+    "title": "Applause",
+    "year": 1929
+  },
+  {
+    "title": "The Asphalt Jungle",
+    "year": 1950
+  },
+  {
+    "title": "Atlantic City",
+    "year": 1980
+  },
+  {
+    "title": "The Atomic Cafe",
+    "year": 1982
+  },
+  {
+    "title": "The Augustas",
+    "year": 1930
+  },
+  {
+    "title": "The Awful Truth",
+    "year": 1937
+  },
+  {
+    "title": "Baby Face",
+    "year": 1933
+  },
+  {
+    "title": "Back to the Future",
+    "year": 1985
+  },
+  {
+    "title": "The Bad and the Beautiful",
+    "year": 1952
+  },
+  {
+    "title": "Bad Day at Black Rock",
+    "year": 1955
+  },
+  {
+    "title": "Badlands",
+    "year": 1973
+  },
+  {
+    "title": "Ball of Fire",
+    "year": 1941
+  },
+  {
+    "title": "Bambi",
+    "year": 1942
+  },
+  {
+    "title": "The Band Wagon",
+    "year": 1953
+  },
+  {
+    "title": "The Bank Dick",
+    "year": 1940
+  },
+  {
+    "title": "The Bargain",
+    "year": 1914
+  },
+  {
+    "title": "The Battle of the Century",
+    "year": 1927
+  },
+  {
+    "title": "The Beau Brummels",
+    "year": 1928
+  },
+  {
+    "title": "Beauty and the Beast",
+    "year": 1991
+  },
+  {
+    "title": "Becky Sharp",
+    "year": 1935
+  },
+  {
+    "title": "Before Stonewall",
+    "year": 1984
+  },
+  {
+    "title": "Being There",
+    "year": 1979
+  },
+  {
+    "title": "Ben-Hur",
+    "year": 1959
+  },
+  {
+    "title": "Ben-Hur: A Tale of the Christ",
+    "year": 1925
+  },
+  {
+    "title": "The Best Years of Our Lives",
+    "year": 1946
+  },
+  {
+    "title": "Big Business",
+    "year": 1929
+  },
+  {
+    "title": "The Big Heat",
+    "year": 1953
+  },
+  {
+    "title": "The Big Lebowski",
+    "year": 1998
+  },
+  {
+    "title": "The Big Parade",
+    "year": 1925
+  },
+  {
+    "title": "The Big Sleep",
+    "year": 1946
+  },
+  {
+    "title": "The Big Trail",
+    "year": 1930
+  },
+  {
+    "title": "The Birds",
+    "year": 1963
+  },
+  {
+    "title": "The Birth of a Nation",
+    "year": 1915
+  },
+  {
+    "title": "Black and Tan",
+    "year": 1929
+  },
+  {
+    "title": "The Black Pirate",
+    "year": 1926
+  },
+  {
+    "title": "The Black Stallion",
+    "year": 1979
+  },
+  {
+    "title": "Blackboard Jungle",
+    "year": 1955
+  },
+  {
+    "title": "Blacksmithing Scene",
+    "year": 1893
+  },
+  {
+    "title": "Blade Runner",
+    "year": 1982
+  },
+  {
+    "title": "Blazing Saddles",
+    "year": 1974
+  },
+  {
+    "title": "Bless Their Little Hearts",
+    "year": 1983
+  },
+  {
+    "title": "The Blood of Jesus",
+    "year": 1941
+  },
+  {
+    "title": "The Blue Bird",
+    "year": 1918
+  },
+  {
+    "title": "The Blues Brothers",
+    "year": 1980
+  },
+  {
+    "title": "Body and Soul",
+    "year": 1925
+  },
+  {
+    "title": "Bonnie and Clyde",
+    "year": 1967
+  },
+  {
+    "title": "Born Yesterday",
+    "year": 1950
+  },
+  {
+    "title": "Boulevard Nights",
+    "year": 1979
+  },
+  {
+    "title": "Boys Don't Cry",
+    "year": 1999
+  },
+  {
+    "title": "Boyz n the Hood",
+    "year": 1991
+  },
+  {
+    "title": "Brandy in the Wilderness",
+    "year": 1969
+  },
+  {
+    "title": "Bread",
+    "year": 1918
+  },
+  {
+    "title": "Breakfast at Tiffany's",
+    "year": 1961
+  },
+  {
+    "title": "The Breakfast Club",
+    "year": 1985
+  },
+  {
+    "title": "Bride of Frankenstein",
+    "year": 1935
+  },
+  {
+    "title": "The Bridge on the River Kwai",
+    "year": 1957
+  },
+  {
+    "title": "Bringing Up Baby",
+    "year": 1938
+  },
+  {
+    "title": "Broadcast News",
+    "year": 1987
+  },
+  {
+    "title": "Brokeback Mountain",
+    "year": 2005
+  },
+  {
+    "title": "Broken Blossoms",
+    "year": 1919
+  },
+  {
+    "title": "A Bronx Morning",
+    "year": 1931
+  },
+  {
+    "title": "Bud Abbott and Lou Costello Meet Frankenstein",
+    "year": 1948
+  },
+  {
+    "title": "Buena Vista Social Club",
+    "year": 1999
+  },
+  {
+    "title": "The Buffalo Creek Flood: An Act of Man",
+    "year": 1975
+  },
+  {
+    "title": "Bullitt",
+    "year": 1968
+  },
+  {
+    "title": "Butch Cassidy and the Sundance Kid",
+    "year": 1969
+  },
+  {
+    "title": "Cabaret",
+    "year": 1972
+  },
+  {
+    "title": "Cabin in the Sky",
+    "year": 1943
+  },
+  {
+    "title": "The Cameraman",
+    "year": 1928
+  },
+  {
+    "title": "Carmen Jones",
+    "year": 1954
+  },
+  {
+    "title": "Casablanca",
+    "year": 1942
+  },
+  {
+    "title": "Castro Street",
+    "year": 1966
+  },
+  {
+    "title": "Cat People",
+    "year": 1942
+  },
+  {
+    "title": "Chan Is Missing",
+    "year": 1982
+  },
+  {
+    "title": "The Cheat",
+    "year": 1915
+  },
+  {
+    "title": "The Chechahcos",
+    "year": 1923
+  },
+  {
+    "title": "Chicana",
+    "year": 1979
+  },
+  {
+    "title": "Chinatown",
+    "year": 1974
+  },
+  {
+    "title": "Christmas Day",
+    "year": 1928
+  },
+  {
+    "title": "A Christmas Story",
+    "year": 1983
+  },
+  {
+    "title": "Chulas Fronteras",
+    "year": 1976
+  },
+  {
+    "title": "The Urban Crisis and the New Militants: Module 7 - Cicero March",
+    "year": 1966
+  },
+  {
+    "title": "Cinderella",
+    "year": 1950
+  },
+  {
+    "title": "Citizen Kane",
+    "year": 1941
+  },
+  {
+    "title": "The City",
+    "year": 1939
+  },
+  {
+    "title": "City Lights",
+    "year": 1931
+  },
+  {
+    "title": "Civilization",
+    "year": 1916
+  },
+  {
+    "title": "Clash of the Wolves",
+    "year": 1925
+  },
+  {
+    "title": "Clerks",
+    "year": 1994
+  },
+  {
+    "title": "A Clockwork Orange",
+    "year": 1971
+  },
+  {
+    "title": "Close Encounters of the Third Kind",
+    "year": 1977
+  },
+  {
+    "title": "Coal Miner's Daughter",
+    "year": 1980
+  },
+  {
+    "title": "Cologne: From the Diary of Ray and Esther",
+    "year": 1939
+  },
+  {
+    "title": "Commandment Keeper Church, Beaufort South Carolina, May 1940",
+    "year": 1940
+  },
+  {
+    "title": "A Computer Animated Hand",
+    "year": 1972
+  },
+  {
+    "title": "The Conversation",
+    "year": 1974
+  },
+  {
+    "title": "Cool Hand Luke",
+    "year": 1967
+  },
+  {
+    "title": "The Cool World",
+    "year": 1963
+  },
+  {
+    "title": "Cooley High",
+    "year": 1975
+  },
+  {
+    "title": "Cops",
+    "year": 1922
+  },
+  {
+    "title": "The Corbett-Fitzsimmons Fight",
+    "year": 1897
+  },
+  {
+    "title": "A Corner in Wheat",
+    "year": 1909
+  },
+  {
+    "title": "The Court Jester",
+    "year": 1955
+  },
+  {
+    "title": "Crisis: Behind a Presidential Commitment",
+    "year": 1963
+  },
+  {
+    "title": "The Crowd",
+    "year": 1928
+  },
+  {
+    "title": "The Cry of Jazz",
+    "year": 1959
+  },
+  {
+    "title": "The Cry of the Children",
+    "year": 1912
+  },
+  {
+    "title": "A Cure for Pokeritis",
+    "year": 1912
+  },
+  {
+    "title": "The Curse of Quon Gwon: When the Far East Mingles with the West",
+    "year": 1916
+  },
+  {
+    "title": "Czechoslovakia 1968",
+    "year": 1969
+  },
+  {
+    "title": "D.O.A.",
+    "year": 1949
+  },
+  {
+    "title": "Dance, Girl, Dance",
+    "year": 1940
+  },
+  {
+    "title": "Dances with Wolves",
+    "year": 1990
+  },
+  {
+    "title": "The Dark Knight",
+    "year": 2008
+  },
+  {
+    "title": "The Daughter of Dawn",
+    "year": 1920
+  },
+  {
+    "title": "Daughter of Shanghai",
+    "year": 1937
+  },
+  {
+    "title": "Daughters of the Dust",
+    "year": 1991
+  },
+  {
+    "title": "David Holzman's Diary",
+    "year": 1967
+  },
+  {
+    "title": "The Day the Earth Stood Still",
+    "year": 1951
+  },
+  {
+    "title": "Days of Heaven",
+    "year": 1978
+  },
+  {
+    "title": "Days of Wine and Roses",
+    "year": 1962
+  },
+  {
+    "title": "Dead Birds",
+    "year": 1963
+  },
+  {
+    "title": "Decasia: The State of Decay",
+    "year": 2002
+  },
+  {
+    "title": "The Decline of Western Civilization",
+    "year": 1981
+  },
+  {
+    "title": "The Deer Hunter",
+    "year": 1978
+  },
+  {
+    "title": "Deliverance",
+    "year": 1972
+  },
+  {
+    "title": "Demolishing and Building Up the Star Theatre",
+    "year": 1901
+  },
+  {
+    "title": "Destry Rides Again",
+    "year": 1939
+  },
+  {
+    "title": "Detour",
+    "year": 1945
+  },
+  {
+    "title": "The Devil Never Sleeps",
+    "year": 1994
+  },
+  {
+    "title": "Dickson Experimental Sound Film",
+    "year": 1894
+  },
+  {
+    "title": "Die Hard",
+    "year": 1988
+  },
+  {
+    "title": "Dirty Harry",
+    "year": 1971
+  },
+  {
+    "title": "Disneyland Dream",
+    "year": 1956
+  },
+  {
+    "title": "Dixon-Wanamaker Expedition to Crow Agency",
+    "year": 1908
+  },
+  {
+    "title": "Do the Right Thing",
+    "year": 1989
+  },
+  {
+    "title": "The Docks of New York",
+    "year": 1928
+  },
+  {
+    "title": "Dodsworth",
+    "year": 1936
+  },
+  {
+    "title": "Dog Day Afternoon",
+    "year": 1975
+  },
+  {
+    "title": "Dog Star Man: Part IV",
+    "year": 1964
+  },
+  {
+    "title": "Dont Look Back",
+    "year": 1967
+  },
+  {
+    "title": "Double Indemnity",
+    "year": 1944
+  },
+  {
+    "title": "Down Argentine Way",
+    "year": 1940
+  },
+  {
+    "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+    "year": 1964
+  },
+  {
+    "title": "The Dragon Painter",
+    "year": 1919
+  },
+  {
+    "title": "Dr\u00e1cula",
+    "year": 1931
+  },
+  {
+    "title": "Dream of a Rarebit Fiend",
+    "year": 1906
+  },
+  {
+    "title": "Duck Amuck",
+    "year": 1953
+  },
+  {
+    "title": "Duck and Cover",
+    "year": 1952
+  },
+  {
+    "title": "Duck Soup",
+    "year": 1933
+  },
+  {
+    "title": "Dumbo",
+    "year": 1941
+  },
+  {
+    "title": "E.T. the Extra-Terrestrial",
+    "year": 1982
+  },
+  {
+    "title": "Eadweard Muybridge, Zoopraxographer",
+    "year": 1975
+  },
+  {
+    "title": "Early Abstractions",
+    "year": 1965
+  },
+  {
+    "title": "East of Eden",
+    "year": 1955
+  },
+  {
+    "title": "Easy Rider",
+    "year": 1969
+  },
+  {
+    "title": "Eaux d'Artifice",
+    "year": 1953
+  },
+  {
+    "title": "Edison Kinetoscopic Record of a Sneeze",
+    "year": 1894
+  },
+  {
+    "title": "El Mariachi",
+    "year": 1992
+  },
+  {
+    "title": "El Norte",
+    "year": 1983
+  },
+  {
+    "title": "Electronic Labyrinth: THX 1138 4EB",
+    "year": 1967
+  },
+  {
+    "title": "Ella Cinders",
+    "year": 1926
+  },
+  {
+    "title": "Emigrants Landing at Ellis Island",
+    "year": 1903
+  },
+  {
+    "title": "Emperor Jones",
+    "year": 1933
+  },
+  {
+    "title": "Empire",
+    "year": 1965
+  },
+  {
+    "title": "The Empire Strikes Back",
+    "year": 1980
+  },
+  {
+    "title": "Employees' Entrance",
+    "year": 1933
+  },
+  {
+    "title": "The Endless Summer",
+    "year": 1966
+  },
+  {
+    "title": "Enter the Dragon",
+    "year": 1973
+  },
+  {
+    "title": "Eraserhead",
+    "year": 1977
+  },
+  {
+    "title": "Eve's Bayou",
+    "year": 1997
+  },
+  {
+    "title": "Evergreen",
+    "year": 1964
+  },
+  {
+    "title": "The Evidence of the Film",
+    "year": 1913
+  },
+  {
+    "title": "The Exiles",
+    "year": 1961
+  },
+  {
+    "title": "The Exorcist",
+    "year": 1973
+  },
+  {
+    "title": "The Exploits of Elaine",
+    "year": 1914
+  },
+  {
+    "title": "A Face in the Crowd",
+    "year": 1957
+  },
+  {
+    "title": "Faces",
+    "year": 1968
+  },
+  {
+    "title": "Fake Fruit Factory",
+    "year": 1986
+  },
+  {
+    "title": "The Fall of the House of Usher",
+    "year": 1928
+  },
+  {
+    "title": "Fantasia",
+    "year": 1940
+  },
+  {
+    "title": "Fargo",
+    "year": 1996
+  },
+  {
+    "title": "Fast Times at Ridgemont High",
+    "year": 1982
+  },
+  {
+    "title": "Fatty's Tintype Tangle",
+    "year": 1915
+  },
+  {
+    "title": "Felicia",
+    "year": 1965
+  },
+  {
+    "title": "Ferris Bueller's Day Off",
+    "year": 1986
+  },
+  {
+    "title": "Field of Dreams",
+    "year": 1989
+  },
+  {
+    "title": "Film Portrait",
+    "year": 1972
+  },
+  {
+    "title": "Five Easy Pieces",
+    "year": 1970
+  },
+  {
+    "title": "Flash Gordon",
+    "year": 1936
+  },
+  {
+    "title": "Flesh and the Devil",
+    "year": 1926
+  },
+  {
+    "title": "Flower Drum Song",
+    "year": 1961
+  },
+  {
+    "title": "Flowers and Trees",
+    "year": 1932
+  },
+  {
+    "title": "The Flying Ace",
+    "year": 1926
+  },
+  {
+    "title": "The Fog of War",
+    "year": 2003
+  },
+  {
+    "title": "A Fool There Was",
+    "year": 1915
+  },
+  {
+    "title": "Foolish Wives",
+    "year": 1922
+  },
+  {
+    "title": "Footlight Parade",
+    "year": 1933
+  },
+  {
+    "title": "Forbidden Planet",
+    "year": 1956
+  },
+  {
+    "title": "Force of Evil",
+    "year": 1948
+  },
+  {
+    "title": "The Forgotten Frontier",
+    "year": 1931
+  },
+  {
+    "title": "Forrest Gump",
+    "year": 1994
+  },
+  {
+    "title": "The Four Horsemen of the Apocalypse",
+    "year": 1921
+  },
+  {
+    "title": "Fourth of July Parade",
+    "year": 1929
+  },
+  {
+    "title": "Fox Movietone News: Jenkins Orphanage Band",
+    "year": 1928
+  },
+  {
+    "title": "Frank Film",
+    "year": 1973
+  },
+  {
+    "title": "Frankenstein",
+    "year": 1931
+  },
+  {
+    "title": "Freaks",
+    "year": 1932
+  },
+  {
+    "title": "Free Radicals",
+    "year": 1958
+  },
+  {
+    "title": "Freedom Riders",
+    "year": 2010
+  },
+  {
+    "title": "The French Connection",
+    "year": 1971
+  },
+  {
+    "title": "The Freshman",
+    "year": 1925
+  },
+  {
+    "title": "From Here to Eternity",
+    "year": 1953
+  },
+  {
+    "title": "From Stump to Ship",
+    "year": 1930
+  },
+  {
+    "title": "From the Manger to the Cross",
+    "year": 1912
+  },
+  {
+    "title": "The Front Page",
+    "year": 1931
+  },
+  {
+    "title": "Frontier",
+    "year": 1936
+  },
+  {
+    "title": "Fuentes Family Ranch",
+    "year": 1938
+  },
+  {
+    "title": "Fuji",
+    "year": 1974
+  },
+  {
+    "title": "Funny Girl",
+    "year": 1968
+  },
+  {
+    "title": "Fury",
+    "year": 1936
+  },
+  {
+    "title": "The Gang's All Here",
+    "year": 1943
+  },
+  {
+    "title": "Garlic Is as Good as Ten Mothers",
+    "year": 1980
+  },
+  {
+    "title": "Gaslight",
+    "year": 1944
+  },
+  {
+    "title": "The General",
+    "year": 1926
+  },
+  {
+    "title": "Gentleman's Agreement",
+    "year": 1947
+  },
+  {
+    "title": "George Stevens World War II Footage",
+    "year": 1946
+  },
+  {
+    "title": "George Washington Carver at Tuskegee Institute",
+    "year": 1937
+  },
+  {
+    "title": "Gerald McBoing-Boing",
+    "year": 1950
+  },
+  {
+    "title": "Gertie the Dinosaur",
+    "year": 1914
+  },
+  {
+    "title": "Ghostbusters",
+    "year": 1984
+  },
+  {
+    "title": "Giant",
+    "year": 1956
+  },
+  {
+    "title": "Gigi",
+    "year": 1958
+  },
+  {
+    "title": "Gilda",
+    "year": 1946
+  },
+  {
+    "title": "The Girl Without a Soul",
+    "year": 1917
+  },
+  {
+    "title": "Girlfriends",
+    "year": 1978
+  },
+  {
+    "title": "Glimpse of the Garden",
+    "year": 1957
+  },
+  {
+    "title": "The Godfather",
+    "year": 1972
+  },
+  {
+    "title": "The Godfather Part II",
+    "year": 1974
+  },
+  {
+    "title": "Going My Way",
+    "year": 1944
+  },
+  {
+    "title": "Gold Diggers of 1933",
+    "year": 1933
+  },
+  {
+    "title": "The Gold Rush",
+    "year": 1925
+  },
+  {
+    "title": "Gone with the Wind",
+    "year": 1939
+  },
+  {
+    "title": "GoodFellas",
+    "year": 1990
+  },
+  {
+    "title": "The Goonies",
+    "year": 1985
+  },
+  {
+    "title": "The Graduate",
+    "year": 1967
+  },
+  {
+    "title": "Grand Hotel",
+    "year": 1932
+  },
+  {
+    "title": "The Grapes of Wrath",
+    "year": 1940
+  },
+  {
+    "title": "Grease",
+    "year": 1978
+  },
+  {
+    "title": "The Great Dictator",
+    "year": 1940
+  },
+  {
+    "title": "The Great Train Robbery",
+    "year": 1903
+  },
+  {
+    "title": "Greed",
+    "year": 1924
+  },
+  {
+    "title": "Grey Gardens",
+    "year": 1975
+  },
+  {
+    "title": "The Ground",
+    "year": 2001
+  },
+  {
+    "title": "Groundhog Day",
+    "year": 1993
+  },
+  {
+    "title": "Growing Up Female",
+    "year": 1971
+  },
+  {
+    "title": "Guess Who's Coming to Dinner",
+    "year": 1967
+  },
+  {
+    "title": "Gun Crazy",
+    "year": 1950
+  },
+  {
+    "title": "Gunga Din",
+    "year": 1939
+  },
+  {
+    "title": "Gus Visser and His Singing Duck",
+    "year": 1925
+  },
+  {
+    "title": "Hail the Conquering Hero",
+    "year": 1944
+  },
+  {
+    "title": "Hair Piece: A Film for Nappy Headed People",
+    "year": 1984
+  },
+  {
+    "title": "Hallelujah",
+    "year": 1929
+  },
+  {
+    "title": "Halloween",
+    "year": 1978
+  },
+  {
+    "title": "Hands Up!",
+    "year": 1926
+  },
+  {
+    "title": "Hapax Legomena I: (nostalgia)",
+    "year": 1971
+  },
+  {
+    "title": "Harlan County U.S.A.",
+    "year": 1976
+  },
+  {
+    "title": "Harold and Maude",
+    "year": 1971
+  },
+  {
+    "title": "He Who Gets Slapped",
+    "year": 1924
+  },
+  {
+    "title": "Hearts and Minds",
+    "year": 1974
+  },
+  {
+    "title": "The Heiress",
+    "year": 1949
+  },
+  {
+    "title": "Hell's Hinges",
+    "year": 1916
+  },
+  {
+    "title": "Hell-Bound Train",
+    "year": 1930
+  },
+  {
+    "title": "Heretic",
+    "year": 1931
+  },
+  {
+    "title": "Heroes All",
+    "year": 1920
+  },
+  {
+    "title": "Hester Street",
+    "year": 1975
+  },
+  {
+    "title": "High Noon",
+    "year": 1952
+  },
+  {
+    "title": "High School",
+    "year": 1968
+  },
+  {
+    "title": "Hindenburg Disaster Newsreel Footage",
+    "year": 1937
+  },
+  {
+    "title": "His Girl Friday",
+    "year": 1940
+  },
+  {
+    "title": "The Hitch-Hiker",
+    "year": 1953
+  },
+  {
+    "title": "The Hole",
+    "year": 1962
+  },
+  {
+    "title": "Hoop Dreams",
+    "year": 1994
+  },
+  {
+    "title": "Hoosiers",
+    "year": 1986
+  },
+  {
+    "title": "Hospital",
+    "year": 1970
+  },
+  {
+    "title": "The Hospital",
+    "year": 1971
+  },
+  {
+    "title": "Hot Dogs for Gauguin",
+    "year": 1972
+  },
+  {
+    "title": "Hours for Jerome",
+    "year": 1982
+  },
+  {
+    "title": "The House I Live In",
+    "year": 1945
+  },
+  {
+    "title": "The House in the Middle",
+    "year": 1954
+  },
+  {
+    "title": "House of Usher",
+    "year": 1960
+  },
+  {
+    "title": "House of Wax",
+    "year": 1953
+  },
+  {
+    "title": "How Green Was My Valley",
+    "year": 1941
+  },
+  {
+    "title": "How the West Was Won",
+    "year": 1962
+  },
+  {
+    "title": "Hud",
+    "year": 1963
+  },
+  {
+    "title": "Humoresque",
+    "year": 1920
+  },
+  {
+    "title": "The Hunters",
+    "year": 1957
+  },
+  {
+    "title": "The Hurt Locker",
+    "year": 2008
+  },
+  {
+    "title": "The Hustler",
+    "year": 1961
+  },
+  {
+    "title": "H\u2082O",
+    "year": 1929
+  },
+  {
+    "title": "I Am a Fugitive from a Chain Gang",
+    "year": 1932
+  },
+  {
+    "title": "I Am Joaquin",
+    "year": 1969
+  },
+  {
+    "title": "I Am Somebody",
+    "year": 1970
+  },
+  {
+    "title": "I, an Actress",
+    "year": 1977
+  },
+  {
+    "title": "Illusions",
+    "year": 1982
+  },
+  {
+    "title": "Imitation of Life",
+    "year": 1934
+  },
+  {
+    "title": "Imitation of Life",
+    "year": 1959
+  },
+  {
+    "title": "The Immigrant",
+    "year": 1917
+  },
+  {
+    "title": "In a Lonely Place",
+    "year": 1950
+  },
+  {
+    "title": "In Cold Blood",
+    "year": 1967
+  },
+  {
+    "title": "In the Heat of the Night",
+    "year": 1967
+  },
+  {
+    "title": "In the Land of the Head Hunters",
+    "year": 1914
+  },
+  {
+    "title": "In the Street",
+    "year": 1948
+  },
+  {
+    "title": "The Incredible Shrinking Man",
+    "year": 1957
+  },
+  {
+    "title": "The Informer",
+    "year": 1935
+  },
+  {
+    "title": "The Inner World of Aphasia",
+    "year": 1968
+  },
+  {
+    "title": "Inside Nazi Germany",
+    "year": 1938
+  },
+  {
+    "title": "Into the Arms of Strangers: Stories of the Kindertransport",
+    "year": 2000
+  },
+  {
+    "title": "Intolerance: Love's Struggle Throughout the Ages",
+    "year": 1916
+  },
+  {
+    "title": "Invasion of the Body Snatchers",
+    "year": 1956
+  },
+  {
+    "title": "The Invisible Man",
+    "year": 1933
+  },
+  {
+    "title": "The Iron Horse",
+    "year": 1924
+  },
+  {
+    "title": "It",
+    "year": 1927
+  },
+  {
+    "title": "It Happened One Night",
+    "year": 1934
+  },
+  {
+    "title": "It's a Gift",
+    "year": 1934
+  },
+  {
+    "title": "It's a Wonderful Life",
+    "year": 1946
+  },
+  {
+    "title": "The Italian",
+    "year": 1915
+  },
+  {
+    "title": "Jailhouse Rock",
+    "year": 1957
+  },
+  {
+    "title": "Jam Session",
+    "year": 1942
+  },
+  {
+    "title": "Jammin' the Blues",
+    "year": 1944
+  },
+  {
+    "title": "Jaws",
+    "year": 1975
+  },
+  {
+    "title": "Jazz on a Summer's Day",
+    "year": 1959
+  },
+  {
+    "title": "The Jazz Singer",
+    "year": 1927
+  },
+  {
+    "title": "Jeffries-Johnson World's Championship Boxing Contest",
+    "year": 1910
+  },
+  {
+    "title": "Jezebel",
+    "year": 1938
+  },
+  {
+    "title": "John Henry and the Inky-Poo",
+    "year": 1946
+  },
+  {
+    "title": "Johnny Guitar",
+    "year": 1954
+  },
+  {
+    "title": "The Joy Luck Club",
+    "year": 1993
+  },
+  {
+    "title": "Jubilo",
+    "year": 1919
+  },
+  {
+    "title": "Judgment at Nuremberg",
+    "year": 1961
+  },
+  {
+    "title": "The Jungle",
+    "year": 1967
+  },
+  {
+    "title": "Jurassic Park",
+    "year": 1993
+  },
+  {
+    "title": "Kannapolis (N.C.), 1941",
+    "year": 1941
+  },
+  {
+    "title": "The Kid",
+    "year": 1921
+  },
+  {
+    "title": "Kid Auto Races at Venice",
+    "year": 1914
+  },
+  {
+    "title": "The Kidnappers Foil",
+    "year": 1930
+  },
+  {
+    "title": "Killer of Sheep",
+    "year": 1978
+  },
+  {
+    "title": "The Killers",
+    "year": 1946
+  },
+  {
+    "title": "King Kong",
+    "year": 1933
+  },
+  {
+    "title": "King of Jazz",
+    "year": 1930
+  },
+  {
+    "title": "King: A Filmed Record... Montgomery to Memphis",
+    "year": 1970
+  },
+  {
+    "title": "The Kiss",
+    "year": 1896
+  },
+  {
+    "title": "Kiss Me Deadly",
+    "year": 1955
+  },
+  {
+    "title": "Knute Rockne All American",
+    "year": 1940
+  },
+  {
+    "title": "Kodachrome Two-Color Test Shots No. III",
+    "year": 1922
+  },
+  {
+    "title": "Koyaanisqatsi",
+    "year": 1982
+  },
+  {
+    "title": "L.A. Confidential",
+    "year": 1997
+  },
+  {
+    "title": "La Bamba",
+    "year": 1987
+  },
+  {
+    "title": "The Lady Eve",
+    "year": 1941
+  },
+  {
+    "title": "The Lady from Shanghai",
+    "year": 1947
+  },
+  {
+    "title": "Lady Helen's Escapade",
+    "year": 1909
+  },
+  {
+    "title": "Lady Windermere's Fan",
+    "year": 1925
+  },
+  {
+    "title": "Lambchops",
+    "year": 1929
+  },
+  {
+    "title": "Lamentation",
+    "year": 1943
+  },
+  {
+    "title": "The Land Beyond the Sunset",
+    "year": 1912
+  },
+  {
+    "title": "Lassie Come Home",
+    "year": 1943
+  },
+  {
+    "title": "The Last Command",
+    "year": 1928
+  },
+  {
+    "title": "The Last of the Mohicans",
+    "year": 1920
+  },
+  {
+    "title": "The Last Picture Show",
+    "year": 1971
+  },
+  {
+    "title": "The Last Waltz",
+    "year": 1978
+  },
+  {
+    "title": "Laura",
+    "year": 1944
+  },
+  {
+    "title": "Lawrence of Arabia",
+    "year": 1962
+  },
+  {
+    "title": "The Lead Shoes",
+    "year": 1949
+  },
+  {
+    "title": "A League of Their Own",
+    "year": 1992
+  },
+  {
+    "title": "The Learning Tree",
+    "year": 1969
+  },
+  {
+    "title": "Leave Her to Heaven",
+    "year": 1945
+  },
+  {
+    "title": "Let There Be Light",
+    "year": 1946
+  },
+  {
+    "title": "Letter from an Unknown Woman",
+    "year": 1948
+  },
+  {
+    "title": "The Life and Death of 9413: A Hollywood Extra",
+    "year": 1928
+  },
+  {
+    "title": "The Life and Times of Rosie the Riveter",
+    "year": 1980
+  },
+  {
+    "title": "Life of an American Fireman",
+    "year": 1903
+  },
+  {
+    "title": "The Life of Emile Zola",
+    "year": 1937
+  },
+  {
+    "title": "Lilies of the Field",
+    "year": 1963
+  },
+  {
+    "title": "Lime Kiln Club Field Day",
+    "year": 1913
+  },
+  {
+    "title": "The Lion King",
+    "year": 1994
+  },
+  {
+    "title": "Little Big Man",
+    "year": 1970
+  },
+  {
+    "title": "Little Caesar",
+    "year": 1931
+  },
+  {
+    "title": "Little Fugitive",
+    "year": 1953
+  },
+  {
+    "title": "Little Miss Marker",
+    "year": 1934
+  },
+  {
+    "title": "Little Nemo",
+    "year": 1911
+  },
+  {
+    "title": "Lives of Performers",
+    "year": 1972
+  },
+  {
+    "title": "The Living Desert",
+    "year": 1953
+  },
+  {
+    "title": "Lonesome",
+    "year": 1928
+  },
+  {
+    "title": "The Long Goodbye",
+    "year": 1973
+  },
+  {
+    "title": "The Lord of the Rings: The Fellowship of the Ring",
+    "year": 2001
+  },
+  {
+    "title": "Losing Ground",
+    "year": 1982
+  },
+  {
+    "title": "Lost Horizon",
+    "year": 1937
+  },
+  {
+    "title": "The Lost Weekend",
+    "year": 1945
+  },
+  {
+    "title": "The Lost World",
+    "year": 1925
+  },
+  {
+    "title": "Louisiana Story",
+    "year": 1948
+  },
+  {
+    "title": "Love Finds Andy Hardy",
+    "year": 1938
+  },
+  {
+    "title": "Love Me Tonight",
+    "year": 1932
+  },
+  {
+    "title": "The Lunch Date",
+    "year": 1989
+  },
+  {
+    "title": "Luxo Jr.",
+    "year": 1986
+  },
+  {
+    "title": "M*A*S*H",
+    "year": 1970
+  },
+  {
+    "title": "Mabel's Blunder",
+    "year": 1914
+  },
+  {
+    "title": "Magical Maestro",
+    "year": 1952
+  },
+  {
+    "title": "The Magnificent Ambersons",
+    "year": 1942
+  },
+  {
+    "title": "The Magnificent Seven",
+    "year": 1960
+  },
+  {
+    "title": "Make Way for Tomorrow",
+    "year": 1937
+  },
+  {
+    "title": "The Making of an American",
+    "year": 1920
+  },
+  {
+    "title": "Malcolm X",
+    "year": 1992
+  },
+  {
+    "title": "The Maltese Falcon",
+    "year": 1941
+  },
+  {
+    "title": "The Man Who Shot Liberty Valance",
+    "year": 1962
+  },
+  {
+    "title": "The Man with the Golden Arm",
+    "year": 1955
+  },
+  {
+    "title": "The Manchurian Candidate",
+    "year": 1962
+  },
+  {
+    "title": "Manhatta",
+    "year": 1921
+  },
+  {
+    "title": "Manhattan",
+    "year": 1979
+  },
+  {
+    "title": "The March",
+    "year": 1964
+  },
+  {
+    "title": "Marian Anderson: The Lincoln Memorial Concert",
+    "year": 1939
+  },
+  {
+    "title": "The Mark of Zorro",
+    "year": 1940
+  },
+  {
+    "title": "The Mark of Zorro",
+    "year": 1920
+  },
+  {
+    "title": "Marty",
+    "year": 1955
+  },
+  {
+    "title": "Mary Poppins",
+    "year": 1964
+  },
+  {
+    "title": "Master Hands",
+    "year": 1936
+  },
+  {
+    "title": "Matrimony's Speed Limit",
+    "year": 1913
+  },
+  {
+    "title": "The Matrix",
+    "year": 1999
+  },
+  {
+    "title": "Mauna Kea: Temple Under Siege",
+    "year": 2005
+  },
+  {
+    "title": "McCabe & Mrs. Miller",
+    "year": 1971
+  },
+  {
+    "title": "Mean Streets",
+    "year": 1973
+  },
+  {
+    "title": "Medium Cool",
+    "year": 1969
+  },
+  {
+    "title": "Meet Me in St. Louis",
+    "year": 1944
+  },
+  {
+    "title": "Melody Ranch",
+    "year": 1940
+  },
+  {
+    "title": "Memento",
+    "year": 2000
+  },
+  {
+    "title": "The Memphis Belle",
+    "year": 1944
+  },
+  {
+    "title": "Men and Dust",
+    "year": 1940
+  },
+  {
+    "title": "Meshes of the Afternoon",
+    "year": 1943
+  },
+  {
+    "title": "Mexican-American Community in Corpus Christi",
+    "year": 1928
+  },
+  {
+    "title": "Michael Jackson's Thriller",
+    "year": 1983
+  },
+  {
+    "title": "The Middleton Family at the New York World's Fair",
+    "year": 1939
+  },
+  {
+    "title": "Midnight",
+    "year": 1939
+  },
+  {
+    "title": "Midnight Cowboy",
+    "year": 1969
+  },
+  {
+    "title": "Mighty Like a Moose",
+    "year": 1926
+  },
+  {
+    "title": "Mildred Pierce",
+    "year": 1945
+  },
+  {
+    "title": "The Miracle of Morgan's Creek",
+    "year": 1943
+  },
+  {
+    "title": "Miracle on 34th Street",
+    "year": 1947
+  },
+  {
+    "title": "Miss Lulu Bett",
+    "year": 1921
+  },
+  {
+    "title": "Modern Times",
+    "year": 1936
+  },
+  {
+    "title": "Modesta",
+    "year": 1956
+  },
+  {
+    "title": "Mom and Dad",
+    "year": 1945
+  },
+  {
+    "title": "Monterey Pop",
+    "year": 1968
+  },
+  {
+    "title": "Moon Breath Beat",
+    "year": 1980
+  },
+  {
+    "title": "Morocco",
+    "year": 1930
+  },
+  {
+    "title": "Motion Painting No. 1",
+    "year": 1947
+  },
+  {
+    "title": "A Movie",
+    "year": 1958
+  },
+  {
+    "title": "Mr. Smith Goes to Washington",
+    "year": 1939
+  },
+  {
+    "title": "Mrs. Miniver",
+    "year": 1942
+  },
+  {
+    "title": "Multiple SIDosis",
+    "year": 1970
+  },
+  {
+    "title": "The Muppet Movie",
+    "year": 1979
+  },
+  {
+    "title": "The Murder of Fred Hampton",
+    "year": 1971
+  },
+  {
+    "title": "The Music Box",
+    "year": 1932
+  },
+  {
+    "title": "The Music Man",
+    "year": 1962
+  },
+  {
+    "title": "The Musketeers of Pig Alley",
+    "year": 1912
+  },
+  {
+    "title": "My Darling Clementine",
+    "year": 1946
+  },
+  {
+    "title": "My Fair Lady",
+    "year": 1964
+  },
+  {
+    "title": "My Man Godfrey",
+    "year": 1936
+  },
+  {
+    "title": "My Name Is Oona",
+    "year": 1969
+  },
+  {
+    "title": "The Naked City",
+    "year": 1948
+  },
+  {
+    "title": "The Naked Spur",
+    "year": 1953
+  },
+  {
+    "title": "Nanook of the North",
+    "year": 1922
+  },
+  {
+    "title": "Nashville",
+    "year": 1975
+  },
+  {
+    "title": "National Velvet",
+    "year": 1944
+  },
+  {
+    "title": "Naughty Marietta",
+    "year": 1935
+  },
+  {
+    "title": "The Navigator",
+    "year": 1924
+  },
+  {
+    "title": "The Negro Soldier",
+    "year": 1944
+  },
+  {
+    "title": "Network",
+    "year": 1976
+  },
+  {
+    "title": "A New Leaf",
+    "year": 1971
+  },
+  {
+    "title": "New York Subway",
+    "year": 1905
+  },
+  {
+    "title": "Newark Athlete",
+    "year": 1891
+  },
+  {
+    "title": "A Night at the Opera",
+    "year": 1935
+  },
+  {
+    "title": "The Night of the Hunter",
+    "year": 1955
+  },
+  {
+    "title": "Night of the Living Dead",
+    "year": 1968
+  },
+  {
+    "title": "A Nightmare on Elm Street",
+    "year": 1984
+  },
+  {
+    "title": "Ninotchka",
+    "year": 1939
+  },
+  {
+    "title": "Norma Rae",
+    "year": 1979
+  },
+  {
+    "title": "North by Northwest",
+    "year": 1959
+  },
+  {
+    "title": "Notes on the Port of St. Francis",
+    "year": 1951
+  },
+  {
+    "title": "Nothing But a Man",
+    "year": 1964
+  },
+  {
+    "title": "Notorious",
+    "year": 1946
+  },
+  {
+    "title": "Now, Voyager",
+    "year": 1942
+  },
+  {
+    "title": "The Nutty Professor",
+    "year": 1963
+  },
+  {
+    "title": "OffOn",
+    "year": 1968
+  },
+  {
+    "title": "Oklahoma!",
+    "year": 1955
+  },
+  {
+    "title": "The Old Mill",
+    "year": 1937
+  },
+  {
+    "title": "Old Yeller",
+    "year": 1957
+  },
+  {
+    "title": "On the Bowery",
+    "year": 1956
+  },
+  {
+    "title": "On the Town",
+    "year": 1949
+  },
+  {
+    "title": "On the Waterfront",
+    "year": 1954
+  },
+  {
+    "title": "Once Upon a Time in the West",
+    "year": 1968
+  },
+  {
+    "title": "One Flew Over the Cuckoo's Nest",
+    "year": 1975
+  },
+  {
+    "title": "One Froggy Evening",
+    "year": 1955
+  },
+  {
+    "title": "One Survivor Remembers",
+    "year": 1995
+  },
+  {
+    "title": "One Week",
+    "year": 1920
+  },
+  {
+    "title": "One-Eyed Jacks",
+    "year": 1961
+  },
+  {
+    "title": "Only Angels Have Wings",
+    "year": 1939
+  },
+  {
+    "title": "Our Daily Bread",
+    "year": 1934
+  },
+  {
+    "title": "Our Day",
+    "year": 1938
+  },
+  {
+    "title": "Our Lady of the Sphere",
+    "year": 1969
+  },
+  {
+    "title": "Out of the Past",
+    "year": 1947
+  },
+  {
+    "title": "The Outlaw Josey Wales",
+    "year": 1976
+  },
+  {
+    "title": "Outrage",
+    "year": 1950
+  },
+  {
+    "title": "The Ox-Bow Incident",
+    "year": 1943
+  },
+  {
+    "title": "Parable",
+    "year": 1964
+  },
+  {
+    "title": "Paris Is Burning",
+    "year": 1990
+  },
+  {
+    "title": "Pass the Gravy",
+    "year": 1928
+  },
+  {
+    "title": "Paths of Glory",
+    "year": 1957
+  },
+  {
+    "title": "Patton",
+    "year": 1970
+  },
+  {
+    "title": "The Pawnbroker",
+    "year": 1964
+  },
+  {
+    "title": "Peege",
+    "year": 1973
+  },
+  {
+    "title": "The Perils of Pauline",
+    "year": 1914
+  },
+  {
+    "title": "Peter Pan",
+    "year": 1924
+  },
+  {
+    "title": "The Phantom of the Opera",
+    "year": 1925
+  },
+  {
+    "title": "The Phenix City Story",
+    "year": 1955
+  },
+  {
+    "title": "The Philadelphia Story",
+    "year": 1940
+  },
+  {
+    "title": "Pickup on South Street",
+    "year": 1953
+  },
+  {
+    "title": "Pillow Talk",
+    "year": 1959
+  },
+  {
+    "title": "Pink Flamingos",
+    "year": 1972
+  },
+  {
+    "title": "The Pink Panther",
+    "year": 1963
+  },
+  {
+    "title": "Pinocchio",
+    "year": 1940
+  },
+  {
+    "title": "A Place in the Sun",
+    "year": 1951
+  },
+  {
+    "title": "Planet of the Apes",
+    "year": 1968
+  },
+  {
+    "title": "Platoon",
+    "year": 1986
+  },
+  {
+    "title": "Playing in the Park",
+    "year": 1929
+  },
+  {
+    "title": "Please, Don't Bury Me Alive!",
+    "year": 1976
+  },
+  {
+    "title": "The Plow That Broke the Plains",
+    "year": 1936
+  },
+  {
+    "title": "Point Blank",
+    "year": 1967
+  },
+  {
+    "title": "Point of Order!",
+    "year": 1964
+  },
+  {
+    "title": "The Poor Little Rich Girl",
+    "year": 1917
+  },
+  {
+    "title": "Popeye the Sailor Meets Sindbad the Sailor",
+    "year": 1936
+  },
+  {
+    "title": "Porgy and Bess",
+    "year": 1959
+  },
+  {
+    "title": "Porky in Wackyland",
+    "year": 1938
+  },
+  {
+    "title": "Portrait of Jason",
+    "year": 1967
+  },
+  {
+    "title": "The Power and the Glory",
+    "year": 1933
+  },
+  {
+    "title": "Powers of Ten",
+    "year": 1977
+  },
+  {
+    "title": "Precious Images",
+    "year": 1986
+  },
+  {
+    "title": "Preservation of the Sign Language",
+    "year": 1913
+  },
+  {
+    "title": "Primary",
+    "year": 1960
+  },
+  {
+    "title": "The Princess Bride",
+    "year": 1987
+  },
+  {
+    "title": "Princess Nicotine; or, The Smoke Fairy",
+    "year": 1909
+  },
+  {
+    "title": "The Prisoner of Zenda",
+    "year": 1937
+  },
+  {
+    "title": "The Producers",
+    "year": 1967
+  },
+  {
+    "title": "Psycho",
+    "year": 1960
+  },
+  {
+    "title": "The Public Enemy",
+    "year": 1931
+  },
+  {
+    "title": "Pull My Daisy",
+    "year": 1959
+  },
+  {
+    "title": "Pulp Fiction",
+    "year": 1994
+  },
+  {
+    "title": "Punch Drunks",
+    "year": 1934
+  },
+  {
+    "title": "Pups Is Pups",
+    "year": 1930
+  },
+  {
+    "title": "Purple Rain",
+    "year": 1984
+  },
+  {
+    "title": "Putney Swope",
+    "year": 1969
+  },
+  {
+    "title": "Quasi at the Quackadero",
+    "year": 1976
+  },
+  {
+    "title": "The Quiet Man",
+    "year": 1952
+  },
+  {
+    "title": "Raging Bull",
+    "year": 1980
+  },
+  {
+    "title": "Raiders of the Lost Ark",
+    "year": 1981
+  },
+  {
+    "title": "A Raisin in the Sun",
+    "year": 1961
+  },
+  {
+    "title": "Real Women Have Curves",
+    "year": 2002
+  },
+  {
+    "title": "Rear Window",
+    "year": 1954
+  },
+  {
+    "title": "Rebecca",
+    "year": 1940
+  },
+  {
+    "title": "Rebel Without a Cause",
+    "year": 1955
+  },
+  {
+    "title": "The Red Book",
+    "year": 1994
+  },
+  {
+    "title": "Red Dust",
+    "year": 1932
+  },
+  {
+    "title": "Red River",
+    "year": 1948
+  },
+  {
+    "title": "The Regeneration",
+    "year": 1915
+  },
+  {
+    "title": "Reminiscences of a Journey to Lithuania",
+    "year": 1972
+  },
+  {
+    "title": "Republic Steel Strike Riots Newsreel Footage",
+    "year": 1937
+  },
+  {
+    "title": "Requiem-29",
+    "year": 1970
+  },
+  {
+    "title": "Return of the Jedi",
+    "year": 1983
+  },
+  {
+    "title": "Return of the Secaucus Seven",
+    "year": 1980
+  },
+  {
+    "title": "Rev. S.S. Jones Home Movies",
+    "year": 2016
+  },
+  {
+    "title": "The Revenge of Pancho Villa",
+    "year": 1936
+  },
+  {
+    "title": "Richard Pryor: Live in Concert",
+    "year": 1979
+  },
+  {
+    "title": "Ride the High Country",
+    "year": 1962
+  },
+  {
+    "title": "Riding a Tricycle",
+    "year": 1928
+  },
+  {
+    "title": "The Right Stuff",
+    "year": 1983
+  },
+  {
+    "title": "Ringling Bros. Circus Parade",
+    "year": 1902
+  },
+  {
+    "title": "Rio Bravo",
+    "year": 1959
+  },
+  {
+    "title": "Rip Van Winkle",
+    "year": 1896
+  },
+  {
+    "title": "The River",
+    "year": 1938
+  },
+  {
+    "title": "Road to Morocco",
+    "year": 1942
+  },
+  {
+    "title": "Rocky",
+    "year": 1976
+  },
+  {
+    "title": "The Rocky Horror Picture Show",
+    "year": 1975
+  },
+  {
+    "title": "Roger & Me",
+    "year": 1989
+  },
+  {
+    "title": "Roman Holiday",
+    "year": 1953
+  },
+  {
+    "title": "Rose Hobart",
+    "year": 1936
+  },
+  {
+    "title": "Rosemary's Baby",
+    "year": 1968
+  },
+  {
+    "title": "Ruggles of Red Gap",
+    "year": 1935
+  },
+  {
+    "title": "Rushmore",
+    "year": 1998
+  },
+  {
+    "title": "Sabrina",
+    "year": 1954
+  },
+  {
+    "title": "Safety Last!",
+    "year": 1923
+  },
+  {
+    "title": "Salesman",
+    "year": 1969
+  },
+  {
+    "title": "Salom\u00e9",
+    "year": 1922
+  },
+  {
+    "title": "Salt of the Earth",
+    "year": 1954
+  },
+  {
+    "title": "Samsara: Death and Rebirth in Cambodia",
+    "year": 1989
+  },
+  {
+    "title": "San Francisco Earthquake & Fire: April 18, 1906",
+    "year": 1906
+  },
+  {
+    "title": "The Battle of San Pietro",
+    "year": 1945
+  },
+  {
+    "title": "Saturday Night Fever",
+    "year": 1977
+  },
+  {
+    "title": "Saving Private Ryan",
+    "year": 1998
+  },
+  {
+    "title": "Scarface",
+    "year": 1932
+  },
+  {
+    "title": "Schindler's List",
+    "year": 1993
+  },
+  {
+    "title": "Scratch and Crow",
+    "year": 1995
+  },
+  {
+    "title": "The Searchers",
+    "year": 1956
+  },
+  {
+    "title": "Seconds",
+    "year": 1966
+  },
+  {
+    "title": "Selena",
+    "year": 1997
+  },
+  {
+    "title": "Serene Velocity",
+    "year": 1970
+  },
+  {
+    "title": "Sergeant York",
+    "year": 1941
+  },
+  {
+    "title": "Seven Brides for Seven Brothers",
+    "year": 1954
+  },
+  {
+    "title": "The Sex Life of the Polyp",
+    "year": 1928
+  },
+  {
+    "title": "sex, lies, and videotape",
+    "year": 1989
+  },
+  {
+    "title": "Shadow of a Doubt",
+    "year": 1943
+  },
+  {
+    "title": "Shadows",
+    "year": 1958
+  },
+  {
+    "title": "Shaft",
+    "year": 1971
+  },
+  {
+    "title": "Shane",
+    "year": 1953
+  },
+  {
+    "title": "The Shawshank Redemption",
+    "year": 1994
+  },
+  {
+    "title": "She Done Him Wrong",
+    "year": 1933
+  },
+  {
+    "title": "She's Gotta Have It",
+    "year": 1986
+  },
+  {
+    "title": "Sherlock Jr.",
+    "year": 1924
+  },
+  {
+    "title": "Sherman's March",
+    "year": 1985
+  },
+  {
+    "title": "The Shining",
+    "year": 1980
+  },
+  {
+    "title": "Shock Corridor",
+    "year": 1963
+  },
+  {
+    "title": "Shoes",
+    "year": 1916
+  },
+  {
+    "title": "The Shop Around the Corner",
+    "year": 1940
+  },
+  {
+    "title": "Show Boat",
+    "year": 1936
+  },
+  {
+    "title": "Show People",
+    "year": 1928
+  },
+  {
+    "title": "Shrek",
+    "year": 2001
+  },
+  {
+    "title": "Siege",
+    "year": 1940
+  },
+  {
+    "title": "The Silence of the Lambs",
+    "year": 1991
+  },
+  {
+    "title": "Singin' in the Rain",
+    "year": 1952
+  },
+  {
+    "title": "Sink or Swim",
+    "year": 1990
+  },
+  {
+    "title": "The Sinking of the Lusitania",
+    "year": 1918
+  },
+  {
+    "title": "Sky High",
+    "year": 1922
+  },
+  {
+    "title": "Slacker",
+    "year": 1990
+  },
+  {
+    "title": "Sleeping Beauty",
+    "year": 1959
+  },
+  {
+    "title": "Smoke Signals",
+    "year": 1998
+  },
+  {
+    "title": "Snow White and the Seven Dwarfs",
+    "year": 1937
+  },
+  {
+    "title": "Snow-White",
+    "year": 1933
+  },
+  {
+    "title": "So's Your Old Man",
+    "year": 1926
+  },
+  {
+    "title": "Some Like It Hot",
+    "year": 1959
+  },
+  {
+    "title": "Something Good \u2014 Negro Kiss",
+    "year": 1898
+  },
+  {
+    "title": "The Son of the Sheik",
+    "year": 1926
+  },
+  {
+    "title": "Sons of the Desert",
+    "year": 1933
+  },
+  {
+    "title": "The Sound of Music",
+    "year": 1965
+  },
+  {
+    "title": "Sounder",
+    "year": 1972
+  },
+  {
+    "title": "Spartacus",
+    "year": 1960
+  },
+  {
+    "title": "The Spook Who Sat by the Door",
+    "year": 1973
+  },
+  {
+    "title": "St. Louis Blues",
+    "year": 1929
+  },
+  {
+    "title": "Stagecoach",
+    "year": 1939
+  },
+  {
+    "title": "Stand and Deliver",
+    "year": 1988
+  },
+  {
+    "title": "A Star Is Born",
+    "year": 1954
+  },
+  {
+    "title": "Star Wars",
+    "year": 1977
+  },
+  {
+    "title": "Stark Love",
+    "year": 1927
+  },
+  {
+    "title": "State Fair",
+    "year": 1933
+  },
+  {
+    "title": "Steamboat Bill, Jr.",
+    "year": 1928
+  },
+  {
+    "title": "Steamboat Willie",
+    "year": 1928
+  },
+  {
+    "title": "The Sting",
+    "year": 1973
+  },
+  {
+    "title": "Stop Making Sense",
+    "year": 1984
+  },
+  {
+    "title": "Stormy Weather",
+    "year": 1943
+  },
+  {
+    "title": "Story of G.I. Joe",
+    "year": 1945
+  },
+  {
+    "title": "The Story of Menstruation",
+    "year": 1946
+  },
+  {
+    "title": "Stranger Than Paradise",
+    "year": 1984
+  },
+  {
+    "title": "Strangers on a Train",
+    "year": 1951
+  },
+  {
+    "title": "A Streetcar Named Desire",
+    "year": 1951
+  },
+  {
+    "title": "The Strong Man",
+    "year": 1926
+  },
+  {
+    "title": "Study of a River",
+    "year": 1997
+  },
+  {
+    "title": "Sullivan's Travels",
+    "year": 1941
+  },
+  {
+    "title": "Sunrise: A Song of Two Humans",
+    "year": 1927
+  },
+  {
+    "title": "Sunset Boulevard",
+    "year": 1950
+  },
+  {
+    "title": "Superman",
+    "year": 1978
+  },
+  {
+    "title": "Suspense.",
+    "year": 1913
+  },
+  {
+    "title": "Suzanne, Suzanne",
+    "year": 1982
+  },
+  {
+    "title": "Sweet Smell of Success",
+    "year": 1957
+  },
+  {
+    "title": "Sweet Sweetback's Baadasssss Song",
+    "year": 1971
+  },
+  {
+    "title": "Swing Time",
+    "year": 1936
+  },
+  {
+    "title": "Symbiopsychotaxiplasm: Take One",
+    "year": 1968
+  },
+  {
+    "title": "The T.A.M.I. Show",
+    "year": 1964
+  },
+  {
+    "title": "Tabu: A Story of the South Seas",
+    "year": 1931
+  },
+  {
+    "title": "Tacoma Narrows Bridge Collapse",
+    "year": 1940
+  },
+  {
+    "title": "The Tall T",
+    "year": 1957
+  },
+  {
+    "title": "Tarantella",
+    "year": 1940
+  },
+  {
+    "title": "Tarzan and His Mate",
+    "year": 1934
+  },
+  {
+    "title": "Taxi Driver",
+    "year": 1976
+  },
+  {
+    "title": "The Tell-Tale Heart",
+    "year": 1953
+  },
+  {
+    "title": "The Ten Commandments",
+    "year": 1956
+  },
+  {
+    "title": "The Terminator",
+    "year": 1984
+  },
+  {
+    "title": "Tess of the Storm Country",
+    "year": 1914
+  },
+  {
+    "title": "Tevye",
+    "year": 1939
+  },
+  {
+    "title": "Thelma & Louise",
+    "year": 1991
+  },
+  {
+    "title": "Thelonious Monk: Straight, No Chaser",
+    "year": 1988
+  },
+  {
+    "title": "There It Is",
+    "year": 1928
+  },
+  {
+    "title": "They Call it Pro Football",
+    "year": 1966
+  },
+  {
+    "title": "The Thief of Bagdad",
+    "year": 1924
+  },
+  {
+    "title": "The Thin Blue Line",
+    "year": 1988
+  },
+  {
+    "title": "The Thin Man",
+    "year": 1934
+  },
+  {
+    "title": "The Thing from Another World",
+    "year": 1951
+  },
+  {
+    "title": "Think of Me First as a Person",
+    "year": 1975
+  },
+  {
+    "title": "This Is Cinerama",
+    "year": 1952
+  },
+  {
+    "title": "This Is Spinal Tap",
+    "year": 1984
+  },
+  {
+    "title": "Three Little Pigs",
+    "year": 1933
+  },
+  {
+    "title": "Navajo Film Themselves",
+    "year": 1966
+  },
+  {
+    "title": "Time and Dreams",
+    "year": 1976
+  },
+  {
+    "title": "A Time for Burning",
+    "year": 1967
+  },
+  {
+    "title": "A Time Out of War",
+    "year": 1954
+  },
+  {
+    "title": "The Times of Harvey Milk",
+    "year": 1984
+  },
+  {
+    "title": "Tin Toy",
+    "year": 1988
+  },
+  {
+    "title": "Titanic",
+    "year": 1997
+  },
+  {
+    "title": "To Be or Not to Be",
+    "year": 1942
+  },
+  {
+    "title": "To Fly!",
+    "year": 1976
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "year": 1962
+  },
+  {
+    "title": "To Sleep with Anger",
+    "year": 1990
+  },
+  {
+    "title": "Tol'able David",
+    "year": 1921
+  },
+  {
+    "title": "Tom, Tom, the Piper's Son",
+    "year": 1969
+  },
+  {
+    "title": "Tootsie",
+    "year": 1982
+  },
+  {
+    "title": "Top Gun",
+    "year": 1986
+  },
+  {
+    "title": "Top Hat",
+    "year": 1935
+  },
+  {
+    "title": "Topaz",
+    "year": 1945
+  },
+  {
+    "title": "Touch of Evil",
+    "year": 1958
+  },
+  {
+    "title": "Toy Story",
+    "year": 1995
+  },
+  {
+    "title": "Traffic in Souls",
+    "year": 1913
+  },
+  {
+    "title": "Trance and Dance in Bali",
+    "year": 1952
+  },
+  {
+    "title": "The Treasure of the Sierra Madre",
+    "year": 1948
+  },
+  {
+    "title": "A Tree Grows in Brooklyn",
+    "year": 1945
+  },
+  {
+    "title": "A Trip Down Market Street Before the Fire",
+    "year": 1906
+  },
+  {
+    "title": "Trouble in Paradise",
+    "year": 1932
+  },
+  {
+    "title": "Tulips Shall Grow",
+    "year": 1942
+  },
+  {
+    "title": "Twelve O'Clock High",
+    "year": 1949
+  },
+  {
+    "title": "Twentieth Century",
+    "year": 1934
+  },
+  {
+    "title": "Two-Lane Blacktop",
+    "year": 1971
+  },
+  {
+    "title": "Uksuum Cauyai: The Drums of Winter",
+    "year": 1988
+  },
+  {
+    "title": "Uncle Tom's Cabin",
+    "year": 1914
+  },
+  {
+    "title": "Under Western Stars",
+    "year": 1938
+  },
+  {
+    "title": "Unforgiven",
+    "year": 1992
+  },
+  {
+    "title": "The Black Masks",
+    "year": 1913
+  },
+  {
+    "title": "V-E +1",
+    "year": 1945
+  },
+  {
+    "title": "Verbena tr\u00e1gica",
+    "year": 1938
+  },
+  {
+    "title": "Vertigo",
+    "year": 1958
+  },
+  {
+    "title": "A Virtuous Vamp",
+    "year": 1919
+  },
+  {
+    "title": "A Walk in the Sun",
+    "year": 1945
+  },
+  {
+    "title": "WALL\u00b7E",
+    "year": 2008
+  },
+  {
+    "title": "Wanda",
+    "year": 1970
+  },
+  {
+    "title": "The War of the Worlds",
+    "year": 1953
+  },
+  {
+    "title": "Water and Power",
+    "year": 1989
+  },
+  {
+    "title": "The Watermelon Woman",
+    "year": 1996
+  },
+  {
+    "title": "Wattstax",
+    "year": 1973
+  },
+  {
+    "title": "The Way of Peace",
+    "year": 1947
+  },
+  {
+    "title": "The Wedding March",
+    "year": 1928
+  },
+  {
+    "title": "West Side Story",
+    "year": 1961
+  },
+  {
+    "title": "Westinghouse Works",
+    "year": 1904
+  },
+  {
+    "title": "What Ever Happened to Baby Jane?",
+    "year": 1962
+  },
+  {
+    "title": "What's Opera, Doc?",
+    "year": 1957
+  },
+  {
+    "title": "Where Are My Children?",
+    "year": 1916
+  },
+  {
+    "title": "White Fawn's Devotion: A Play Acted by a Tribe of Red Indians in America",
+    "year": 1910
+  },
+  {
+    "title": "White Heat",
+    "year": 1949
+  },
+  {
+    "title": "Who Framed Roger Rabbit",
+    "year": 1988
+  },
+  {
+    "title": "Who Killed Vincent Chin?",
+    "year": 1987
+  },
+  {
+    "title": "Who's Afraid of Virginia Woolf?",
+    "year": 1966
+  },
+  {
+    "title": "Why Man Creates",
+    "year": 1968
+  },
+  {
+    "title": "Wild and Woolly",
+    "year": 1917
+  },
+  {
+    "title": "Wild Boys of the Road",
+    "year": 1933
+  },
+  {
+    "title": "The Wild Bunch",
+    "year": 1969
+  },
+  {
+    "title": "Wild River",
+    "year": 1960
+  },
+  {
+    "title": "Will Success Spoil Rock Hunter?",
+    "year": 1957
+  },
+  {
+    "title": "Willy Wonka & the Chocolate Factory",
+    "year": 1971
+  },
+  {
+    "title": "Winchester '73",
+    "year": 1950
+  },
+  {
+    "title": "The Wind",
+    "year": 1928
+  },
+  {
+    "title": "Wings",
+    "year": 1927
+  },
+  {
+    "title": "The Wishing Ring: An Idyll of Old England",
+    "year": 1914
+  },
+  {
+    "title": "With Car and Camera Around the World",
+    "year": 1929
+  },
+  {
+    "title": "With the Abraham Lincoln Brigade in Spain",
+    "year": 1937
+  },
+  {
+    "title": "Within Our Gates",
+    "year": 1920
+  },
+  {
+    "title": "The Wizard of Oz",
+    "year": 1939
+  },
+  {
+    "title": "The Wobblies",
+    "year": 1979
+  },
+  {
+    "title": "Woman of the Year",
+    "year": 1942
+  },
+  {
+    "title": "A Woman Under the Influence",
+    "year": 1974
+  },
+  {
+    "title": "The Women",
+    "year": 1939
+  },
+  {
+    "title": "Woodstock",
+    "year": 1970
+  },
+  {
+    "title": "Wuthering Heights",
+    "year": 1939
+  },
+  {
+    "title": "Yankee Doodle Dandy",
+    "year": 1942
+  },
+  {
+    "title": "Young Frankenstein",
+    "year": 1974
+  },
+  {
+    "title": "Young Mr. Lincoln",
+    "year": 1939
+  },
+  {
+    "title": "Zoot Suit",
+    "year": 1981
+  },
+  {
+    "title": "The Power of the Press",
+    "year": 1928
+  },
+  {
+    "title": "Dracula",
+    "year": 1931
+  },
+  {
+    "title": "Grass: A Nation's Battle for Life",
+    "year": 1925
+  },
+  {
+    "title": "...No Lies",
+    "year": 1973
+  },
+  {
+    "title": "The Pearl",
+    "year": 1947
+  },
+  {
+    "title": "A Study in Reds",
+    "year": 1932
+  },
+  {
+    "title": "Why We Fight: Prelude to War",
+    "year": 1942
+  },
+  {
+    "title": "Why We Fight: The Nazis Strike",
+    "year": 1943
+  },
+  {
+    "title": "Why We Fight: Divide and Conquer",
+    "year": 1943
+  },
+  {
+    "title": "Why We Fight: The Battle of Britain",
+    "year": 1943
+  },
+  {
+    "title": "Why We Fight: The Battle of Russia",
+    "year": 1943
+  },
+  {
+    "title": "Why We Fight: The Battle of China",
+    "year": 1944
+  },
+  {
+    "title": "War Comes to America",
+    "year": 1945
+  },
+  {
+    "title": "Attica",
+    "year": 1974
+  },
+  {
+    "title": "The Ballad of Gregorio Cortez",
+    "year": 1982
+  },
+  {
+    "title": "Behind Every Good Man",
+    "year": 1967
+  },
+  {
+    "title": "Betty Tells Her Story",
+    "year": 1972
+  },
+  {
+    "title": "Bush Mama",
+    "year": 1979
+  },
+  {
+    "title": "Carrie",
+    "year": 1976
+  },
+  {
+    "title": "Charade",
+    "year": 1963
+  },
+  {
+    "title": "Cyrano de Bergerac",
+    "year": 1950
+  },
+  {
+    "title": "Hairspray",
+    "year": 1988
+  },
+  {
+    "title": "House Party",
+    "year": 1990
+  },
+  {
+    "title": "Iron Man",
+    "year": 2008
+  },
+  {
+    "title": "Itam Hakim, Hopiit",
+    "year": 1984
+  },
+  {
+    "title": "The Little Mermaid",
+    "year": 1989
+  },
+  {
+    "title": "Manzanar",
+    "year": 1972
+  },
+  {
+    "title": "Mingus: Charlie Mingus 1968",
+    "year": 1968
+  },
+  {
+    "title": "Pariah",
+    "year": 2011
+  },
+  {
+    "title": "Scorpio Rising",
+    "year": 1963
+  },
+  {
+    "title": "Titicut Follies",
+    "year": 1967
+  },
+  {
+    "title": "Tongues Untied",
+    "year": 1989
+  },
+  {
+    "title": "Union Maids",
+    "year": 1976
+  },
+  {
+    "title": "When Harry Met Sally...",
+    "year": 1989
+  },
+  {
+    "title": "Word Is Out: Stories of Some of Our Lives",
+    "year": 1977
+  },
+  {
+    "title": "Mardi Gras Carnival",
+    "year": 1898
+  },
+  {
+    "title": "7th Heaven",
+    "year": 1927
+  },
+  {
+    "title": "Super Fly",
+    "year": 1972
+  },
+  {
+    "title": "Cab Calloway Home Movies",
+    "year": 1948
+  },
+  {
+    "title": "President McKinley Inauguration",
+    "year": 1901
+  },
+  {
+    "title": "A Movie Trip Through Filmland",
+    "year": 1921
+  },
+  {
+    "title": "Dinner at Eight",
+    "year": 1933
+  },
+  {
+    "title": "The Unconquered",
+    "year": 1954
+  },
+  {
+    "title": "Lady and the Tramp",
+    "year": 1955
+  },
+  {
+    "title": "Edge of the City",
+    "year": 1957
+  },
+  {
+    "title": "We're Alive",
+    "year": 1974
+  },
+  {
+    "title": "Cruisin' J-Town",
+    "year": 1975
+  },
+  {
+    "title": "Alambrista!",
+    "year": 1977
+  },
+  {
+    "title": "Passing Through",
+    "year": 1977
+  },
+  {
+    "title": "Fame",
+    "year": 1980
+  },
+  {
+    "title": "Desperately Seeking Susan",
+    "year": 1985
+  },
+  {
+    "title": "The Lighted Field",
+    "year": 1987
+  },
+  {
+    "title": "Matewan",
+    "year": 1987
+  },
+  {
+    "title": "Home Alone",
+    "year": 1990
+  },
+  {
+    "title": "Queen of Diamonds",
+    "year": 1991
+  },
+  {
+    "title": "Terminator 2: Judgment Day",
+    "year": 1991
+  },
+  {
+    "title": "The Nightmare Before Christmas",
+    "year": 1993
+  },
+  {
+    "title": "The Wedding Banquet",
+    "year": 1993
+  },
+  {
+    "title": "Maya Lin: A Strong Clear Vision",
+    "year": 1994
+  },
+  {
+    "title": "Apollo 13",
+    "year": 1995
+  },
+  {
+    "title": "Bamboozled",
+    "year": 2000
+  },
+  {
+    "title": "Love & Basketball",
+    "year": 2000
+  },
+  {
+    "title": "12 Years a Slave",
+    "year": 2013
+  },
+  {
+    "title": "20 Feet from Stardom",
+    "year": 2013
+  },
+  {
+    "title": "American Me",
+    "year": 1992
+  },
+  {
+    "title": "Angels with Dirty Faces",
+    "year": 1938
+  },
+  {
+    "title": "Beverly Hills Cop",
+    "year": 1984
+  },
+  {
+    "title": "Chelsea Girls",
+    "year": 1966
+  },
+  {
+    "title": "Common Threads: Stories from the Quilt",
+    "year": 1989
+  },
+  {
+    "title": "Compensation",
+    "year": 1999
+  },
+  {
+    "title": "Dirty Dancing",
+    "year": 1987
+  },
+  {
+    "title": "Ganja & Hess",
+    "year": 1973
+  },
+  {
+    "title": "Invaders from Mars",
+    "year": 1953
+  },
+  {
+    "title": "KoKo's Earth Control",
+    "year": 1928
+  },
+  {
+    "title": "My Family",
+    "year": 1995
+  },
+  {
+    "title": "The Miracle Worker",
+    "year": 1962
+  },
+  {
+    "title": "My Own Private Idaho",
+    "year": 1991
+  },
+  {
+    "title": "No Country for Old Men",
+    "year": 2007
+  },
+  {
+    "title": "Powwow Highway",
+    "year": 1989
+  },
+  {
+    "title": "The Pride of the Yankees",
+    "year": 1942
+  },
+  {
+    "title": "The Social Network",
+    "year": 2010
+  },
+  {
+    "title": "Spy Kids",
+    "year": 2001
+  },
+  {
+    "title": "Star Trek II: The Wrath of Khan",
+    "year": 1982
+  },
+  {
+    "title": "The Texas Chain Saw Massacre",
+    "year": 1974
+  },
+  {
+    "title": "Up in Smoke",
+    "year": 1978
+  },
+  {
+    "title": "Uptown Saturday Night",
+    "year": 1974
+  },
+  {
+    "title": "Will",
+    "year": 1981
+  },
+  {
+    "title": "Danse serpentine (Annabelle)",
+    "year": 1895
+  },
+  {
+    "title": "Bohulano Family Film Collection",
+    "year": 1979
+  },
+  {
+    "title": "Zora Lathan Student Films",
+    "year": 1975
+  },
+  {
+    "title": "The Tramp and the Dog",
+    "year": 1896
+  },
+  {
+    "title": "The Oath of the Sword",
+    "year": 1914
+  },
+  {
+    "title": "The Maid of McMillan",
+    "year": 1916
+  },
+  {
+    "title": "The Lady",
+    "year": 1925
+  },
+  {
+    "title": "Sparrows",
+    "year": 1926
+  },
+  {
+    "title": "Ten Nights in a Barroom",
+    "year": 1926
+  },
+  {
+    "title": "White Christmas",
+    "year": 1954
+  },
+  {
+    "title": "High Society",
+    "year": 1956
+  },
+  {
+    "title": "Brooklyn Bridge",
+    "year": 1981
+  },
+  {
+    "title": "Say Amen, Somebody",
+    "year": 1982
+  },
+  {
+    "title": "The Thing",
+    "year": 1982
+  },
+  {
+    "title": "The Big Chill",
+    "year": 1983
+  },
+  {
+    "title": "The Karate Kid",
+    "year": 1984
+  },
+  {
+    "title": "Glory",
+    "year": 1989
+  },
+  {
+    "title": "Philadelphia",
+    "year": 1993
+  },
+  {
+    "title": "Before Sunrise",
+    "year": 1995
+  },
+  {
+    "title": "Clueless",
+    "year": 1995
+  },
+  {
+    "title": "The Truman Show",
+    "year": 1998
+  },
+  {
+    "title": "Frida",
+    "year": 2002
+  },
+  {
+    "title": "The Hours",
+    "year": 2002
+  },
+  {
+    "title": "The Incredibles",
+    "year": 2004
+  },
+  {
+    "title": "The Wrecking Crew",
+    "year": 2008
+  },
+  {
+    "title": "Inception",
+    "year": 2010
+  },
+  {
+    "title": "The Loving Story",
+    "year": 2011
+  },
+  {
+    "title": "The Grand Budapest Hotel",
+    "year": 2014
+  }
+]
