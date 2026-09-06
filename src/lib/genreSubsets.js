@@ -1,7 +1,9 @@
 import {
-  selectTopByVoteCountWithEraQuota,
+  selectTopByVoteCountWithQuotas,
   CLASSIC_ERA_CUTOFF_YEAR,
   CLASSIC_ERA_QUOTA,
+  CANONICAL_QUOTA,
+  isCanonicalSourced,
 } from './popularMode.js'
 import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
 
@@ -85,20 +87,22 @@ export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 // Comedy added via personal import still surfaces here if popular enough,
 // not only ones fetched via the top-comedy discover source (#150). Then
 // caps to GENRE_SUBSET_POOL_SIZE — smaller than Popular's cap since these
-// niche subsets run shallower on genuinely popular titles (#165). Every
-// subset except Comic Book itself also excludes Marvel/DC movies (#180) —
-// Comic Book is the one place they're still rankable (#181).
+// niche subsets run shallower on genuinely popular titles (#165) — with a
+// reserved floor for classic-era movies (#203) and one for movies from a
+// canonical critical/preservation source (#207), so a flood of modern or
+// merely-mainstream matches can't crowd either out; see
+// selectTopByVoteCountWithQuotas in popularMode.js. Every subset except
+// Comic Book itself also excludes Marvel/DC movies (#180) — Comic Book is
+// the one place they're still rankable (#181).
 export function selectGenreSubset(movies, subsetId) {
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return movies
   const matched = movies.filter(config.matches)
   const scoped = subsetId === 'comicbook' ? matched : matched.filter((m) => !isMarvelOrDc(m))
-  return selectTopByVoteCountWithEraQuota(
-    scoped,
-    GENRE_SUBSET_POOL_SIZE,
-    CLASSIC_ERA_QUOTA,
-    CLASSIC_ERA_CUTOFF_YEAR,
-  )
+  return selectTopByVoteCountWithQuotas(scoped, GENRE_SUBSET_POOL_SIZE, [
+    { matches: (m) => m.year != null && m.year < CLASSIC_ERA_CUTOFF_YEAR, quota: CLASSIC_ERA_QUOTA },
+    { matches: isCanonicalSourced, quota: CANONICAL_QUOTA },
+  ])
 }
 
 // Display label for any genre/language subset id — used by SaveRankingModal/

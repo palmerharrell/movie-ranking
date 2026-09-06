@@ -432,23 +432,40 @@ language entries, and 1 country entry, grouped in the picker:
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
   which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
   (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (100) via
-  the shared `selectTopByVoteCountWithEraQuota` (`src/lib/popularMode.js`) —
+  the shared `selectTopByVoteCountWithQuotas` (`src/lib/popularMode.js`) —
   smaller than Popular's `POPULAR_POOL_SIZE` (300), since niche genre/
   language/country subsets don't have as much depth of genuinely popular
   titles as Popular/Family/All Movies do; sharing Popular's cap left a long
   tail of obscure matches that users ended up skipping en masse (#165, e.g.
   nearly a third of the Sci-Fi subset). A flat voteCount cutoff also
   systematically favors modern/mainstream titles — TMDb engagement skews
-  heavily toward recent, streamed releases — so `selectTopByVoteCountWithEraQuota`
-  reserves at least `CLASSIC_ERA_QUOTA` (20) of the capped slots for the
-  best-by-voteCount movies released before `CLASSIC_ERA_CUTOFF_YEAR` (1980),
-  topping up from outside the natural top-N only when the natural ranking
-  doesn't already clear that floor (#203, found via the Musicals subset
-  missing golden-age titles like *The King and I* to a wave of higher-
-  voteCount modern/Disney musicals). It's a floor, not a fixed partition — a
-  subset whose classics are already popular enough to rank highly on their
-  own (e.g. Italian) is returned unchanged. All share Popular's palette (no
-  bespoke palette per genre). Filtering is
+  heavily toward recent, streamed releases — so `selectTopByVoteCountWithQuotas`
+  reserves two independent floors within the cap, each topped up from
+  outside the natural top-N only when the natural ranking doesn't already
+  clear it: at least `CLASSIC_ERA_QUOTA` (20) of the slots go to the
+  best-by-voteCount movies released before `CLASSIC_ERA_CUTOFF_YEAR` (1980)
+  (#203, found via the Musicals subset missing golden-age titles to a wave
+  of higher-voteCount modern/Disney musicals), and at least
+  `CANONICAL_QUOTA` (20) go to the best-by-voteCount movies from a
+  `CANONICAL_SOURCE_IDS` source (AFI's lists, Ebert's Great Movies, Sight &
+  Sound, the National Film Registry, 1001 Movies — hand-curated
+  critical/preservation lists, as opposed to the TMDb-discover-based
+  `top-<genre>` sources) with at least `CANONICAL_MIN_VOTE_COUNT` (25) TMDb
+  votes — that floor excludes a source-qualifying movie with too few votes,
+  since the National Film Registry in particular preserves home movies,
+  student films, and raw footage collections alongside actual narrative
+  features, and a handful of votes is enough to tell an obscure-but-real
+  classic from preservation ephemera almost nobody has "seen" (#207). Both
+  are floors, not fixed partitions — a subset whose classics/canonical
+  movies are already popular enough to rank highly on their own (e.g.
+  Italian) is returned unchanged — and neither floor evicts a movie already
+  kept to satisfy the other, so filling one can't silently undo the other.
+  Both floors together still don't guarantee any specific title clears the
+  cap: with a fixed-size quota and, in a subset like Musicals, dozens of
+  genuine classics/canonical titles competing for it, a lower-voteCount
+  entry (e.g. *The King and I*, at 414 votes) can still lose out to
+  better-voted classics/canonical titles filling the same floor. All share
+  Popular's palette (no bespoke palette per genre). Filtering is
   by the movie's own attributes, not by which `sources[]` tag brought it
   into the pool — a Comedy added via personal import still surfaces here if
   popular enough. See **Building the list** below for how the pool is kept
@@ -460,9 +477,9 @@ language entries, and 1 country entry, grouped in the picker:
   #151) — filters by `productionCountries` including `"GB"` (unlike the
   genre/language subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
-  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithEraQuota`,
-  same smaller-than-Popular cap and classic-era quota as the genre/language
-  subsets above (#165, #203).
+  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
+  same smaller-than-Popular cap and classic-era/canonical-source quotas as
+  the genre/language subsets above (#165, #203, #207).
   Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
   in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
   subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
@@ -493,7 +510,7 @@ language entries, and 1 country entry, grouped in the picker:
   unaffected by any of this — it stays the one place showing the entire
   unfiltered pool, Marvel/DC included, since `selectPopular`/
   `selectGenreSubset` (where the exclusion lives) are never applied there.
-  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithEraQuota`,
+  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
   same as the other genre subsets. Shares Popular's palette.
 - `GET /api/movies?family=true&popular=true&genre=comedy&pg13=true` composes
   server-side filters (family applied first, then the pg13 toggle if on,
