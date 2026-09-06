@@ -152,6 +152,24 @@ body {
   color: var(--text-high);
 }
 
+/* PG-13-and-under toggle (#193) — global, composes with whichever subset is
+   active, so it's styled alongside the subset picker rather than as part of
+   any one theme. */
+.pg13-toggle {
+  color: var(--text-mid);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pg13-toggle:hover {
+  color: var(--text-high);
+}
+
+.pg13-toggle input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* Body / standings column */
 
 .standings-divider {

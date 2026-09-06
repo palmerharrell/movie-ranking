@@ -35,17 +35,18 @@ async function request(path, options = {}) {
 
 // The pool's static metadata only — no per-visitor eloRating/timesRanked.
 // That state lives in this browser's localStorage (#115), not the server.
-function fetchStaticMovies({ family, popular, genre } = {}) {
+function fetchStaticMovies({ family, popular, genre, pg13 } = {}) {
   const params = new URLSearchParams()
   if (family) params.set('family', 'true')
   if (popular) params.set('popular', 'true')
   if (genre) params.set('genre', genre)
+  if (pg13) params.set('pg13', 'true')
   const qs = params.toString()
   return request(qs ? `/api/movies?${qs}` : '/api/movies')
 }
 
-export async function getMovies({ family, popular, genre } = {}) {
-  const staticMovies = await fetchStaticMovies({ family, popular, genre })
+export async function getMovies({ family, popular, genre, pg13 } = {}) {
+  const staticMovies = await fetchStaticMovies({ family, popular, genre, pg13 })
   return mergeWithLocalState(staticMovies)
 }
 
@@ -56,8 +57,8 @@ export async function getMovies({ family, popular, genre } = {}) {
 // every movie in this pool already matches it, so a category built on it
 // would be tautological (e.g. no "Family Movies" category while the Family
 // subset, itself Family-genre-filtered per #152, is active).
-export async function getCategory({ family, popular, genre } = {}) {
-  const movies = await getMovies({ family, popular, genre })
+export async function getCategory({ family, popular, genre, pg13 } = {}) {
+  const movies = await getMovies({ family, popular, genre, pg13 })
   const eligible = movies.filter((m) => !m.skipped)
   const rankedCount = eligible.filter((m) => m.timesRanked > 0).length
   return generateCategory(eligible, {
@@ -114,9 +115,11 @@ export async function rankPack(movieIds) {
 
 // `subset` is the picker's own subset id ('popular', 'family', 'all', or a
 // genre/language/country id) — stamped on the snapshot so the Load dialog
-// can later filter to just the active subset (see getSavedRankings).
-export async function saveRanking(name, { family, popular, genre, subset } = {}) {
-  const movies = await getMovies({ family, popular, genre })
+// can later filter to just the active subset (see getSavedRankings). `pg13`
+// is stamped separately (#193) — it's an independent, composable dimension
+// from `subset` rather than one of the subset ids.
+export async function saveRanking(name, { family, popular, genre, pg13, subset } = {}) {
+  const movies = await getMovies({ family, popular, genre, pg13 })
   const eligible = movies.filter((m) => !m.skipped)
   if (eligible.length === 0 || eligible.some((m) => m.timesRanked < 1)) {
     throw new Error('Every movie in the pool must be ranked at least once before saving')
@@ -131,6 +134,7 @@ export async function saveRanking(name, { family, popular, genre, subset } = {})
     body: JSON.stringify({
       name,
       subset: subset || null,
+      pg13: !!pg13,
       entries,
       clientId: getOrCreateClientId(),
     }),
@@ -139,16 +143,21 @@ export async function saveRanking(name, { family, popular, genre, subset } = {})
   return result
 }
 
-export async function resetRanking({ family, popular, genre } = {}) {
-  const movies = await getMovies({ family, popular, genre })
+export async function resetRanking({ family, popular, genre, pg13 } = {}) {
+  const movies = await getMovies({ family, popular, genre, pg13 })
   resetLocalState(movies.map((m) => m.id))
 }
 
-// Restricted to snapshots saved from the given subset id — the Load dialog
-// only ever wants the active subset's own saves (#186 follow-up).
-export function getSavedRankings(subset) {
-  const qs = subset ? `?subset=${encodeURIComponent(subset)}` : ''
-  return request(`/api/rankings${qs}`)
+// Restricted to snapshots saved from the given subset id (#186 follow-up)
+// and, when `pg13` is a boolean, to snapshots saved with the
+// PG-13-and-under toggle in that same state (#193) — the Load dialog only
+// ever wants saves matching the currently active subset+toggle combination.
+export function getSavedRankings(subset, pg13) {
+  const params = new URLSearchParams()
+  if (subset) params.set('subset', subset)
+  if (pg13 === true || pg13 === false) params.set('pg13', String(pg13))
+  const qs = params.toString()
+  return request(qs ? `/api/rankings?${qs}` : '/api/rankings')
 }
 
 export function getSavedRanking(id) {

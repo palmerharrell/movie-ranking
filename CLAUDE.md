@@ -50,9 +50,11 @@ Static metadata only — `eloRating` and `timesRanked` live in the browser's
 local ranking state instead (see **Online deployment**). `mpaaRating` is the
 movie's US MPAA certification (e.g. `"PG-13"`), fetched from TMDb's
 `/movie/{id}/release_dates` during enrichment, or `null` if TMDb has no US
-certification for it. Not currently used to drive any subset filter — the
-Family subset (see **Movie subsets**) is genre-based, not rating-based
-(#152) — kept as general metadata for potential future use. `studio` is the movie's
+certification for it. The Family subset (see **Movie subsets**) is
+genre-based, not rating-based (#152) — `mpaaRating` doesn't drive that
+filter — but it does drive the separate PG-13-and-under toggle (#193, see
+**PG-13 and under toggle** below), which composes with every subset
+including Family. `studio` is the movie's
 production company if it matches a curated allowlist of notable studios
 (`NOTABLE_STUDIOS` in `src/lib/curatedAttributes.js`), or `null` otherwise —
 TMDb lists several production companies per movie, most too obscure to be a
@@ -230,8 +232,9 @@ exposed in the UI.
 - **Completion:** once every non-skipped movie in the *currently visible*
   pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
   save the ranking. "Visible pool" is whichever subset is active (Popular,
-  Family, or All Movies) minus skipped movies — see **Movie subsets** and
-  **Skip ("Haven't Seen")** (#136).
+  Family, or All Movies) minus skipped movies, further narrowed by the
+  PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
+  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
   for the visible, non-skipped pool (gathered from its own local ranking
   state — see
@@ -239,7 +242,9 @@ exposed in the UI.
   resets that scope's local ranking state back to defaults (`eloRating =
   1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
   full-pool save resets the whole pool; a Family-mode save resets only the
-  Family subset, leaving progress on the rest of the pool untouched.
+  Family subset, leaving progress on the rest of the pool untouched; a save
+  made with the PG-13-and-under toggle on resets only the toggle-filtered
+  slice of whichever subset was active (#193).
   This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
   "2027 Redo") without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
@@ -247,21 +252,32 @@ exposed in the UI.
   the ranking's creator (#115) — not yet enforced anywhere. It's also
   stamped with the subset id it was saved from (`saved_rankings.subset` in
   the backend's SQLite table — see **Online deployment**), so a save made
-  while, say, Sci-Fi was active is tagged `'sci-fi'`.
+  while, say, Sci-Fi was active is tagged `'sci-fi'` — and, independently,
+  with whether the PG-13-and-under toggle was active
+  (`saved_rankings.pg13`, `0`/`1`, `NULL` for snapshots saved before the
+  toggle existed, #193). `pg13` gets its own column rather than folding into
+  `subset` because the toggle is a second, orthogonal dimension that
+  composes with every subset (Popular+PG-13, Family+PG-13, Sci-Fi+PG-13,
+  etc.) rather than being a subset of its own — encoding it into the
+  `subset` string (e.g. `'family-pg13'`) would have broken every place that
+  already treats `subset` as one of the fixed picker ids (`subsetLabel`,
+  the genre/language lookups, etc.).
 - **Load:** a "Load Ranking" entry point lists saved snapshots scoped to the
-  *currently active* subset only — `GET /api/rankings?subset=<id>` filters
-  server-side, and `LoadRankingView.jsx`'s dialog title reads "Load
-  \<Subset\> Ranking" (e.g. "Load Sci-Fi Ranking") so the scoping is visible,
-  not just implicit; switching the active subset (closing and reopening the
-  dialog) shows that subset's own saves instead. Snapshots saved before this
-  scoping existed have no `subset` and are excluded from every filtered
-  list. Listed by name/date/movie count; opening one displays it via the
-  same tiered Results screen shown on live completion (#107,
-  `ResultsScreen.jsx` reused by `LoadRankingView.jsx` with `readOnly` — Top
-  10 grid, 11-25 and 26-100 tiers, and anything outside the snapshot's top
-  100) — only the movies that were actually part of that saved run, not the
-  current full pool — read-only (no Save Ranking button; a "Back to list"
-  link replaces it), and it does not affect or restore live ranking state.
+  *currently active* subset **and** PG-13 toggle state only —
+  `GET /api/rankings?subset=<id>&pg13=<true|false>` filters server-side, and
+  `LoadRankingView.jsx`'s dialog title reads "Load \<Subset\> Ranking" (e.g.
+  "Load Sci-Fi Ranking", or "Load Sci-Fi (PG-13 & Under) Ranking" when the
+  toggle is on) so the scoping is visible, not just implicit; switching the
+  active subset or toggle (closing and reopening the dialog) shows that
+  combination's own saves instead. Snapshots saved before this scoping
+  existed have no `subset`/`pg13` and are excluded from every filtered list.
+  Listed by name/date/movie count; opening one displays it via the same
+  tiered Results screen shown on live completion (#107, `ResultsScreen.jsx`
+  reused by `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and
+  26-100 tiers, and anything outside the snapshot's top 100) — only the
+  movies that were actually part of that saved run, not the current full
+  pool — read-only (no Save Ranking button; a "Back to list" link replaces
+  it), and it does not affect or restore live ranking state.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
@@ -286,30 +302,40 @@ exposed in the UI.
   across sessions and devices, plus serving the pool's static metadata —
   everything else stays static or lives client-side.
   - Storage: SQLite (`better-sqlite3`) is enough at this scale:
-    - `saved_rankings(id, name, created_at, data, owner_client_id, subset)` —
-      completed snapshots; `data` is the JSON-serialized
+    - `saved_rankings(id, name, created_at, data, owner_client_id, subset,
+      pg13)` — completed snapshots; `data` is the JSON-serialized
       `{movieId, eloRating, timesRanked}[]` at save time — only the movies
       actually in scope for that save (the whole pool, or just the Family
-      subset for a Family-mode save). `owner_client_id` is the
+      subset for a Family-mode save, further narrowed if the PG-13-and-under
+      toggle was on). `owner_client_id` is the
       creating browser's client id — reserved for a future edit/re-rank
       feature restricted to the ranking's creator (#115); not yet enforced by
       any endpoint. `subset` is the picker's subset id the save was made
       from (`'popular'`, `'family'`, `'all'`, or a genre/language/country
       id) — lets `GET /api/rankings` filter to one subset (see **Saved
       rankings**); `null` for snapshots saved before this column existed.
+      `pg13` (#193) is `0`/`1` for whether the PG-13-and-under toggle (see
+      **Movie subsets**) was active for that save — a separate column from
+      `subset` since the toggle is an independent, composable dimension
+      rather than one of the subset ids; `NULL` for snapshots saved before
+      the toggle existed.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
-      `?family=true` restricts to the Family subset (see **Movie subsets**).
-      The client merges this with its own local ranking state.
-    - `POST /api/rankings` — body: `{name, subset, entries, clientId}`, where
-      `entries` is the `{movieId, eloRating, timesRanked}[]` the browser
-      gathered from its own local ranking state; the server just persists it
-      tagged with `clientId` as `owner_client_id` and `subset` as-is. The
-      browser resets its own local state for that scope after a successful
-      save.
+      `?family=true` restricts to the Family subset (see **Movie subsets**);
+      `?pg13=true` restricts to the PG-13-and-under toggle's filter (#193,
+      composable with `family`/`popular`/`genre`). The client merges this
+      with its own local ranking state.
+    - `POST /api/rankings` — body: `{name, subset, pg13, entries, clientId}`,
+      where `entries` is the `{movieId, eloRating, timesRanked}[]` the
+      browser gathered from its own local ranking state; the server just
+      persists it tagged with `clientId` as `owner_client_id` and
+      `subset`/`pg13` as-is. The browser resets its own local state for that
+      scope after a successful save.
     - `GET /api/rankings` — list of saved snapshots (`id`, `name`,
-      `createdAt`, `movieCount`, `subset`); `?subset=<id>` restricts to
-      snapshots saved from that subset (see **Saved rankings**)
+      `createdAt`, `movieCount`, `subset`, `pg13`); `?subset=<id>` restricts
+      to snapshots saved from that subset, and `?pg13=<true|false>`
+      restricts to snapshots saved with the toggle in that state (see
+      **Saved rankings**) — composable with each other
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
       snapshot-time `eloRating`, limited to the movies that were part of
       that save), sorted descending, for read-only display
@@ -328,7 +354,8 @@ exposed in the UI.
   queue described in **Category generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, subset picker, a "Load Ranking" entry point for
+- **Banner:** app title, the PG-13-and-under toggle (#193, see **PG-13 and
+  under toggle**), subset picker, a "Load Ranking" entry point for
   browsing saved snapshots (see **Saved rankings**), and a "Skipped" entry
   point for browsing/un-skipping persistently-skipped movies (#137, see
   **Skip ("Haven't Seen")**).
@@ -425,24 +452,55 @@ language entries, and 1 country entry, grouped in the picker:
   `selectGenreSubset` (where the exclusion lives) are never applied there.
   Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same as
   the other genre subsets. Shares Popular's palette.
-- `GET /api/movies?family=true&popular=true&genre=comedy` composes
-  server-side filters (family applied first, then one top-N strategy —
-  `genre` and `popular` are alternate strategies, only one ever applies);
-  the client then merges in its own local ranking state and generates
-  categories from that filtered set, so category generation (overlap rule,
-  attribute matching) only ever draws from the active subset. Switching
-  subsets always re-fetches, since every one is a different pool.
+- `GET /api/movies?family=true&popular=true&genre=comedy&pg13=true` composes
+  server-side filters (family applied first, then the pg13 toggle if on,
+  then one top-N strategy — `genre` and `popular` are alternate strategies,
+  only one ever applies); the client then merges in its own local ranking
+  state and generates categories from that filtered set, so category
+  generation (overlap rule, attribute matching) only ever draws from the
+  active subset+toggle combination. Switching subsets, or flipping the
+  toggle, always re-fetches, since either changes the pool.
 - Pack labels never vary by subset — `src/lib/labelWording.js`'s
   `formatPackLabel` only shortens "Random Five" to "Random 5"; there is no
   more movie/film wording variance.
 - **Scoped completion/save:** the "every movie ranked" completion check (see
-  **Saved rankings**) operates on the currently-visible subset, so ranking
-  all of any subset triggers the save prompt just as finishing All Movies
-  does. Saving (`api.saveRanking(name, { family, popular, genre })`)
-  snapshots and resets only the active subset's local Elo state — progress
-  on movies outside that subset is left untouched. This keeps a save from
+  **Saved rankings**) operates on the currently-visible subset+toggle
+  combination, so ranking all of any subset triggers the save prompt just as
+  finishing All Movies does, and the same is true with the PG-13-and-under
+  toggle on. Saving (`api.saveRanking(name, { family, popular, genre, pg13,
+  subset })`) snapshots and resets only that combination's local Elo state —
+  progress on movies outside it (a different subset, or the same subset with
+  the toggle in the other state) is left untouched. This keeps a save from
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
+
+## PG-13 and under toggle (#193)
+A global checkbox in the banner, next to the subset picker (`pg13` state in
+`App.jsx`, persisted in its own `localStorage` key — unlike the subset
+picker's own key, it survives subset switches rather than being tied to
+one) — labeled "PG-13 & Under." When on, it restricts whichever subset is
+active to movies with `mpaaRating` of `G`, `PG`, or `PG-13`
+(`src/lib/pg13Mode.js`'s `isPg13OrUnder`/`selectPg13OrUnder`), excluding `R`
+and `NC-17` outright. A movie with a `null` `mpaaRating` (no US
+certification on file — see **Data model**) is also excluded while the
+toggle is on, since there's no way to verify it actually qualifies. Unlike
+Popular/Family/genre/language/country, this isn't a subset of its own — it's
+an additional filter layered on top of whichever subset is active, the same
+composable shape as the Popular/genre top-N strategies but applied as a
+plain filter (mirroring how `family` composes, not how `genre`/`popular` are
+mutually exclusive alternatives). Server-side, `getMovies` in
+`server/rankingService.js` applies it right after the `family` filter and
+before whichever top-N strategy runs, so "top-N" always means "top-N within
+whatever's already been filtered" — same principle as `family`+`popular`
+composing (see **Popular subset**). Client-side, `App.jsx`'s
+`computeVisibleMovies` mirrors that same pipeline to re-derive "the
+currently-visible pool" from `api.rankPack()`'s unfiltered response. Every
+place that threads `family`/`popular`/`genre` through the app
+(`api.getMovies`/`api.getCategory`/`api.saveRanking`/`api.resetRanking`,
+`App.jsx`'s pack-fetching helpers) also threads `pg13` the same way. See
+**Saved rankings** for how the toggle's state is tagged on saved snapshots
+(its own `pg13` column, independent of `subset`, since it composes with
+every subset rather than being one).
 
 ## Maintaining this spec
 - When a PR implements a feature marked **NOT YET IMPLEMENTED** above (or

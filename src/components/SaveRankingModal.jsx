@@ -14,16 +14,21 @@ const FIXED_COPY = {
 
 // Popular and every genre/language subset (#150) share one generic template
 // rather than a bespoke entry per id — there are too many to hand-write.
-function copyFor(subset) {
-  if (FIXED_COPY[subset]) return FIXED_COPY[subset]
-  const label = subsetLabel(subset)
+// `pg13` (#193) appends its own qualifier to whichever label results, since
+// it composes with every subset rather than being one itself.
+function copyFor(subset, pg13) {
+  const base = FIXED_COPY[subset] ?? {
+    title: `Every movie in ${subsetLabel(subset)} has been ranked`,
+    body: `Give this ranking a name to save it. Saving resets just the ${subsetLabel(subset)} movies so you can start a fresh ${subsetLabel(subset)} ranking run — the rest of your pool is untouched.`,
+  }
+  if (!pg13) return base
   return {
-    title: `Every movie in ${label} has been ranked`,
-    body: `Give this ranking a name to save it. Saving resets just the ${label} movies so you can start a fresh ${label} ranking run — the rest of your pool is untouched.`,
+    title: `${base.title} (PG-13 & Under)`,
+    body: base.body,
   }
 }
 
-export function SaveRankingModal({ onSave, onDismiss, subset }) {
+export function SaveRankingModal({ onSave, onDismiss, subset, pg13 }) {
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -47,8 +52,8 @@ export function SaveRankingModal({ onSave, onDismiss, subset }) {
     <div className="modal-overlay">
       <div className="modal-card">
         <p className="modal-eyebrow text-[11px] font-medium uppercase">Ranking Complete</p>
-        <h2 className="modal-title mt-1 text-xl font-semibold">{copyFor(subset).title}</h2>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-mid)' }}>{copyFor(subset).body}</p>
+        <h2 className="modal-title mt-1 text-xl font-semibold">{copyFor(subset, pg13).title}</h2>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-mid)' }}>{copyFor(subset, pg13).body}</p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
           <input
             type="text"
