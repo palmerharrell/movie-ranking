@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
-import { PackQueue } from './components/PackQueue.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { SubsetPicker } from './components/SubsetPicker.jsx'
 import { SaveRankingModal } from './components/SaveRankingModal.jsx'
@@ -10,6 +9,8 @@ import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import { SkippedView } from './components/SkippedView.jsx'
+import { BannerMenu } from './components/BannerMenu.jsx'
+import { InstructionsModal } from './components/InstructionsModal.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -17,12 +18,17 @@ import { selectPg13OrUnder } from './lib/pg13Mode.js'
 import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
+import filmReelBg from './assets/film-reel-bg.png'
 
 const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
 // PG-13-and-under (#193) is a global toggle, not tied to the active subset —
 // it persists across subset switches (mirrors SUBSET_STORAGE_KEY's own
 // persistence, just as its own independent flag).
 const PG13_STORAGE_KEY = 'movie-ranking-pg13'
+// The "how it works" popup (replacing the old always-visible pack-card
+// captions) shows once per browser on startup unless dismissed with "Don't
+// show this again" — same shape as PG13_STORAGE_KEY's persistent flag.
+const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
 const QUEUE_SIZE = 8
 
 function initialSubset() {
@@ -33,6 +39,10 @@ function initialSubset() {
 
 function initialPg13() {
   return localStorage.getItem(PG13_STORAGE_KEY) === 'true'
+}
+
+function initialShowInstructions() {
+  return localStorage.getItem(INSTRUCTIONS_STORAGE_KEY) !== 'true'
 }
 
 async function fetchPacks(family, popular, genre, pg13) {
@@ -78,6 +88,7 @@ function App() {
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
+  const [showInstructionsModal, setShowInstructionsModal] = useState(initialShowInstructions)
   // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
   // (#182/#183) — fetched once since it's independent of the active subset.
   const [allMoviesCount, setAllMoviesCount] = useState(null)
@@ -489,6 +500,11 @@ function App() {
     discardActivePack()
   }
 
+  function handleCloseInstructions(dontShowAgain) {
+    if (dontShowAgain) localStorage.setItem(INSTRUCTIONS_STORAGE_KEY, 'true')
+    setShowInstructionsModal(false)
+  }
+
   async function handleSaveRanking(name) {
     // Let a failure here propagate to the modal, which shows it inline.
     // { family, popular } scopes the snapshot + reset to the active subset,
@@ -542,41 +558,42 @@ function App() {
 
   return (
     <div
-      data-theme={['family', 'all'].includes(subset) ? subset : 'popular'}
+      data-theme={subset === 'all' ? 'all' : 'popular'}
       className="app-shell flex h-screen flex-col overflow-hidden"
+      style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
     >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
-        <header className="banner flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:h-[78px] md:flex-nowrap md:px-8 md:py-0">
-          <div className="flex items-center gap-3">
-            <h1 className="app-title text-[22px] md:text-[30px]">Movie Ranking</h1>
+        <header className="banner flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
+          <div className="app-title-badge flex w-fit items-center justify-center self-center gap-2 rounded-full px-1 md:gap-3 md:px-1.5">
+            <img
+              src={`${import.meta.env.BASE_URL}favicon.svg`}
+              alt=""
+              aria-hidden="true"
+              className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
+            />
+            <h1 className="app-title text-center text-[22px] md:text-[30px]">Movie Ranking</h1>
+            <img
+              src={`${import.meta.env.BASE_URL}favicon.svg`}
+              alt=""
+              aria-hidden="true"
+              className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
+            />
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 md:flex-nowrap md:gap-x-3">
-            <button
-              type="button"
-              onClick={() => setShowStandingsDrawer(true)}
-              className="banner-button md:hidden"
-            >
-              Standings
-            </button>
-            <button type="button" onClick={() => setShowLoadView(true)} className="banner-button">
-              Load Ranking
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowSkippedView(true)}
-              className="banner-button"
-            >
-              Skipped
-            </button>
-            <label className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] md:ml-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <BannerMenu
+              onStandings={() => setShowStandingsDrawer(true)}
+              onLoadRanking={() => setShowLoadView(true)}
+              onSkipped={() => setShowSkippedView(true)}
+            />
+            <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
+            <label className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]">
+              PG-13 &amp; Under
               <input
                 type="checkbox"
                 checked={pg13}
                 onChange={(event) => setPg13(event.target.checked)}
               />
-              PG-13 &amp; Under
             </label>
-            <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
           </div>
         </header>
 
@@ -634,64 +651,48 @@ function App() {
             )}
           </aside>
 
-          <main
-            className={`flex min-h-0 flex-col items-center overflow-y-auto px-4 md:px-8 ${
-              subset === 'popular' ? 'py-4' : 'py-[26px]'
-            }`}
-          >
-            <div className="flex w-full max-w-xl flex-col gap-4 xl:max-w-none xl:flex-row xl:items-start xl:justify-center">
-              <div className="w-full xl:max-w-xl">
-                {category ? (
-                  category.type === HEAD_TO_HEAD_TYPE ? (
-                    <HeadToHeadPanel
-                      category={category}
-                      onPick={handleHeadToHeadPick}
-                      disabled={busy || switchingSubset}
-                    />
-                  ) : (
-                    <RightPanel
-                      category={category}
-                      onReorder={handleReorder}
-                      onSkip={handleSkipMovie}
-                      skippedMovies={skippedMovies}
-                      onUndoSkip={handleUndoSkip}
-                      awaitingLastSkipConfirm={awaitingLastSkipConfirm}
-                      onConfirmSkipLast={handleConfirmSkipLast}
-                      onDeclineSkipLast={handleDeclineSkipLast}
-                      disabled={busy || switchingSubset}
-                    />
-                  )
-                ) : error ? (
-                  <p className="text-sm text-red-400">{error}</p>
-                ) : movies ? (
-                  <p className="text-sm" style={{ color: 'var(--text-low)' }}>
-                    Not enough movies to build a category yet.
-                  </p>
-                ) : (
-                  <p className="text-sm" style={{ color: 'var(--text-low)' }}>
-                    Loading…
-                  </p>
-                )}
-                {category?.type !== HEAD_TO_HEAD_TYPE && (
-                  <div className="mt-4">
-                    <RankButton
-                      onClick={handleRank}
-                      disabled={!category || busy || switchingSubset || category.movies.length < 2}
-                    />
-                  </div>
-                )}
-              </div>
-              {/* Beside the active pack once there's room (xl+); below it
-                  (PackQueue's own top margin) on narrower windows. Skipped
-                  entirely when the queue is empty so no empty column is
-                  reserved next to the pack. */}
-              {category && queue.length > 0 && (
-                <div className="w-full xl:w-72 xl:shrink-0">
-                  <PackQueue
-                    queue={queue}
+          <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 py-4 md:px-8">
+            <div className="w-full max-w-xl">
+              {category ? (
+                category.type === HEAD_TO_HEAD_TYPE ? (
+                  <HeadToHeadPanel
+                    category={category}
+                    onPick={handleHeadToHeadPick}
                     disabled={busy || switchingSubset}
-                    onSelect={handleSelectQueued}
-                    className="mt-4 flex flex-col gap-2 xl:mt-0"
+                    queue={queue}
+                    onSelectQueued={handleSelectQueued}
+                  />
+                ) : (
+                  <RightPanel
+                    category={category}
+                    onReorder={handleReorder}
+                    onSkip={handleSkipMovie}
+                    skippedMovies={skippedMovies}
+                    onUndoSkip={handleUndoSkip}
+                    awaitingLastSkipConfirm={awaitingLastSkipConfirm}
+                    onConfirmSkipLast={handleConfirmSkipLast}
+                    onDeclineSkipLast={handleDeclineSkipLast}
+                    disabled={busy || switchingSubset}
+                    queue={queue}
+                    onSelectQueued={handleSelectQueued}
+                  />
+                )
+              ) : error ? (
+                <p className="text-sm text-red-400">{error}</p>
+              ) : movies ? (
+                <p className="text-sm" style={{ color: 'var(--text-low)' }}>
+                  Not enough movies to build a category yet.
+                </p>
+              ) : (
+                <p className="text-sm" style={{ color: 'var(--text-low)' }}>
+                  Loading…
+                </p>
+              )}
+              {category?.type !== HEAD_TO_HEAD_TYPE && (
+                <div className="mt-4">
+                  <RankButton
+                    onClick={handleRank}
+                    disabled={!category || busy || switchingSubset || category.movies.length < 2}
                   />
                 </div>
               )}
@@ -729,6 +730,7 @@ function App() {
       {showSkippedView && (
         <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
       )}
+      {showInstructionsModal && <InstructionsModal onClose={handleCloseInstructions} />}
     </div>
   )
 }

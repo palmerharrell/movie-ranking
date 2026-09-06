@@ -14,36 +14,41 @@ const LANGUAGE_SUBSETS = GENRE_SUBSETS.filter((g) => LANGUAGE_SUBSET_IDS.include
 
 export function SubsetPicker({ subset, onChange, allMoviesCount }) {
   return (
-    <select
-      value={subset}
-      onChange={(event) => onChange(event.target.value)}
-      className="subset-select ml-3.5 text-[11px] font-medium uppercase tracking-[0.1em]"
-    >
-      <optgroup label="Curated Lists">
-        {CURATED_SUBSETS.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label="Genres">
-        <option value={FAMILY_SUBSET.id}>{FAMILY_SUBSET.label}</option>
-        {GENRE_ONLY_SUBSETS.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label="Language">
-        {LANGUAGE_SUBSETS.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label="Not Recommended">
-        <option value="all">All{allMoviesCount != null ? ` (${allMoviesCount})` : ''}</option>
-      </optgroup>
-    </select>
+    <div className="subset-select-wrap">
+      <select
+        value={subset}
+        onChange={(event) => onChange(event.target.value)}
+        className="subset-select text-[11px] font-medium uppercase tracking-[0.1em]"
+      >
+        <optgroup label="Curated Lists">
+          {CURATED_SUBSETS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Genres">
+          <option value={FAMILY_SUBSET.id}>{FAMILY_SUBSET.label}</option>
+          {GENRE_ONLY_SUBSETS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Language">
+          {LANGUAGE_SUBSETS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Not Recommended">
+          <option value="all">All{allMoviesCount != null ? ` (${allMoviesCount})` : ''}</option>
+        </optgroup>
+      </select>
+      <span className="subset-select-arrow" aria-hidden="true">
+        ▾
+      </span>
+    </div>
   )
 }

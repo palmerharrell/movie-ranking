@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/sortable'
 import { MovieTile } from './MovieTile.jsx'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
+import { QueueMenu } from './QueueMenu.jsx'
 import { formatPackLabel } from '../lib/labelWording.js'
 
 export function RightPanel({
@@ -25,6 +26,8 @@ export function RightPanel({
   onConfirmSkipLast,
   onDeclineSkipLast,
   disabled,
+  queue,
+  onSelectQueued,
 }) {
   const sensors = useSensors(useSensor(PointerSensor))
   const tilesListRef = useRef(null)
@@ -57,16 +60,9 @@ export function RightPanel({
 
   return (
     <div className="pack-card">
-      <div className="mb-3">
-        <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-3">
-          <p className="pack-eyebrow text-[11px] font-medium uppercase">Now Showing</p>
-          {category.movies.length > 1 && (
-            <p className="rank-caption text-[11px] md:text-right">
-              Drag to reorder, click Rank to set order and go to next list
-            </p>
-          )}
-        </div>
-        <h2 className="pack-category-label mt-1">{formatPackLabel(category.label)}</h2>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <h2 className="pack-category-label">{formatPackLabel(category.label)}</h2>
+        <QueueMenu queue={queue} disabled={disabled} onSelect={onSelectQueued} />
       </div>
       <DndContext
         sensors={sensors}
