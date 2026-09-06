@@ -1,3 +1,5 @@
+import { isMarvelOrDc } from './comicBookMovies.js'
+
 // Tune later — not a hard requirement from #104, just a starting cutoff.
 export const POPULAR_POOL_SIZE = 300
 
@@ -11,6 +13,12 @@ export function selectTopByVoteCount(movies, n) {
     .slice(0, n)
 }
 
+// Marvel/DC movies are excluded here (#180) — their sheer volume (dozens of
+// MCU/DCEU entries) was crowding out everything else in this top-N cutoff.
+// They're still rankable, just via the dedicated Comic Book subset (#181)
+// instead — see genreSubsets.js's 'comicbook' entry, which skips this
+// exclusion. All Movies bypasses selectPopular entirely, so it's unaffected
+// and stays the one place Marvel/DC still show up outside Comic Book.
 export function selectPopular(movies) {
-  return selectTopByVoteCount(movies, POPULAR_POOL_SIZE)
+  return selectTopByVoteCount(movies.filter((m) => !isMarvelOrDc(m)), POPULAR_POOL_SIZE)
 }

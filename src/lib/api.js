@@ -8,6 +8,7 @@ import {
   markSkipped as markSkippedLocal,
   unmarkSkipped as unmarkSkippedLocal,
   unmarkAllSkipped as unmarkAllSkippedLocal,
+  restoreSkipped as restoreSkippedLocal,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
@@ -75,6 +76,13 @@ export function markSkipped(movieId) {
 
 export function unmarkSkipped(movieId) {
   unmarkSkippedLocal(movieId)
+}
+
+// Full reversal of markSkipped — used by the in-pack "undo skip" action,
+// which restores the exact eloRating/timesRanked markSkipped just wiped
+// (#169), unlike the persistent Skipped-view unmarkSkipped above.
+export function restoreSkipped(movieId, eloRating, timesRanked) {
+  restoreSkippedLocal(movieId, eloRating, timesRanked)
 }
 
 // Every persistently-skipped movie across the whole pool, regardless of

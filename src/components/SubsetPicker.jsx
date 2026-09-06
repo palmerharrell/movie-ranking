@@ -1,32 +1,33 @@
-import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS, COUNTRY_SUBSET_IDS } from '../lib/genreSubsets.js'
+import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS } from '../lib/genreSubsets.js'
 
-const GENERAL_SUBSETS = [
-  { id: 'popular', label: 'Popular' },
-  { id: 'family', label: 'Family' },
-  { id: 'all', label: 'All Movies' },
-]
+const CURATED_SUBSETS = [{ id: 'popular', label: 'Popular' }]
 
-const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter(
-  (g) => !LANGUAGE_SUBSET_IDS.includes(g.id) && !COUNTRY_SUBSET_IDS.includes(g.id),
-)
+// Family isn't part of GENRE_SUBSETS (its own familyMode.js logic), but per
+// #183 it's grouped with the other genre-style subsets in the picker.
+const FAMILY_SUBSET = { id: 'family', label: 'Family' }
+
+// British is TMDb production-country based rather than genre/language, but
+// per #183 it's grouped with the genre subsets in the picker too — there's
+// no dedicated "Country" group left once it moves.
+const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter((g) => !LANGUAGE_SUBSET_IDS.includes(g.id))
 const LANGUAGE_SUBSETS = GENRE_SUBSETS.filter((g) => LANGUAGE_SUBSET_IDS.includes(g.id))
-const COUNTRY_SUBSETS = GENRE_SUBSETS.filter((g) => COUNTRY_SUBSET_IDS.includes(g.id))
 
-export function SubsetPicker({ subset, onChange }) {
+export function SubsetPicker({ subset, onChange, allMoviesCount }) {
   return (
     <select
       value={subset}
       onChange={(event) => onChange(event.target.value)}
       className="subset-select ml-3.5 text-[11px] font-medium uppercase tracking-[0.1em]"
     >
-      <optgroup label="Subsets">
-        {GENERAL_SUBSETS.map((s) => (
+      <optgroup label="Curated Lists">
+        {CURATED_SUBSETS.map((s) => (
           <option key={s.id} value={s.id}>
             {s.label}
           </option>
         ))}
       </optgroup>
       <optgroup label="Genres">
+        <option value={FAMILY_SUBSET.id}>{FAMILY_SUBSET.label}</option>
         {GENRE_ONLY_SUBSETS.map((s) => (
           <option key={s.id} value={s.id}>
             {s.label}
@@ -40,12 +41,8 @@ export function SubsetPicker({ subset, onChange }) {
           </option>
         ))}
       </optgroup>
-      <optgroup label="Country">
-        {COUNTRY_SUBSETS.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
+      <optgroup label="Not Recommended">
+        <option value="all">All{allMoviesCount != null ? ` (${allMoviesCount})` : ''}</option>
       </optgroup>
     </select>
   )

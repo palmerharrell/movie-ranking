@@ -111,7 +111,12 @@ exposed in the UI.
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
   pack generation and from the ranked-progress denominator (see **Progress
-  tracking**), until un-skipped. Besides the in-pack "undo" while that pack
+  tracking**), until un-skipped. If the movie had already been ranked in a
+  previous pack, marking it skipped also resets its `eloRating`/`timesRanked`
+  back to defaults (1000/0) — a skip removes the movie from the ranking
+  entirely, not just from future packs (#169); un-skipping it afterward
+  starts it back at those same defaults rather than restoring the old
+  rating, since that data is gone. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
   banner next to "Load Ranking") lists every persistently-skipped movie
@@ -309,13 +314,13 @@ exposed in the UI.
   point for browsing/un-skipping persistently-skipped movies (#137, see
   **Skip ("Haven't Seen")**).
 
-## Movie subsets (#104, #146, #150, #151)
+## Movie subsets (#104, #146, #150, #151, #180, #181)
 There are no more cosmetic-only "themes" — the banner's picker
 (`src/components/SubsetPicker.jsx`, a grouped `<select>`) chooses which
 **subset of the pool** to rank, and each subset carries its own visual
 identity (a `data-theme` value with its own CSS custom-property palette in
 `src/index.css`) purely as a side effect of which subset is active, not as
-an independent choice. Three general entries plus 14 genre entries, 3
+an independent choice. Three general entries plus 15 genre entries, 3
 language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
@@ -337,7 +342,7 @@ language entries, and 1 country entry, grouped in the picker:
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
   Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
-  Italian. TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
+  Italian, Comic Book (see below). TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
   — it's the defining attribute of the general **Family** subset above
   instead, so a second "Family" entry in the picker's Genres group would be
   redundant (this was previously framed as avoiding a naming collision with
@@ -348,19 +353,27 @@ language entries, and 1 country entry, grouped in the picker:
   keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
   which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
-  (French/Spanish/Italian) — then caps to the same top-N-by-`voteCount` as
-  Popular via the shared `selectTopByVoteCount` (`src/lib/popularMode.js`).
-  All share Popular's palette (no bespoke palette per genre). Filtering is
+  (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (100) via
+  the shared `selectTopByVoteCount` (`src/lib/popularMode.js`) — smaller than
+  Popular's `POPULAR_POOL_SIZE` (300), since niche genre/language/country
+  subsets don't have as much depth of genuinely popular titles as Popular/
+  Family/All Movies do; sharing Popular's cap left a long tail of obscure
+  matches that users ended up skipping en masse (#165, e.g. nearly a third
+  of the Sci-Fi subset). All share Popular's palette (no bespoke palette per
+  genre). Filtering is
   by the movie's own attributes, not by which `sources[]` tag brought it
   into the pool — a Comedy added via personal import still surfaces here if
   popular enough. See **Building the list** below for how the pool is kept
   stocked with genuinely popular movies per subset, not just whatever we'd
-  already collected.
+  already collected. Every genre/language subset here, plus Popular and
+  Family above, also excludes Marvel/DC movies (#180) — see **Comic Book**
+  below for where they went and why.
 - **British** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`, `id: 'british'`,
   #151) — filters by `productionCountries` including `"GB"` (unlike the
   genre/language subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
-  caps to the same top-N-by-`voteCount` as Popular via `selectTopByVoteCount`.
+  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same
+  smaller-than-Popular cap as the genre/language subsets above (#165).
   Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
   in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
   subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
@@ -370,6 +383,29 @@ language entries, and 1 country entry, grouped in the picker:
   entries enriched before `productionCountries` existed are backfilled via
   `scripts/refreshEnrichedFields.js` (same one-off backfill script used for
   `voteCount` in #104 and the `musical` keyword in #150).
+- **Comic Book** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`, `id:
+  'comicbook'`, #180/#181) — the one subset that still includes Marvel/DC
+  movies. Every other subset above (Popular, Family, and every other
+  genre/language/country subset) filters them out via
+  `src/lib/comicBookMovies.js`'s `isMarvelOrDc` — their sheer volume (dozens
+  of MCU/DCEU entries) was crowding out everything else in those top-N
+  cutoffs. `isMarvelOrDc` matches on `studio === 'Marvel Studios'`, a
+  curated allowlist of Marvel/DC collection names
+  (`MARVEL_DC_COLLECTIONS`, same hand-picked spirit as
+  `NOTABLE_STUDIOS`/`KEYWORD_LABELS` in `curatedAttributes.js`), or a small
+  hardcoded `tmdbId` exception list (`MARVEL_DC_TMDB_ID_EXCEPTIONS`, same
+  pattern as Musicals' Coco/Sister Act exceptions) for standalone
+  films TMDb doesn't group into a collection. The Comic Book subset itself
+  matches more broadly than `isMarvelOrDc` — `isComicBook` also includes
+  TMDb's `superhero` keyword, so non-Marvel/DC comic adaptations (Hellboy,
+  Kick-Ass, etc.) land here too, per #181 ("other comic book movies are
+  allowed here too"); those non-Marvel/DC superhero movies are *not*
+  excluded from other subsets, only Marvel/DC ones are. All Movies is
+  unaffected by any of this — it stays the one place showing the entire
+  unfiltered pool, Marvel/DC included, since `selectPopular`/
+  `selectGenreSubset` (where the exclusion lives) are never applied there.
+  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same as
+  the other genre subsets. Shares Popular's palette.
 - `GET /api/movies?family=true&popular=true&genre=comedy` composes
   server-side filters (family applied first, then one top-N strategy —
   `genre` and `popular` are alternate strategies, only one ever applies);

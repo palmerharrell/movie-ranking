@@ -42,4 +42,12 @@ describe('selectPopular', () => {
     selectPopular(movies)
     expect(movies.map((m) => m.id)).toEqual(['a', 'b'])
   })
+
+  it('excludes Marvel/DC movies even if they would otherwise rank highly (#180)', () => {
+    const movies = [
+      { id: 'marvel', voteCount: 999, studio: 'Marvel Studios' },
+      { id: 'plain', voteCount: 1 },
+    ]
+    expect(selectPopular(movies).map((m) => m.id)).toEqual(['plain'])
+  })
 })

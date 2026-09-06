@@ -5,6 +5,7 @@ import {
   resetLocalState,
   markSkipped,
   unmarkSkipped,
+  restoreSkipped,
 } from './localRankingStore.js'
 
 function createMemoryStorage() {
@@ -59,6 +60,19 @@ describe('markSkipped / unmarkSkipped', () => {
     expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '2').skipped).toBe(false)
   })
 
+  it('clears eloRating/timesRanked for a movie ranked then skipped (#169)', () => {
+    applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
+    expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '1').timesRanked).toBe(1)
+
+    markSkipped('1')
+
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').eloRating).toBe(1000)
+    expect(byId.get('1').timesRanked).toBe(0)
+    expect(byId.get('1').skipped).toBe(true)
+  })
+
   it('survives resetLocalState (skip is independent of elo/timesRanked reset)', () => {
     markSkipped('1')
     applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
@@ -68,6 +82,21 @@ describe('markSkipped / unmarkSkipped', () => {
     const byId = new Map(merged.map((m) => [m.id, m]))
     expect(byId.get('1').timesRanked).toBe(0)
     expect(byId.get('1').skipped).toBe(true)
+  })
+})
+
+describe('restoreSkipped', () => {
+  it('fully restores a ranked movie skipped via the in-pack undo (#169)', () => {
+    applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
+    const before = mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '1')
+
+    markSkipped('1')
+    restoreSkipped('1', before.eloRating, before.timesRanked)
+
+    const after = mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '1')
+    expect(after.skipped).toBe(false)
+    expect(after.eloRating).toBe(before.eloRating)
+    expect(after.timesRanked).toBe(before.timesRanked)
   })
 })
 

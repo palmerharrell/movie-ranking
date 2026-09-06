@@ -53,14 +53,30 @@ function App() {
   // packs[0] is the active pack; packs[1..] is the upcoming queue.
   const [packs, setPacks] = useState(null)
   const [error, setError] = useState(null)
+  // Set when a subset-switch fetch fails while stale (previous-subset)
+  // movies/packs are still on screen — see the effect below and #178.
+  // Kept separate from `error` because the full-page error branches key off
+  // `movies`/`category` being falsy, which isn't true during a subset
+  // switch; this instead drives an inline banner alongside the stale
+  // content, with a retry action.
+  const [subsetSwitchError, setSubsetSwitchError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
+  // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
+  // (#182/#183) — fetched once since it's independent of the active subset.
+  const [allMoviesCount, setAllMoviesCount] = useState(null)
   const wasFullyRanked = useRef(false)
+  // Guards against rapid subset switching: only the most recent subset's
+  // fetch is allowed to apply its results or clear switchingSubset, so an
+  // older switch's fetch resolving after a newer one can't clobber the
+  // newer subset's data or hide its still-in-flight loading overlay.
+  const subsetFetchId = useRef(0)
   // Set inside handleSkipMovie's setPacks updater, acted on by the effect
   // below once the resulting pack state has actually committed — see the
   // comment on handleSkipMovie for why this can't just be a synchronous
@@ -107,15 +123,57 @@ function App() {
     localStorage.setItem(SUBSET_STORAGE_KEY, subset)
   }, [subset])
 
-  // Every subset is a different pool, so always re-fetch on change.
+  useEffect(() => {
+    api.getMovies().then((allMovies) => setAllMoviesCount(allMovies.length))
+  }, [])
+
+  // Fetches the active subset's movies/packs. Used both by the effect below
+  // on subset change and by the banner's Retry action after a failure —
+  // retrying re-runs this without touching skip/prompt state, since those
+  // were already reset by the switch that triggered the failed attempt.
+  // A failure while `movies`/`category` are still populated (a subset
+  // switch, since old data stays on screen — see #175) surfaces as an
+  // inline banner (`subsetSwitchError`) instead of the full-page error
+  // branches, which only render when `movies`/`category` are falsy (#178).
+  function loadSubset() {
+    const hadMovies = movies !== null
+    setSwitchingSubset(true)
+    setSubsetSwitchError(null)
+    const fetchId = ++subsetFetchId.current
+    const isStale = () => fetchId !== subsetFetchId.current
+    Promise.all([
+      api
+        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
+        .then((updated) => {
+          if (!isStale()) noteMoviesUpdate(updated)
+        }),
+      fetchPacks(isFamily, isPopular, activeGenre).then((freshPacks) => {
+        if (!isStale()) setPacks(freshPacks)
+      }),
+    ])
+      .catch((err) => {
+        if (isStale()) return
+        if (hadMovies) {
+          setSubsetSwitchError(err.message)
+        } else {
+          setError(err.message)
+        }
+      })
+      .finally(() => {
+        if (!isStale()) setSwitchingSubset(false)
+      })
+  }
+
+  // Every subset is a different pool, so always re-fetch on change. Old
+  // `movies`/`packs` stay on screen (not reset to null) while this is in
+  // flight, so `switchingSubset` drives a loading overlay over the stale
+  // pack/queue rather than the "Loading…" text used for the initial load,
+  // which would otherwise flash the previous subset's content for a beat
+  // before this settles (#175).
   useEffect(() => {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
-    api
-      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre })
-      .then(noteMoviesUpdate)
-      .catch((err) => setError(err.message))
-    fetchPacks(isFamily, isPopular, activeGenre).then(setPacks).catch((err) => setError(err.message))
+    loadSubset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subset])
 
@@ -292,9 +350,14 @@ function App() {
     })
     setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
-    // just for this pack. handleUndoSkip below reverses it.
+    // just for this pack. handleUndoSkip below reverses it. markSkipped also
+    // resets eloRating/timesRanked to defaults (#169), so mirror that in
+    // local `movies` state too rather than leaving the stale pre-skip rating
+    // displayed until the next refetch.
     api.markSkipped(movieId)
-    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: true } : m)))
+    setMovies((prev) =>
+      prev.map((m) => (m.id === movieId ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
+    )
   }
 
   // Acts on the outcome `handleSkipMovie` recorded into `pendingSkipOutcome`
@@ -333,8 +396,17 @@ function App() {
       return [{ ...prev[0], movies }, ...prev.slice(1)]
     })
     setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
-    api.unmarkSkipped(movieId)
-    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m)))
+    // Full reversal (#169), unlike the persistent Skipped-view unmarkSkipped
+    // path — restores the exact eloRating/timesRanked markSkipped wiped,
+    // since entry.movie still holds that pre-skip data.
+    api.restoreSkipped(movieId, entry.movie.eloRating, entry.movie.timesRanked)
+    setMovies((prev) =>
+      prev.map((m) =>
+        m.id === movieId
+          ? { ...m, skipped: false, eloRating: entry.movie.eloRating, timesRanked: entry.movie.timesRanked }
+          : m
+      )
+    )
     // Undoing a skip brings the pack back above 1 movie, so the "skip this
     // one too?" prompt (if showing) no longer applies.
     setAwaitingLastSkipConfirm(false)
@@ -367,7 +439,9 @@ function App() {
     const lastMovie = category.movies[0]
     setAwaitingLastSkipConfirm(false)
     api.markSkipped(lastMovie.id)
-    setMovies((prev) => prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true } : m)))
+    setMovies((prev) =>
+      prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
+    )
     setSkippedMovies([])
     discardActivePack()
   }
@@ -459,9 +533,28 @@ function App() {
             >
               Skipped
             </button>
-            <SubsetPicker subset={subset} onChange={setSubset} />
+            <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
           </div>
         </header>
+
+        {subsetSwitchError && (
+          <div className="mx-4 mt-2 flex shrink-0 items-center justify-between gap-3 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300 md:mx-8">
+            <span>Couldn't switch subsets: {subsetSwitchError}</span>
+            <div className="flex shrink-0 items-center gap-3">
+              <button type="button" onClick={loadSubset} className="underline">
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubsetSwitchError(null)}
+                aria-label="Dismiss"
+                className="text-base leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[340px_1fr]">
           {showStandingsDrawer && (
@@ -510,7 +603,7 @@ function App() {
                     <HeadToHeadPanel
                       category={category}
                       onPick={handleHeadToHeadPick}
-                      disabled={busy}
+                      disabled={busy || switchingSubset}
                     />
                   ) : (
                     <RightPanel
@@ -522,7 +615,7 @@ function App() {
                       awaitingLastSkipConfirm={awaitingLastSkipConfirm}
                       onConfirmSkipLast={handleConfirmSkipLast}
                       onDeclineSkipLast={handleDeclineSkipLast}
-                      disabled={busy}
+                      disabled={busy || switchingSubset}
                     />
                   )
                 ) : error ? (
@@ -540,7 +633,7 @@ function App() {
                   <div className="mt-4">
                     <RankButton
                       onClick={handleRank}
-                      disabled={!category || busy || category.movies.length < 2}
+                      disabled={!category || busy || switchingSubset || category.movies.length < 2}
                     />
                   </div>
                 )}
@@ -553,7 +646,7 @@ function App() {
                 <div className="w-full xl:w-72 xl:shrink-0">
                   <PackQueue
                     queue={queue}
-                    disabled={busy}
+                    disabled={busy || switchingSubset}
                     onSelect={handleSelectQueued}
                     className="mt-4 flex flex-col gap-2 xl:mt-0"
                   />

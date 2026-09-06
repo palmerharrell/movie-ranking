@@ -1,4 +1,13 @@
-import { selectTopByVoteCount, POPULAR_POOL_SIZE } from './popularMode.js'
+import { selectTopByVoteCount } from './popularMode.js'
+import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
+
+// Tune later — not a hard requirement from #165, just a starting cutoff.
+// Smaller than POPULAR_POOL_SIZE: niche genre/language/country subsets don't
+// have as much depth of genuinely popular titles as Popular/Family/All
+// Movies do, so sharing the same 300-movie cap left a long tail of obscure
+// matches users ended up skipping en masse (#165, e.g. nearly a third of the
+// Sci-Fi subset).
+export const GENRE_SUBSET_POOL_SIZE = 100
 
 // Coco and Sister Act are real musicals TMDb doesn't tag with the `musical`
 // keyword (confirmed live against TMDb's API during planning, #150) — a
@@ -50,6 +59,12 @@ export const GENRE_SUBSETS = [
   { id: 'spanish', label: 'Spanish', language: 'es' },
   { id: 'italian', label: 'Italian', language: 'it' },
   { id: 'british', label: 'British', matches: isBritish, country: 'GB' },
+  // The only subset that includes Marvel/DC movies (#181) — every other
+  // subset below excludes them via selectGenreSubset/selectPopular (#180).
+  // Broader than isMarvelOrDc: TMDb's `superhero` keyword folds in other
+  // comic adaptations (Hellboy, Kick-Ass, etc.) too, per #181's "other
+  // comic book movies are allowed here too."
+  { id: 'comicbook', label: 'Comic Book', matches: isComicBook, keyword: 'superhero' },
 ].map((config) => ({
   ...config,
   matches:
@@ -60,17 +75,20 @@ export const GENRE_SUBSETS = [
 
 export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 
-export const COUNTRY_SUBSET_IDS = ['british']
-
 // Filters to movies matching the subset's own attributes (genre/keyword/
 // language) — not by which sources[] tag got a movie into the pool, so a
 // Comedy added via personal import still surfaces here if popular enough,
 // not only ones fetched via the top-comedy discover source (#150). Then
-// caps to the same top-N-by-voteCount used by Popular.
+// caps to GENRE_SUBSET_POOL_SIZE — smaller than Popular's cap since these
+// niche subsets run shallower on genuinely popular titles (#165). Every
+// subset except Comic Book itself also excludes Marvel/DC movies (#180) —
+// Comic Book is the one place they're still rankable (#181).
 export function selectGenreSubset(movies, subsetId) {
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return movies
-  return selectTopByVoteCount(movies.filter(config.matches), POPULAR_POOL_SIZE)
+  const matched = movies.filter(config.matches)
+  const scoped = subsetId === 'comicbook' ? matched : matched.filter((m) => !isMarvelOrDc(m))
+  return selectTopByVoteCount(scoped, GENRE_SUBSET_POOL_SIZE)
 }
 
 // Display label for any genre/language subset id — used by SaveRankingModal/
