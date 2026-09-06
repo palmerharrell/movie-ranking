@@ -70,7 +70,7 @@ export function unmarkSkipped(movieId) {
   unmarkSkippedLocal(movieId)
 }
 
-// Unfiltered — a pack built in Family mode still only contains family-safe
+// Unfiltered — a pack built in Family mode still only contains Family-genre
 // movies, but the returned pool reflects every movie's state (mirrors the
 // pre-#115 server response, which was always unfiltered).
 export async function rankPack(movieIds) {

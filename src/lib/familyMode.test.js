@@ -1,17 +1,32 @@
 import { describe, it, expect } from 'vitest'
-import { isFamilySafe } from './familyMode.js'
+import { isFamilyGenre, selectFamilySubset } from './familyMode.js'
 
-describe('isFamilySafe', () => {
-  it.each(['G', 'PG', 'PG-13'])('accepts %s', (mpaaRating) => {
-    expect(isFamilySafe({ mpaaRating })).toBe(true)
+describe('isFamilyGenre', () => {
+  it('accepts a movie tagged with the Family genre', () => {
+    expect(isFamilyGenre({ genres: ['Comedy', 'Family'] })).toBe(true)
   })
 
-  it.each(['R', 'NC-17', 'Unrated'])('rejects %s', (mpaaRating) => {
-    expect(isFamilySafe({ mpaaRating })).toBe(false)
+  it('rejects a movie without the Family genre', () => {
+    expect(isFamilyGenre({ genres: ['Drama'] })).toBe(false)
+    expect(isFamilyGenre({})).toBe(false)
   })
 
-  it('rejects a movie with no confirmed rating', () => {
-    expect(isFamilySafe({ mpaaRating: null })).toBe(false)
-    expect(isFamilySafe({})).toBe(false)
+  it('has no MPAA safety floor — an R-rated Family-genre movie still qualifies (#152)', () => {
+    expect(isFamilyGenre({ genres: ['Family'], mpaaRating: 'R' })).toBe(true)
+  })
+
+  it('excludes a family-safe-rated movie that lacks the Family genre (#152)', () => {
+    expect(isFamilyGenre({ genres: ['Drama'], mpaaRating: 'G' })).toBe(false)
+  })
+})
+
+describe('selectFamilySubset', () => {
+  it('filters to Family-genre movies and caps to the top-N by voteCount', () => {
+    const movies = [
+      { id: '1', genres: ['Family'], voteCount: 10 },
+      { id: '2', genres: ['Family'], voteCount: 50 },
+      { id: '3', genres: ['Drama'], voteCount: 1000 },
+    ]
+    expect(selectFamilySubset(movies).map((m) => m.id)).toEqual(['2', '1'])
   })
 })

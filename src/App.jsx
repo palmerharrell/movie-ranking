@@ -10,7 +10,7 @@ import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import * as api from './lib/api.js'
-import { isFamilySafe } from './lib/familyMode.js'
+import { selectFamilySubset } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
 import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
@@ -87,7 +87,7 @@ function App() {
   // consistent with what's currently shown.
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = isFamily
-      ? updatedMovies.filter(isFamilySafe)
+      ? selectFamilySubset(updatedMovies)
       : activeGenre
         ? selectGenreSubset(updatedMovies, activeGenre)
         : isPopular
