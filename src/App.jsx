@@ -558,7 +558,7 @@ function App() {
 
   return (
     <div
-      data-theme={subset === 'all' ? 'all' : 'popular'}
+      data-theme="popular"
       className="app-shell flex h-screen flex-col overflow-hidden"
       style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
     >
@@ -625,9 +625,7 @@ function App() {
           )}
 
           <aside
-            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${
-              subset === 'all' ? 'md:border-r md:border-[var(--surface-border)]' : ''
-            } ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
             <div className="mb-2 flex justify-end md:hidden">
