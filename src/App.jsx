@@ -292,9 +292,14 @@ function App() {
     })
     setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
-    // just for this pack. handleUndoSkip below reverses it.
+    // just for this pack. handleUndoSkip below reverses it. markSkipped also
+    // resets eloRating/timesRanked to defaults (#169), so mirror that in
+    // local `movies` state too rather than leaving the stale pre-skip rating
+    // displayed until the next refetch.
     api.markSkipped(movieId)
-    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: true } : m)))
+    setMovies((prev) =>
+      prev.map((m) => (m.id === movieId ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
+    )
   }
 
   // Acts on the outcome `handleSkipMovie` recorded into `pendingSkipOutcome`
@@ -333,8 +338,17 @@ function App() {
       return [{ ...prev[0], movies }, ...prev.slice(1)]
     })
     setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
-    api.unmarkSkipped(movieId)
-    setMovies((prev) => prev.map((m) => (m.id === movieId ? { ...m, skipped: false } : m)))
+    // Full reversal (#169), unlike the persistent Skipped-view unmarkSkipped
+    // path — restores the exact eloRating/timesRanked markSkipped wiped,
+    // since entry.movie still holds that pre-skip data.
+    api.restoreSkipped(movieId, entry.movie.eloRating, entry.movie.timesRanked)
+    setMovies((prev) =>
+      prev.map((m) =>
+        m.id === movieId
+          ? { ...m, skipped: false, eloRating: entry.movie.eloRating, timesRanked: entry.movie.timesRanked }
+          : m
+      )
+    )
     // Undoing a skip brings the pack back above 1 movie, so the "skip this
     // one too?" prompt (if showing) no longer applies.
     setAwaitingLastSkipConfirm(false)
@@ -367,7 +381,9 @@ function App() {
     const lastMovie = category.movies[0]
     setAwaitingLastSkipConfirm(false)
     api.markSkipped(lastMovie.id)
-    setMovies((prev) => prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true } : m)))
+    setMovies((prev) =>
+      prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
+    )
     setSkippedMovies([])
     discardActivePack()
   }

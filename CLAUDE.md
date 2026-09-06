@@ -111,7 +111,12 @@ exposed in the UI.
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
   pack generation and from the ranked-progress denominator (see **Progress
-  tracking**), until un-skipped. Besides the in-pack "undo" while that pack
+  tracking**), until un-skipped. If the movie had already been ranked in a
+  previous pack, marking it skipped also resets its `eloRating`/`timesRanked`
+  back to defaults (1000/0) — a skip removes the movie from the ranking
+  entirely, not just from future packs (#169); un-skipping it afterward
+  starts it back at those same defaults rather than restoring the old
+  rating, since that data is gone. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
   banner next to "Load Ranking") lists every persistently-skipped movie
