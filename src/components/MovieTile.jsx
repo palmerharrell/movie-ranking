@@ -35,7 +35,7 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
             onSkip(movie.id)
           }}
           disabled={disabled}
-          className="skip-button flex h-6 w-6 items-center justify-center text-sm leading-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="skip-button flex h-9 w-9 items-center justify-center text-base leading-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-6 sm:w-6 sm:text-sm"
           aria-label={`Haven't seen ${movie.title} — remove from this pack`}
         >
           <span aria-hidden="true">✕</span>

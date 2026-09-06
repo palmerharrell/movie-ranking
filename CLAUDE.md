@@ -208,14 +208,17 @@ exposed in the UI.
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
 - **Upcoming queue:** rather than a single "next category" generated on
   demand, the app keeps a small queue of pre-generated upcoming packs (8,
-  via `PackQueue.jsx`, `QUEUE_SIZE` in `App.jsx` — #134) displayed alongside
-  the active pack, replacing the old multi-list picker chips (there's only
-  one pool now, so there's nothing to switch between).
+  `QUEUE_SIZE` in `App.jsx` — #134). Rather than a separate always-visible
+  list column, it's surfaced via an icon-only dropdown (`QueueMenu.jsx`, no
+  text label) in the pack card's own header, top-right, next to the pack's
+  category label — opening it shows the same queued-pack cards (poster
+  stack + label) as before, just on demand instead of permanently occupying
+  layout space.
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
-  - **Clicking a queued pack** discards the current active pack without
-    submitting it, promotes the clicked pack to active, and generates one
-    fresh pack to refill the queue.
+  - **Clicking a queued pack** (from the dropdown) discards the current
+    active pack without submitting it, promotes the clicked pack to active,
+    and generates one fresh pack to refill the queue.
   - Queued packs are generated independently and may overlap each other in
     which movies they include — that's expected, not a bug, since only one of
     them will ever actually get submitted.
@@ -350,15 +353,32 @@ exposed in the UI.
   sorted by eloRating. Progress label (`n/nnn ranked`) near the header — see
   **Progress tracking**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
-  label, reorderable via drag-and-drop (`@dnd-kit`) — plus the upcoming-packs
-  queue described in **Category generation & queue**.
+  label, reorderable via drag-and-drop (`@dnd-kit`) — plus the icon-only
+  queue dropdown in the card's own header described in **Category
+  generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
-- **Banner:** app title, the PG-13-and-under toggle (#193, see **PG-13 and
-  under toggle**), subset picker, a "Load Ranking" entry point for
-  browsing saved snapshots (see **Saved rankings**), and a "Skipped" entry
-  point for browsing/un-skipping persistently-skipped movies (#137, see
-  **Skip ("Haven't Seen")**).
+- **Banner:** two rows. Top row: an app-icon (recolored to the active
+  Neon-theme palette — see **Movie subsets**) on either side of the "Movie
+  Ranking" title, all three sitting on a shared dark badge
+  (`.app-title-badge`) so the icons and title read as one continuous piece
+  rather than separate elements, without adding height beyond the icons'
+  own. Bottom row, spread across the full width: an icon-only "☰" menu
+  button (`BannerMenu.jsx`, no text label) on the left — opening it reveals
+  Standings (mobile-only; desktop already shows the standings panel
+  in-line), a "Load Ranking" entry point for browsing saved snapshots (see
+  **Saved rankings**), and a "Skipped" entry point for browsing/un-skipping
+  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**) — then
+  the subset picker, then the PG-13-and-under toggle (#193, see **PG-13 and
+  under toggle**) flush right. A large, very-faint film-reel watermark
+  (baked-in low alpha, not CSS `opacity`, so it doesn't fade the banner's
+  own gradient) sits behind the whole app-shell under the Neon theme only —
+  see **Movie subsets**.
+- **Startup instructions:** a one-time popup (`InstructionsModal.jsx`,
+  shown unless dismissed with "Don't show this again",
+  `movie-ranking-hide-instructions` in `localStorage`) explains the drag/
+  Rank/Head-to-Head flow and what each banner control above does, replacing
+  the old always-visible per-pack captions.
 
 ## Movie subsets (#104, #146, #150, #151, #180, #181)
 There are no more cosmetic-only "themes" — the banner's picker
@@ -370,7 +390,15 @@ an independent choice. Three general entries plus 15 genre entries, 3
 language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
-  above). Dark, moody palette.
+  above). Dark, moody "Neon" palette (navy background, teal/pink accents) —
+  shared by every subset below except All Movies. The app icons flanking
+  the title, and the large low-opacity film-reel watermark behind the app
+  shell, are recolored to this palette's navy/teal (see **UI layout**) and
+  only appear under it — the source art lives outside the repo (the
+  original clip-art master), recolored via a one-off Pillow script (not
+  checked in) into `public/favicon.svg`, `public/apple-touch-icon.png`,
+  `public/pwa-192.png`, `public/pwa-512.png`, `public/pwa-maskable-512.png`,
+  and `src/assets/film-reel-bg.png`.
 - **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
   genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
   `isFamilyGenre`/`selectFamilySubset` (#152). This is a curation filter,
@@ -381,8 +409,12 @@ language entries, and 1 country entry, grouped in the picker:
   which offered that safety guarantee but not genre-based curation; #152
   deliberately traded one for the other.) Caps to the same
   top-N-by-`voteCount` as Popular and the other genre/language subsets, via
-  `selectFamilySubset`. Warm "storybook night" palette (deep indigo
-  background, marigold/teal accents) — cheerful without being glaring.
+  `selectFamilySubset`. Shares Popular's dark, moody palette, same as every
+  genre/language/country subset below — it previously had its own bespoke
+  "storybook night" palette (deep indigo background, marigold/teal accents),
+  but that made it the only genre-shaped subset with a distinct visual
+  identity, which read as inconsistent; removed in favor of one shared look
+  for every subset except All Movies.
 - **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
   parchment-toned palette.
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
