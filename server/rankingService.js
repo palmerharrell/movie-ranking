@@ -6,6 +6,8 @@ import {
   createSavedRanking,
   listSavedRankings as listSavedRankingsFromDb,
   getSavedRanking,
+  getSavedRankingByShareSlug,
+  setShareSlug,
 } from './db.js'
 import { loadMovies } from './movieStore.js'
 
@@ -61,8 +63,8 @@ export function saveRanking(db, name, entries, { ownerClientId, subset, pg13 } =
   if (!Array.isArray(entries) || entries.length === 0) {
     throw new Error('entries must be a non-empty array')
   }
-  const id = createSavedRanking(db, name, entries, ownerClientId ?? null, subset ?? null, !!pg13)
-  return { id, name }
+  const { id, shareSlug } = createSavedRanking(db, name, entries, ownerClientId ?? null, subset ?? null, !!pg13)
+  return { id, name, shareSlug }
 }
 
 // { id, name, createdAt, movieCount, subset, pg13 }[] for saved snapshots,
@@ -92,5 +94,45 @@ export function getSavedRankingMovies(db, dataDir, id) {
     (a, b) => b.eloRating - a.eloRating,
   )
 
-  return { id: saved.id, name: saved.name, createdAt: saved.createdAt, movies }
+  return {
+    id: saved.id,
+    name: saved.name,
+    createdAt: saved.createdAt,
+    shareSlug: saved.shareSlug,
+    movies,
+  }
+}
+
+// The public Top 10 for a saved ranking, looked up by its share slug (#220)
+// — used by the unauthenticated share endpoint, so this deliberately
+// returns far less than getSavedRankingMovies: no ownerClientId, no
+// eloRating/timesRanked, no entries beyond the top 10 themselves. Returns
+// null if no saved ranking has that slug or the pool's static metadata
+// isn't found.
+export function getSharedRankingTopTen(db, dataDir, slug) {
+  const staticMovies = loadMovies(dataDir)
+  if (!staticMovies) return null
+
+  const saved = getSavedRankingByShareSlug(db, slug)
+  if (!saved) return null
+
+  const entryMap = new Map(saved.entries.map((e) => [e.movieId, e]))
+  const movieMap = new Map(staticMovies.map((m) => [m.id, m]))
+  const topTen = [...entryMap.entries()]
+    .sort((a, b) => b[1].eloRating - a[1].eloRating)
+    .slice(0, 10)
+    .map(([movieId]) => movieMap.get(movieId))
+    .filter(Boolean)
+    .map((m) => ({ id: m.id, title: m.title, year: m.year, posterUrl: m.posterUrl }))
+
+  return { name: saved.name, subset: saved.subset, pg13: saved.pg13, movies: topTen }
+}
+
+// Lazily assigns a share slug to a saved ranking that predates sharing
+// (#220) — a saved snapshot is created with one up front now (see
+// saveRanking), but older rows need one generated the first time Share is
+// clicked from LoadRankingView. Idempotent. Returns null if `id` doesn't
+// exist.
+export function ensureShareSlug(db, id) {
+  return setShareSlug(db, id)
 }

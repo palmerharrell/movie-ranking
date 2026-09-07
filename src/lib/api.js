@@ -163,3 +163,19 @@ export function getSavedRankings(subset, pg13) {
 export function getSavedRanking(id) {
   return request(`/api/rankings/${id}`)
 }
+
+// Lazily backfills a share slug (#220) for a saved ranking that predates
+// sharing — new saves already get one back from `saveRanking` itself, so
+// this is only needed for a legacy row (LoadRankingView calls it when the
+// snapshot it loaded has no `shareSlug`).
+export function shareRanking(id) {
+  return request(`/api/rankings/${id}/share`, { method: 'POST' })
+}
+
+// Public — no auth header needed server-side (the route is registered
+// before the bearer-token middleware), since anyone with the link should be
+// able to view it. Returns { name, subset, pg13, movies } where `movies` is
+// just the Top 10, public fields only (see getSharedRankingTopTen).
+export function getSharedRanking(slug) {
+  return request(`/api/rankings/share/${slug}`)
+}
