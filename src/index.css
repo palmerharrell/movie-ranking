@@ -35,6 +35,34 @@ body {
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
+/* ===================== Light/Dark Mode (#265) =====================
+   Independent of the subset's own [data-theme='popular'] palette above —
+   every subset already shares that one look, so this just overrides the
+   same custom-property names when Light Mode is active. Dark Mode is the
+   default (no override needed, matches the block above). */
+
+[data-color-mode='light'] {
+  color-scheme: light;
+  --bg-page: #f4f6fb;
+  --bg-overlay:
+    radial-gradient(55% 55% at 15% 0%, rgba(63, 210, 199, 0.12), transparent 60%),
+    radial-gradient(55% 55% at 95% 100%, rgba(240, 79, 140, 0.1), transparent 60%);
+  --surface: #ffffff;
+  --surface-border: rgba(13, 20, 45, 0.1);
+  --surface-shadow: 0 1px 3px rgba(13, 20, 45, 0.08);
+  --accent: #0f9c90;
+  --accent-hover: #0c7b72;
+  --accent2: #d6316f;
+  --accent2-hover: #b8285d;
+  --accent-line: rgba(15, 156, 144, 0.35);
+  --text-high: #10152b;
+  --text-mid: #333c58;
+  --text-low: #6b7290;
+  --text-faint: #8990ac;
+  --text-credit: #565f80;
+  --poster-placeholder: repeating-linear-gradient(135deg, #e7eaf4 0 5px, #dde1f0 5px 10px);
+}
+
 /* ===================== App shell ===================== */
 
 /* The film-reel watermark's faintness is baked into the asset's own alpha
@@ -203,7 +231,7 @@ body {
 }
 
 [data-theme='popular'] .standings-row {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--text-high) 4%, transparent);
   border: 1px solid transparent;
 }
 
@@ -663,7 +691,7 @@ body {
 }
 
 .results-outside-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--text-high) 3%, transparent);
   border-radius: 6px;
 }
 
@@ -739,6 +767,25 @@ body {
 }
 
 .banner-menu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-high);
+}
+
+/* Light/Dark Mode toggle (#265) */
+
+.theme-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  font-size: 16px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.theme-toggle-button:hover {
+  border-color: var(--accent);
 }
