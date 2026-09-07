@@ -112,8 +112,13 @@ exposed in the UI.
   the skipped movie out of any already-generated queued packs that include
   it (#155, `replaceDiscardedQueuePacks` in `App.jsx`) — otherwise a movie
   just marked "haven't seen" could resurface if that pre-generated queue
-  pack were later selected. A queued pack that drops to <=1 movie this way
-  is discarded and replaced with a freshly generated one. Skip is persistent
+  pack were later selected. Any queued pack containing the skipped movie is
+  discarded wholesale and replaced with a freshly generated one, rather than
+  just filtering the skipped movie out of it in place (#218) — packs are
+  always meant to be a fixed size (5, or 2 for Head to Head), so quietly
+  shrinking one in place instead of regenerating it could let a queued pack
+  lose several movies across separate skips over time and eventually
+  surface with too few tiles. Skip is persistent
   (#136), not just for the active pack: a skipped movie
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
@@ -172,7 +177,13 @@ exposed in the UI.
   ranked movies by `eloRating` — with a 10% chance on each pack generated
   (`HEAD_TO_HEAD_CHANCE`), checked before the Random Five chance. Falls
   through to the normal pack flow if fewer than 2 ranked movies (with a real
-  `eloRating`) are available yet. Since both movies are already-ranked, a
+  `eloRating`) are available yet, or if fewer than
+  `MIN_RANKED_FOR_HEAD_TO_HEAD` (20) movies have been ranked overall (#217)
+  — below that, "top 50 by eloRating" is really just every movie ranked so
+  far, no more meaningful a "top" than the very first pack ranked (mirrors
+  Top 10 Tough Choice's own higher `MIN_RANKED_FOR_TOUGH_CHOICE` floor
+  below, just set lower since Head to Head's pool (50) is already much
+  larger than Tough Choice's (10)). Since both movies are already-ranked, a
   Head to Head pack has no "Haven't Seen" skip button, no drag-and-drop, and
   no separate "Rank →" confirmation — clicking one of the two movies submits
   a single pairwise Elo update (`HeadToHeadPanel.jsx`) and advances the queue
@@ -203,7 +214,30 @@ exposed in the UI.
   connectivity/island tracking, just this steady overlap rule is expected to
   merge things in practice. Before there are enough ranked movies to satisfy
   it (e.g. very first few packs), fall back to 0 required overlap and just
-  pick 5 at random from the matching set.
+  pick 5 at random from the matching set. The 1–2 already-ranked "filler"
+  slots (here and in Head to Head/Top 10 Tough Choice's own draws) are
+  chosen with a weighted pick favoring lower `timesRanked`
+  (`categoryGenerator.js`'s `weightedSample`/`rankedWeight`, weight `1 /
+  (timesRanked + 1)`) rather than uniformly at random — otherwise the same
+  heavily-reinforced movies keep getting reused as filler/opponents instead
+  of movies ranked only once or twice (#219).
+- **Full-coverage measures (#224):** nothing in the mechanic above
+  *guarantees* every movie eventually gets ranked — it's all probabilistic —
+  but two things push hard toward full coverage without needing new
+  persisted state:
+  - `tryBuildCategory` draws its candidate attribute *values* from
+    not-yet-ranked movies first, falling back to the whole pool only when
+    none remain — so categories tend to get built around an unranked
+    movie's own attributes instead of picking blind, making it far more
+    likely an unranked movie actually lands in `matches`.
+  - A forced-inclusion backstop: `unranked[totalRankedCount %
+    unranked.length]` is guaranteed a slot in every Random Five pack a call
+    to `generateCategory` produces (both the chance-triggered one and the
+    attempt-exhausted fallback) — never in an attribute pack, since forcing
+    a mismatched movie in would make the category's label inaccurate.
+    `totalRankedCount` only advances when a "Rank →" actually lands, so
+    this deterministically rotates which not-yet-ranked movie gets forced
+    next, without any new per-movie staleness tracking.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
 - **Upcoming queue:** rather than a single "next category" generated on
@@ -232,12 +266,27 @@ exposed in the UI.
   `n skipped` (#136).
 
 ## Saved rankings
-- **Completion:** once every non-skipped movie in the *currently visible*
-  pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
-  save the ranking. "Visible pool" is whichever subset is active (Popular,
-  Family, or All Movies) minus skipped movies, further narrowed by the
-  PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
-  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136).
+- **Completion → auto-save (#227):** once every non-skipped movie in the
+  *currently visible* pool has `timesRanked ≥ 1`, the app immediately and
+  silently saves it under a generated name (`src/lib/rankingName.js`'s
+  `generateRankingName` — the subset's label, plus the PG-13-and-under
+  qualifier when it's on, plus today's date, e.g. `"Sci-Fi (PG-13 & Under) —
+  Sep 6, 2026"`) — no naming prompt, no separate confirmation step; this
+  replaced an earlier flow where completion opened a modal asking the user
+  to type a name before saving. "Visible pool" is whichever subset is active
+  (Popular, Family, or All Movies) minus skipped movies, further narrowed by
+  the PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
+  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136). The
+  Results screen (`ResultsScreen.jsx`) still appears right after, showing
+  the just-completed standings with the generated name as its title and a
+  "Saved automatically" subtitle, so the user can see what happened; its
+  footer button reads "Continue Ranking" (dismissing it) rather than "Save
+  Ranking" — dismissing is what starts the next run (see **Save** below),
+  since the save itself already happened. If the save request itself fails,
+  the Results screen simply doesn't appear (the same inline-error path any
+  other API failure takes) — the completed state isn't lost, since the pool
+  is still fully ranked, so the save is retried the next time
+  `noteMoviesUpdate` runs (e.g. switching back to this subset).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
   for the visible, non-skipped pool (gathered from its own local ranking
   state — see
@@ -248,8 +297,8 @@ exposed in the UI.
   Family subset, leaving progress on the rest of the pool untouched; a save
   made with the PG-13-and-under toggle on resets only the toggle-filtered
   slice of whichever subset was active (#193).
-  This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
-  "2027 Redo") without the runs interfering with each other. Every saved
+  This lets the pool be ranked repeatedly over time (e.g. auto-named runs on
+  different dates) without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
   deployment**), reserved for a future feature restricting edits/re-ranks to
   the ranking's creator (#115) — not yet enforced anywhere. It's also
@@ -281,6 +330,40 @@ exposed in the UI.
   movies that were actually part of that saved run, not the current full
   pool — read-only (no Save Ranking button; a "Back to list" link replaces
   it), and it does not affect or restore live ranking state.
+- **Sharing (#220):** every saved snapshot gets a "Share" button in
+  `ResultsScreen.jsx`'s footer — both the live post-completion screen and
+  the read-only Load Ranking view — that copies a public link to that
+  ranking's Top 10 to the clipboard. The link is `?share=<slug>` on the
+  app's own URL (e.g. `https://.../movie-ranking/?share=ngfjyDxrZtbE`), not
+  a new path, so it needs no GitHub Pages routing/rewrite support; `main.jsx`
+  checks for that query param before rendering `App` at all, and if it's
+  present renders `SharedRankingView.jsx` instead — a small standalone page
+  with no bearer-token pool fetch and no app shell, since anyone with the
+  link needs to be able to open it.
+  - **Slug, not the row's own id:** `saved_rankings.share_slug` is a random,
+    unguessable id (12-char base64url, `server/db.js`'s
+    `generateShareSlug`), deliberately not the row's sequential numeric
+    `id` — that would let a shared link's neighbors (id-1, id+1) be
+    trivially browsed to see other people's saved rankings. Every new save
+    is assigned one immediately (`createSavedRanking`), so the Share button
+    works right away with no extra round trip; a snapshot saved before
+    sharing existed has `share_slug = NULL` until backfilled (see below).
+  - **Public endpoint:** `GET /api/rankings/share/:slug` is registered
+    before the bearer-token auth middleware in `server/index.js` (and
+    before the authenticated `GET /api/rankings/:id` route, so `:id` never
+    swallows the literal `share` segment) — anyone can call it, no
+    `Authorization` header needed. It returns far less than the
+    authenticated saved-ranking endpoints: just `{name, subset, pg13,
+    movies}`, where `movies` is only the Top 10 (`id`, `title`, `year`,
+    `posterUrl` — no `eloRating`/`timesRanked`/`ownerClientId`) — see
+    `getSharedRankingTopTen` in `server/rankingService.js`.
+  - **Legacy backfill:** a snapshot saved before this feature has no slug
+    yet. `LoadRankingView.jsx`'s Share button calls the authenticated
+    `POST /api/rankings/:id/share` the first time it's clicked on such a
+    snapshot, which lazily generates and persists one
+    (`ensureShareSlug`/`setShareSlug`) and reuses it on any later click in
+    that same session. The live post-completion screen never needs this
+    path, since a fresh save already has a slug.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
@@ -321,7 +404,13 @@ exposed in the UI.
       **Movie subsets**) was active for that save — a separate column from
       `subset` since the toggle is an independent, composable dimension
       rather than one of the subset ids; `NULL` for snapshots saved before
-      the toggle existed.
+      the toggle existed. `share_slug` (#220) is a random unguessable id for
+      the public share link (see **Sharing** under **Saved rankings**) —
+      `NULL` for a snapshot that hasn't had one assigned yet (every new save
+      gets one immediately; a legacy snapshot gets one lazily on first
+      Share click). Uniqueness is enforced via a separate index rather than
+      a column constraint, since SQLite's `ALTER TABLE ADD COLUMN` doesn't
+      support `UNIQUE` directly.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
       `?family=true` restricts to the Family subset (see **Movie subsets**);
@@ -332,8 +421,9 @@ exposed in the UI.
       where `entries` is the `{movieId, eloRating, timesRanked}[]` the
       browser gathered from its own local ranking state; the server just
       persists it tagged with `clientId` as `owner_client_id` and
-      `subset`/`pg13` as-is. The browser resets its own local state for that
-      scope after a successful save.
+      `subset`/`pg13` as-is, and assigns a `shareSlug` (#220), returned in
+      the response alongside `id`/`name`. The browser resets its own local
+      state for that scope after a successful save.
     - `GET /api/rankings` — list of saved snapshots (`id`, `name`,
       `createdAt`, `movieCount`, `subset`, `pg13`); `?subset=<id>` restricts
       to snapshots saved from that subset, and `?pg13=<true|false>`
@@ -341,9 +431,22 @@ exposed in the UI.
       **Saved rankings**) — composable with each other
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
       snapshot-time `eloRating`, limited to the movies that were part of
-      that save), sorted descending, for read-only display
+      that save), sorted descending, for read-only display; also includes
+      `shareSlug` (`null` if not yet assigned)
+    - `POST /api/rankings/:id/share` (#220) — lazily assigns and persists a
+      share slug for a saved ranking that doesn't have one yet (a no-op,
+      returning the existing slug, if it already does); see **Sharing**
+      under **Saved rankings**
+    - `GET /api/rankings/share/:slug` (#220) — public, no `Authorization`
+      header required (registered ahead of the auth middleware) — a saved
+      ranking's public Top 10 by its share slug: `{name, subset, pg13,
+      movies}`, `movies` limited to `id`/`title`/`year`/`posterUrl` only;
+      see **Sharing** under **Saved rankings**
   - Auth: single-user app, so a shared bearer token in an env var, checked on
-    every request, is sufficient — no user accounts needed yet.
+    every request, is sufficient — no user accounts needed yet; the one
+    exception is the public share endpoint above, deliberately excluded
+    from that check since anyone with a shared link needs to be able to
+    open it.
   - CORS: restrict to the GitHub Pages origin.
   - Process management: `systemd` or `pm2` so it survives reboots/crashes;
     reverse-proxied through Caddy or nginx for TLS.
@@ -391,32 +494,40 @@ language entries, and 1 country entry, grouped in the picker:
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody "Neon" palette (navy background, teal/pink accents) —
-  shared by every subset below except All Movies. The app icons flanking
-  the title, and the large low-opacity film-reel watermark behind the app
-  shell, are recolored to this palette's navy/teal (see **UI layout**) and
-  only appear under it — the source art lives outside the repo (the
+  shared by every other subset, All Movies included (#211). The app icons
+  flanking the title, and the large low-opacity film-reel watermark behind
+  the app shell, are recolored to this palette's navy/teal (see **UI
+  layout**) and appear under every subset now that it's the only palette —
+  the source art lives outside the repo (the
   original clip-art master), recolored via a one-off Pillow script (not
   checked in) into `public/favicon.svg`, `public/apple-touch-icon.png`,
   `public/pwa-192.png`, `public/pwa-512.png`, `public/pwa-maskable-512.png`,
   and `src/assets/film-reel-bg.png`.
 - **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
   genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
-  `isFamilyGenre`/`selectFamilySubset` (#152). This is a curation filter,
-  not an MPAA safety guarantee: a Family-genre movie can still carry any
-  `mpaaRating`, including `PG-13` or, in principle, something TMDb
-  miscategorizes — there is no rating floor layered underneath it. (This
+  `isFamilyGenre`/`selectFamilySubset` (#152). The genre tag alone isn't a
+  safety guarantee — a Family-genre movie can still carry any `mpaaRating`,
+  including `PG-13` or, in principle, something TMDb miscategorizes — so
+  Family always additionally applies the PG-13-and-under filter (see **PG-13
+  and under toggle** below) on top of the genre curation, regardless of the
+  toggle's own on/off state (#200). (This
   replaced an earlier `mpaaRating`-based G/PG/PG-13 filter, `isFamilySafe`,
   which offered that safety guarantee but not genre-based curation; #152
-  deliberately traded one for the other.) Caps to the same
+  deliberately traded one for the other, and #200 brought the rating floor
+  back as an unconditional addition to the genre curation rather than a
+  replacement for it.) Caps to the same
   top-N-by-`voteCount` as Popular and the other genre/language subsets, via
   `selectFamilySubset`. Shares Popular's dark, moody palette, same as every
   genre/language/country subset below — it previously had its own bespoke
   "storybook night" palette (deep indigo background, marigold/teal accents),
   but that made it the only genre-shaped subset with a distinct visual
   identity, which read as inconsistent; removed in favor of one shared look
-  for every subset except All Movies.
-- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Warm,
-  parchment-toned palette.
+  across every subset.
+- **All Movies** (`subset: 'all'`) — the entire unfiltered pool. Shares
+  Popular's dark, moody palette like every other subset (#211) — it
+  previously had its own bespoke warm/parchment-toned palette, which made it
+  the last subset with a distinct visual identity; removed for the same
+  reason Family's bespoke palette was, above.
 - **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
   Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
@@ -432,13 +543,40 @@ language entries, and 1 country entry, grouped in the picker:
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
   which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
   (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (100) via
-  the shared `selectTopByVoteCount` (`src/lib/popularMode.js`) — smaller than
-  Popular's `POPULAR_POOL_SIZE` (300), since niche genre/language/country
-  subsets don't have as much depth of genuinely popular titles as Popular/
-  Family/All Movies do; sharing Popular's cap left a long tail of obscure
-  matches that users ended up skipping en masse (#165, e.g. nearly a third
-  of the Sci-Fi subset). All share Popular's palette (no bespoke palette per
-  genre). Filtering is
+  the shared `selectTopByVoteCountWithQuotas` (`src/lib/popularMode.js`) —
+  smaller than Popular's `POPULAR_POOL_SIZE` (300), since niche genre/
+  language/country subsets don't have as much depth of genuinely popular
+  titles as Popular/Family/All Movies do; sharing Popular's cap left a long
+  tail of obscure matches that users ended up skipping en masse (#165, e.g.
+  nearly a third of the Sci-Fi subset). A flat voteCount cutoff also
+  systematically favors modern/mainstream titles — TMDb engagement skews
+  heavily toward recent, streamed releases — so `selectTopByVoteCountWithQuotas`
+  reserves two independent floors within the cap, each topped up from
+  outside the natural top-N only when the natural ranking doesn't already
+  clear it: at least `CLASSIC_ERA_QUOTA` (20) of the slots go to the
+  best-by-voteCount movies released before `CLASSIC_ERA_CUTOFF_YEAR` (1980)
+  (#203, found via the Musicals subset missing golden-age titles to a wave
+  of higher-voteCount modern/Disney musicals), and at least
+  `CANONICAL_QUOTA` (20) go to the best-by-voteCount movies from a
+  `CANONICAL_SOURCE_IDS` source (AFI's lists, Ebert's Great Movies, Sight &
+  Sound, the National Film Registry, 1001 Movies — hand-curated
+  critical/preservation lists, as opposed to the TMDb-discover-based
+  `top-<genre>` sources) with at least `CANONICAL_MIN_VOTE_COUNT` (25) TMDb
+  votes — that floor excludes a source-qualifying movie with too few votes,
+  since the National Film Registry in particular preserves home movies,
+  student films, and raw footage collections alongside actual narrative
+  features, and a handful of votes is enough to tell an obscure-but-real
+  classic from preservation ephemera almost nobody has "seen" (#207). Both
+  are floors, not fixed partitions — a subset whose classics/canonical
+  movies are already popular enough to rank highly on their own (e.g.
+  Italian) is returned unchanged — and neither floor evicts a movie already
+  kept to satisfy the other, so filling one can't silently undo the other.
+  Both floors together still don't guarantee any specific title clears the
+  cap: with a fixed-size quota and, in a subset like Musicals, dozens of
+  genuine classics/canonical titles competing for it, a lower-voteCount
+  entry (e.g. *The King and I*, at 414 votes) can still lose out to
+  better-voted classics/canonical titles filling the same floor. All share
+  Popular's palette (no bespoke palette per genre). Filtering is
   by the movie's own attributes, not by which `sources[]` tag brought it
   into the pool — a Comedy added via personal import still surfaces here if
   popular enough. See **Building the list** below for how the pool is kept
@@ -450,8 +588,9 @@ language entries, and 1 country entry, grouped in the picker:
   #151) — filters by `productionCountries` including `"GB"` (unlike the
   genre/language subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
-  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same
-  smaller-than-Popular cap as the genre/language subsets above (#165).
+  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
+  same smaller-than-Popular cap and classic-era/canonical-source quotas as
+  the genre/language subsets above (#165, #203, #207).
   Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
   in `genreSubsets.js`). Shares Popular's palette, same as the genre/language
   subsets. Topped up via TMDb's `/discover/movie?with_origin_country=GB`
@@ -482,8 +621,8 @@ language entries, and 1 country entry, grouped in the picker:
   unaffected by any of this — it stays the one place showing the entire
   unfiltered pool, Marvel/DC included, since `selectPopular`/
   `selectGenreSubset` (where the exclusion lives) are never applied there.
-  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCount`, same as
-  the other genre subsets. Shares Popular's palette.
+  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
+  same as the other genre subsets. Shares Popular's palette.
 - `GET /api/movies?family=true&popular=true&genre=comedy&pg13=true` composes
   server-side filters (family applied first, then the pg13 toggle if on,
   then one top-N strategy — `genre` and `popular` are alternate strategies,
@@ -506,11 +645,21 @@ language entries, and 1 country entry, grouped in the picker:
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
 
-## PG-13 and under toggle (#193)
+## PG-13 and under toggle (#193, #200)
 A global checkbox in the banner, next to the subset picker (`pg13` state in
 `App.jsx`, persisted in its own `localStorage` key — unlike the subset
 picker's own key, it survives subset switches rather than being tied to
-one) — labeled "PG-13 & Under." When on, it restricts whichever subset is
+one) — labeled "PG-13 & Under." Family always applies this filter
+regardless of the checkbox's own state (#200, see **Movie subsets** above) —
+while Family is active, the checkbox itself shows checked and disabled (with
+a tooltip explaining why) rather than actually flipping the underlying
+`pg13` preference, so switching to a different subset immediately reveals
+whatever the user had it set to beforehand. `App.jsx`'s `effectivePg13`
+(`isFamily || pg13`) is what every filter/fetch/save/load call and the
+checkbox's own `checked` prop actually use; the raw `pg13` state is what's
+read/written to `localStorage` and passed to `setPg13` by the checkbox's
+`onChange`, so it never gets silently overwritten by Family forcing it on.
+When on, it restricts whichever subset is
 active to movies with `mpaaRating` of `G`, `PG`, or `PG-13`
 (`src/lib/pg13Mode.js`'s `isPg13OrUnder`/`selectPg13OrUnder`), excluding `R`
 and `NC-17` outright. A movie with a `null` `mpaaRating` (no US

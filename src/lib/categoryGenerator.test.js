@@ -398,7 +398,7 @@ describe('generateCategory', () => {
   })
 
   it('builds a "Head to Head" pack when the head-to-head chance hits', () => {
-    const movies = Array.from({ length: 10 }, (_, i) => ({
+    const movies = Array.from({ length: 20 }, (_, i) => ({
       id: String(i + 1),
       title: `M${i + 1}`,
       eloRating: 1000 + i,
@@ -419,7 +419,7 @@ describe('generateCategory', () => {
 
   it('only draws Head to Head movies from ranked movies with a numeric eloRating', () => {
     const movies = [
-      ...Array.from({ length: 3 }, (_, i) => ({ id: `ranked-${i}`, title: `R${i}`, eloRating: 1200 })),
+      ...Array.from({ length: 20 }, (_, i) => ({ id: `ranked-${i}`, title: `R${i}`, eloRating: 1200 })),
       ...Array.from({ length: 5 }, (_, i) => ({ id: `unranked-${i}`, title: `U${i}` })),
     ]
     const isRanked = (m) => m.id.startsWith('ranked-')
@@ -427,7 +427,7 @@ describe('generateCategory', () => {
     for (let seed = 0; seed < 30; seed++) {
       const result = generateCategory(movies, {
         isRanked,
-        totalRankedCount: 3,
+        totalRankedCount: 20,
         random: forceHeadToHeadThenSeeded(seed),
       })
       if (!result || result.type !== 'head-to-head') continue
@@ -443,6 +443,23 @@ describe('generateCategory', () => {
     expect(result).not.toBeNull()
     expect(result.type).not.toBe('head-to-head')
     expect(result.movies).toHaveLength(5)
+  })
+
+  it('falls through to a normal pack when fewer than MIN_RANKED_FOR_HEAD_TO_HEAD movies are ranked (#217)', () => {
+    const movies = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+
+    const result = generateCategory(movies, {
+      isRanked,
+      totalRankedCount: 12,
+      random: forceHeadToHeadThenSeeded(1),
+    })
+    expect(result).not.toBeNull()
+    expect(result.type).not.toBe('head-to-head')
   })
 
   it('builds a "Top 10 Tough Choice" pack when its chance hits and the ranked threshold is met', () => {
@@ -513,5 +530,118 @@ describe('generateCategory', () => {
     expect(result).not.toBeNull()
     expect(result.label).not.toBe('Top 10 Tough Choice')
     expect(result.movies).toHaveLength(5)
+  })
+
+  // #219: overlap-filler and Head to Head picks should favor movies with a
+  // lower timesRanked instead of uniformly reusing the same already-ranked
+  // handful.
+  it('weights overlap-filler picks toward lower timesRanked', () => {
+    const movies = [
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `u${i}`, title: `U${i}`, ranked: false, timesRanked: 0 })),
+      ...Array.from({ length: 2 }, (_, i) => ({ id: `low${i}`, title: `L${i}`, ranked: true, timesRanked: 1 })),
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `high${i}`, title: `H${i}`, ranked: true, timesRanked: 50 })),
+    ]
+    const isRanked = (m) => m.ranked
+
+    let lowAppearances = 0
+    let highAppearances = 0
+    for (let seed = 0; seed < 300; seed++) {
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: 5,
+        random: forceRandomFiveThenSeeded(seed),
+      })
+      for (const m of result.movies) {
+        if (m.id.startsWith('low')) lowAppearances++
+        if (m.id.startsWith('high')) highAppearances++
+      }
+    }
+    // 2 "low" movies vs 3 "high" movies competing for 2 filler slots: a
+    // uniform pick would favor "high" (more of them); the weighting should
+    // flip that.
+    expect(lowAppearances).toBeGreaterThan(highAppearances)
+  })
+
+  it('weights Head to Head picks toward lower timesRanked', () => {
+    const movies = [
+      { id: 'low', title: 'Low', eloRating: 1000, timesRanked: 1 },
+      ...Array.from({ length: 4 }, (_, i) => ({ id: `high${i}`, title: `H${i}`, eloRating: 999 - i, timesRanked: 50 })),
+    ]
+    const isRanked = () => true
+
+    let lowAppearances = 0
+    for (let seed = 0; seed < 300; seed++) {
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: movies.length,
+        random: forceHeadToHeadThenSeeded(seed),
+      })
+      if (result.movies.some((m) => m.id === 'low')) lowAppearances++
+    }
+    // A uniform pick of 2-of-5 would include "low" ~40% of the time; the
+    // weighting (timesRanked 1 vs 50) should push that well above chance.
+    expect(lowAppearances).toBeGreaterThan(300 * 0.4)
+  })
+
+  // #224: forced-inclusion backstop should deterministically rotate through
+  // not-yet-ranked movies via totalRankedCount, and guarantee the picked one
+  // a slot in every Random Five pack.
+  it('forces the totalRankedCount-selected unranked movie into Random Five packs', () => {
+    const unrankedIds = ['u0', 'u1', 'u2', 'u3']
+    const movies = [
+      ...unrankedIds.map((id) => ({ id, title: id, ranked: false })),
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `r${i}`, title: `R${i}`, ranked: true })),
+    ]
+    const isRanked = (m) => m.ranked
+
+    for (let totalRankedCount = 0; totalRankedCount < unrankedIds.length; totalRankedCount++) {
+      const expectedForcedId = unrankedIds[totalRankedCount % unrankedIds.length]
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount,
+        random: forceRandomFiveThenSeeded(totalRankedCount),
+      })
+      expect(result.movies.some((m) => m.id === expectedForcedId)).toBe(true)
+    }
+  })
+})
+
+describe('tryBuildCategory unranked bias (#224)', () => {
+  function makeGenrePoolMovies() {
+    return [
+      ...Array.from({ length: 5 }, (_, i) => ({ id: `u${i}`, title: `U${i}`, genres: ['SciFi'] })),
+      ...Array.from({ length: 5 }, (_, i) => ({ id: `r${i}`, title: `R${i}`, genres: ['Drama'] })),
+    ]
+  }
+
+  it('prefers an attribute value from not-yet-ranked movies when one is available', () => {
+    const movies = makeGenrePoolMovies()
+    const isRanked = (m) => m.id.startsWith('r')
+
+    let sciFiCount = 0
+    let dramaCount = 0
+    for (let seed = 0; seed < 200; seed++) {
+      const category = tryBuildCategory(movies, seededRandom(seed), [], isRanked)
+      if (!category) continue
+      if (category.picks[0].value === 'SciFi') sciFiCount++
+      if (category.picks[0].value === 'Drama') dramaCount++
+    }
+    expect(sciFiCount).toBeGreaterThan(0)
+    expect(dramaCount).toBe(0)
+  })
+
+  it('without an isRanked callback, both values remain eligible', () => {
+    const movies = makeGenrePoolMovies()
+
+    let sciFiCount = 0
+    let dramaCount = 0
+    for (let seed = 0; seed < 200; seed++) {
+      const category = tryBuildCategory(movies, seededRandom(seed))
+      if (!category) continue
+      if (category.picks[0].value === 'SciFi') sciFiCount++
+      if (category.picks[0].value === 'Drama') dramaCount++
+    }
+    expect(sciFiCount).toBeGreaterThan(0)
+    expect(dramaCount).toBeGreaterThan(0)
   })
 })

@@ -38,13 +38,20 @@ describe('selectGenreSubset', () => {
     expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual(['has-keyword'])
   })
 
-  it('musicals includes the hardcoded Coco/Sister Act exceptions even without the keyword', () => {
+  it('musicals includes the hardcoded exceptions even without the keyword (#150/#205)', () => {
     const movies = [
       movie({ id: 'coco', tmdbId: 354912, keywords: [] }),
       movie({ id: 'sister-act', tmdbId: 2005, keywords: [] }),
+      movie({ id: 'flower-drum-song', tmdbId: 25105, keywords: [] }),
+      movie({ id: 'thoroughly-modern-millie', tmdbId: 32489, keywords: [] }),
       movie({ id: 'unrelated', tmdbId: 999, keywords: [] }),
     ]
-    expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual(['coco', 'sister-act'])
+    expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual([
+      'coco',
+      'sister-act',
+      'flower-drum-song',
+      'thoroughly-modern-millie',
+    ])
   })
 
   it('matches by originalLanguage for language subsets', () => {
@@ -104,6 +111,47 @@ describe('selectGenreSubset', () => {
       movie({ id: `m${i}`, genres: ['Horror'], voteCount: i }),
     )
     expect(selectGenreSubset(movies, 'horror')).toHaveLength(GENRE_SUBSET_POOL_SIZE)
+  })
+
+  it('reserves room for classic-era movies even when modern entries would otherwise fill the whole cap (#203)', () => {
+    const modern = Array.from({ length: GENRE_SUBSET_POOL_SIZE }, (_, i) =>
+      movie({ id: `modern${i}`, genres: ['Horror'], voteCount: 1000 + i, year: 2010 }),
+    )
+    const classic = movie({ id: 'best-classic', genres: ['Horror'], voteCount: 5, year: 1950 })
+    const result = selectGenreSubset([...modern, classic], 'horror')
+    expect(result).toHaveLength(GENRE_SUBSET_POOL_SIZE)
+    expect(result.map((m) => m.id)).toContain('best-classic')
+  })
+
+  it('reserves room for canonical-source movies even when modern entries would otherwise fill the whole cap (#207)', () => {
+    const modern = Array.from({ length: GENRE_SUBSET_POOL_SIZE }, (_, i) =>
+      movie({ id: `modern${i}`, genres: ['Horror'], voteCount: 1000 + i, year: 2010 }),
+    )
+    const canonical = movie({
+      id: 'best-canonical',
+      genres: ['Horror'],
+      voteCount: 30,
+      year: 2015,
+      sources: ['ebert-great-movies'],
+    })
+    const result = selectGenreSubset([...modern, canonical], 'horror')
+    expect(result).toHaveLength(GENRE_SUBSET_POOL_SIZE)
+    expect(result.map((m) => m.id)).toContain('best-canonical')
+  })
+
+  it('does not count a canonical-source movie below CANONICAL_MIN_VOTE_COUNT toward the canonical quota (#207)', () => {
+    const modern = Array.from({ length: GENRE_SUBSET_POOL_SIZE }, (_, i) =>
+      movie({ id: `modern${i}`, genres: ['Horror'], voteCount: 1000 + i, year: 2010 }),
+    )
+    const ephemera = movie({
+      id: 'home-movie',
+      genres: ['Horror'],
+      voteCount: 1,
+      year: 2015,
+      sources: ['national-film-registry'],
+    })
+    const result = selectGenreSubset([...modern, ephemera], 'horror')
+    expect(result.map((m) => m.id)).not.toContain('home-movie')
   })
 })
 

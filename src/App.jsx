@@ -4,7 +4,6 @@ import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { SubsetPicker } from './components/SubsetPicker.jsx'
-import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
@@ -18,6 +17,8 @@ import { selectPg13OrUnder } from './lib/pg13Mode.js'
 import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
+import { generateRankingName } from './lib/rankingName.js'
+import { buildShareUrl } from './lib/shareLink.js'
 import filmReelBg from './assets/film-reel-bg.png'
 
 const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
@@ -83,7 +84,13 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
-  const [showSaveModal, setShowSaveModal] = useState(false)
+  // Name the just-completed ranking was auto-saved under (#227) — shown as
+  // the Results screen's title so the user can see what it got called.
+  const [resultsTitle, setResultsTitle] = useState(null)
+  // The auto-saved ranking's share slug (#220) — saveRanking hands one back
+  // immediately, so the Share button works right away with no extra round
+  // trip.
+  const [resultsShareSlug, setResultsShareSlug] = useState(null)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
@@ -115,6 +122,11 @@ function App() {
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
   const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) ? subset : null
+  // Family always applies the PG-13-and-under filter (#200), regardless of
+  // the toggle's own state — the toggle itself just reflects that visually
+  // (forced on and disabled — see the checkbox below) without touching the
+  // user's underlying `pg13` preference, so leaving Family restores it.
+  const effectivePg13 = isFamily || pg13
 
   // Mirrors the server's getMovies filter pipeline (server/rankingService.js)
   // exactly: family filter, then the pg13 toggle (#193), then one top-N
@@ -124,25 +136,60 @@ function App() {
   // what re-derives "the currently-visible subset" from it client-side.
   function computeVisibleMovies(updatedMovies) {
     let result = isFamily ? updatedMovies.filter(isFamilyGenre) : updatedMovies
-    if (pg13) result = selectPg13OrUnder(result)
+    if (effectivePg13) result = selectPg13OrUnder(result)
     if (activeGenre) return selectGenreSubset(result, activeGenre)
     if (isPopular || isFamily) return selectPopular(result)
     return result
   }
 
-  // Prompts to save once the currently-visible pool transitions into "every
-  // movie ranked at least once" — not on every subsequent Rank click while
-  // it stays there. In a filtered subset "the pool" means that subset (the
-  // save itself is scoped the same way — see handleSaveRanking), so this
+  // Auto-saves once the currently-visible pool transitions into "every movie
+  // ranked at least once" — not on every subsequent Rank click while it
+  // stays there. In a filtered subset "the pool" means that subset (the save
+  // itself is scoped the same way — see autoSaveCompletedRanking), so this
   // fires on subset completion too, independent of the rest of the pool.
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = computeVisibleMovies(updatedMovies)
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
-      setShowResultsScreen(true)
+      autoSaveCompletedRanking()
     }
     wasFullyRanked.current = fullyRanked
+  }
+
+  // Replaces the old "Ranking Complete" naming modal (#227): completion now
+  // auto-saves immediately under a generated name, and the Results screen
+  // (shown either way) just reports what it was saved as via `resultsTitle`.
+  // A failure here surfaces the same as any other API error — the Results
+  // screen simply doesn't appear, matching how a failed manual save used to
+  // leave the modal up with an inline error, just without a modal to retry
+  // from; the completed state isn't lost, so the next `noteMoviesUpdate`
+  // call (e.g. after switching back to this subset) will retry the save.
+  async function autoSaveCompletedRanking() {
+    const name = generateRankingName(subset, effectivePg13)
+    let saved
+    try {
+      saved = await api.saveRanking(name, {
+        family: isFamily,
+        popular: isPopular,
+        genre: activeGenre,
+        pg13: effectivePg13,
+        subset,
+      })
+    } catch (err) {
+      setError(err.message)
+      return
+    }
+    setResultsTitle(name)
+    setResultsShareSlug(saved.shareSlug)
+    setShowResultsScreen(true)
+  }
+
+  // The live Results screen's Share button (#220) — the slug is already
+  // known from the auto-save above, so this is just building the link and
+  // copying it; ResultsScreen owns the click-feedback state.
+  async function handleShareResults() {
+    await navigator.clipboard.writeText(buildShareUrl(resultsShareSlug))
   }
 
   useEffect(() => {
@@ -173,11 +220,11 @@ function App() {
     const isStale = () => fetchId !== subsetFetchId.current
     Promise.all([
       api
-        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+        .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
         .then((updated) => {
           if (!isStale()) noteMoviesUpdate(updated)
         }),
-      fetchPacks(isFamily, isPopular, activeGenre, pg13).then((freshPacks) => {
+      fetchPacks(isFamily, isPopular, activeGenre, effectivePg13).then((freshPacks) => {
         if (!isStale()) setPacks(freshPacks)
       }),
     ])
@@ -223,7 +270,7 @@ function App() {
       // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -244,7 +291,7 @@ function App() {
       const loserId = category.movies.find((m) => m.id !== winnerId).id
       const updatedMovies = await api.rankPack([winnerId, loserId])
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       noteMoviesUpdate(updatedMovies)
@@ -265,7 +312,7 @@ function App() {
         .filter((_, i) => i !== queueIndex)
         .map((p) => p.label)
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         remainingLabels,
       )
       setPacks((prev) => {
@@ -288,7 +335,7 @@ function App() {
     setBusy(true)
     try {
       const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
         queue.slice(1).map((p) => p.label),
       )
       setPacks((prev) => [...prev.slice(1), freshPack])
@@ -315,7 +362,7 @@ function App() {
           ...replacements.map((r) => r.fresh.label),
         ]
         const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
+          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
           avoidLabels,
         )
         replacements.push({ old: pack, fresh: freshPack })
@@ -349,11 +396,13 @@ function App() {
   // still discards immediately, since there's nothing left to show.
   //
   // Queued packs were pre-generated and may already include the
-  // now-skipped movie (#155) — filtering it out here (rather than waiting
-  // until that pack is promoted to active) keeps a skipped movie from
-  // surfacing again just because it was already baked into a
-  // not-yet-selected queue pack. A queued pack that drops to <=1 movie is
-  // unusable, so it's handed to replaceDiscardedQueuePacks above.
+  // now-skipped movie (#155) — any such pack is discarded and replaced
+  // wholesale via replaceDiscardedQueuePacks above, rather than just
+  // filtering the skipped movie out of it in place. Packs are always meant
+  // to be a fixed size (5, or 2 for Head to Head) — quietly shrinking one in
+  // place instead of regenerating it left the door open for a queued pack
+  // to lose several movies across separate skips over time and eventually
+  // surface with too few tiles (#218).
   function handleSkipMovie(movieId) {
     // The pack is already down to its one remaining movie and awaiting the
     // "skip this one too?" decision (#156) — clicking that same movie's own
@@ -375,20 +424,11 @@ function App() {
       } else if (remaining.length === 0) {
         pendingSkipOutcome.current = 'discard-empty'
       }
-      const discards = []
-      const updatedQueue = prev.slice(1).map((pack) => {
-        if (!pack.movies.some((m) => m.id === movieId)) return pack
-        const packRemaining = pack.movies.filter((m) => m.id !== movieId)
-        if (packRemaining.length <= 1) {
-          discards.push(pack)
-          return pack
-        }
-        return { ...pack, movies: packRemaining }
-      })
+      const discards = prev.slice(1).filter((pack) => pack.movies.some((m) => m.id === movieId))
       if (discards.length > 0) {
         pendingQueueDiscards.current = discards
       }
-      return [activePack, ...updatedQueue]
+      return [activePack, ...prev.slice(1)]
     })
     setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
@@ -466,7 +506,7 @@ function App() {
   // modal renders on top of it.
   function handleSkippedViewChange() {
     api
-      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+      .getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
       .then((updated) => {
         noteMoviesUpdate(updated)
         if (isFullyRanked(updated)) setShowSkippedView(false)
@@ -505,21 +545,22 @@ function App() {
     setShowInstructionsModal(false)
   }
 
-  async function handleSaveRanking(name) {
-    // Let a failure here propagate to the modal, which shows it inline.
-    // { family, popular } scopes the snapshot + reset to the active subset,
-    // leaving the rest of the pool's progress untouched.
-    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre, pg13, subset })
-    setShowSaveModal(false)
+  // The ranking is already auto-saved by the time this runs (see
+  // autoSaveCompletedRanking) — dismissing the Results screen just starts a
+  // fresh run for this scope, the same reset-and-refetch that used to
+  // follow a manual save.
+  async function handleResultsDismiss() {
     setShowResultsScreen(false)
+    setResultsTitle(null)
+    setResultsShareSlug(null)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, pg13),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -534,7 +575,7 @@ function App() {
 
   async function handleResetRanking() {
     // Let a failure here propagate to the modal, which shows it inline.
-    await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 })
+    await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
     setShowResetModal(false)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
@@ -542,8 +583,8 @@ function App() {
 
     try {
       const [updatedMovies, freshPacks] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, pg13),
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
       ])
       noteMoviesUpdate(updatedMovies)
       setPacks(freshPacks)
@@ -558,7 +599,7 @@ function App() {
 
   return (
     <div
-      data-theme={subset === 'all' ? 'all' : 'popular'}
+      data-theme="popular"
       className="app-shell flex h-screen flex-col overflow-hidden"
       style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
     >
@@ -586,11 +627,15 @@ function App() {
               onSkipped={() => setShowSkippedView(true)}
             />
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
-            <label className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]">
+            <label
+              className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]"
+              title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
+            >
               PG-13 &amp; Under
               <input
                 type="checkbox"
-                checked={pg13}
+                checked={effectivePg13}
+                disabled={isFamily}
                 onChange={(event) => setPg13(event.target.checked)}
               />
             </label>
@@ -625,9 +670,7 @@ function App() {
           )}
 
           <aside
-            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${
-              subset === 'all' ? 'md:border-r md:border-[var(--surface-border)]' : ''
-            } ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
             <div className="mb-2 flex justify-end md:hidden">
@@ -704,16 +747,10 @@ function App() {
       {showResultsScreen && movies && (
         <ResultsScreen
           movies={movies}
-          onSaveClick={() => setShowSaveModal(true)}
-          onDismiss={() => setShowResultsScreen(false)}
-        />
-      )}
-      {showSaveModal && (
-        <SaveRankingModal
-          onSave={handleSaveRanking}
-          onDismiss={() => setShowSaveModal(false)}
-          subset={subset}
-          pg13={pg13}
+          title={resultsTitle}
+          subtitle="Saved automatically"
+          onDismiss={handleResultsDismiss}
+          onShare={resultsShareSlug ? handleShareResults : undefined}
         />
       )}
       {showResetModal && (
@@ -721,11 +758,11 @@ function App() {
           onConfirm={handleResetRanking}
           onDismiss={() => setShowResetModal(false)}
           subset={subset}
-          pg13={pg13}
+          pg13={effectivePg13}
         />
       )}
       {showLoadView && (
-        <LoadRankingView subset={subset} pg13={pg13} onClose={() => setShowLoadView(false)} />
+        <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
         <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />

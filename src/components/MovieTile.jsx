@@ -41,7 +41,7 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
           <span aria-hidden="true">✕</span>
         </button>
       </div>
-      <div className="poster-placeholder h-14 w-9 shrink-0 overflow-hidden rounded-[5px] bg-cover sm:h-16 sm:w-11">
+      <div className="poster-placeholder h-16 w-11 shrink-0 overflow-hidden rounded-[5px] bg-cover sm:h-20 sm:w-14">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}

@@ -4,7 +4,14 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { createDb } from './db.js'
-import { getMovies, saveRanking, listSavedRankings, getSavedRankingMovies } from './rankingService.js'
+import {
+  getMovies,
+  saveRanking,
+  listSavedRankings,
+  getSavedRankingMovies,
+  getSharedRankingTopTen,
+  ensureShareSlug,
+} from './rankingService.js'
 
 dotenv.config({ quiet: true })
 
@@ -25,6 +32,18 @@ const app = express()
 
 app.use(express.json())
 app.use(cors({ origin: ALLOWED_ORIGIN }))
+
+// Public, unauthenticated (#220) — a shared Top 10 link needs to work for
+// anyone who opens it, not just this app's own bearer-token holder.
+// Registered before the auth middleware below, and before the authenticated
+// `/api/rankings/:id` route so `/api/rankings/share/:slug` doesn't get
+// swallowed by `:id`. Deliberately returns far less than the authenticated
+// saved-ranking endpoints — see getSharedRankingTopTen.
+app.get('/api/rankings/share/:slug', (req, res) => {
+  const shared = getSharedRankingTopTen(db, DATA_DIR, req.params.slug)
+  if (!shared) return res.status(404).json({ error: 'Shared ranking not found' })
+  res.json(shared)
+})
 
 app.use((req, res, next) => {
   if (req.headers.authorization !== `Bearer ${API_TOKEN}`) {
@@ -67,6 +86,14 @@ app.get('/api/rankings/:id', (req, res) => {
   const saved = getSavedRankingMovies(db, DATA_DIR, req.params.id)
   if (!saved) return res.status(404).json({ error: 'Saved ranking not found' })
   res.json(saved)
+})
+
+// Lazily assigns a share slug to a legacy saved ranking that predates
+// sharing (#220) — new saves already get one up front (see saveRanking).
+app.post('/api/rankings/:id/share', (req, res) => {
+  const shareSlug = ensureShareSlug(db, req.params.id)
+  if (!shareSlug) return res.status(404).json({ error: 'Saved ranking not found' })
+  res.json({ shareSlug })
 })
 
 app.listen(PORT, () => {
