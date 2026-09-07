@@ -368,6 +368,37 @@ body {
   }
 }
 
+/* Head to Head / Top 10 Tough Choice intro announcement (#298) — a
+   screen-filling opaque takeover (not a translucent scrim like
+   .modal-overlay) since it's meant to read as a full interruption before
+   the pack itself becomes visible/interactive underneath. */
+.pack-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-page);
+  opacity: 1;
+  transition: opacity 300ms ease;
+}
+
+.pack-intro-overlay.pack-intro-fading {
+  opacity: 0;
+}
+
+.pack-intro-text {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 9vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: var(--accent);
+}
+
 .queue-menu-button {
   display: flex;
   align-items: center;

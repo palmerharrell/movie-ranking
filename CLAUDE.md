@@ -212,6 +212,18 @@ exposed in the UI.
   whichever handful of movies got ranked first, not movies the user actually
   cares about. Falls through to the normal pack flow if the threshold isn't
   met or fewer than 2 ranked movies are available.
+- **Intro announcement (#298):** whenever a Head to Head or Top 10 Tough
+  Choice pack becomes the active pack — via "Rank →", picking a queued pack,
+  or a subset switch — `App.jsx` shows a screen-filling `PackIntroOverlay`
+  (`"Head to Head!"` or `"Top 10 Tough Choice!"`, taken straight from the
+  pack's own `category.label`) for `PACK_INTRO_DISPLAY_MS` (1.4s) before
+  fading out over `PACK_INTRO_FADE_MS` (300ms). The pack itself is already
+  mounted underneath (so posters etc. are loading during the overlay) but
+  disabled until the overlay clears, so an early click/keypress can't submit
+  a pick before the announcement finishes. Triggered by an effect keyed on
+  `category`'s own object identity, so it fires on every fresh Head to Head/
+  Tough Choice pack, not just the first one in a session. Normal 5-packs
+  (attribute-based or Random Five) show no intro at all.
 - **Overlap requirement:** once the pool has enough ranked movies to draw
   from, each new 5-pack (attribute-based or random) must include 1–2 movies
   that have already appeared in a previous pack, with the rest being movies
