@@ -266,12 +266,27 @@ exposed in the UI.
   `n skipped` (#136).
 
 ## Saved rankings
-- **Completion:** once every non-skipped movie in the *currently visible*
-  pool has `timesRanked ≥ 1`, show a modal prompting the user to name and
-  save the ranking. "Visible pool" is whichever subset is active (Popular,
-  Family, or All Movies) minus skipped movies, further narrowed by the
-  PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
-  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136).
+- **Completion → auto-save (#227):** once every non-skipped movie in the
+  *currently visible* pool has `timesRanked ≥ 1`, the app immediately and
+  silently saves it under a generated name (`src/lib/rankingName.js`'s
+  `generateRankingName` — the subset's label, plus the PG-13-and-under
+  qualifier when it's on, plus today's date, e.g. `"Sci-Fi (PG-13 & Under) —
+  Sep 6, 2026"`) — no naming prompt, no separate confirmation step; this
+  replaced an earlier flow where completion opened a modal asking the user
+  to type a name before saving. "Visible pool" is whichever subset is active
+  (Popular, Family, or All Movies) minus skipped movies, further narrowed by
+  the PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
+  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136). The
+  Results screen (`ResultsScreen.jsx`) still appears right after, showing
+  the just-completed standings with the generated name as its title and a
+  "Saved automatically" subtitle, so the user can see what happened; its
+  footer button reads "Continue Ranking" (dismissing it) rather than "Save
+  Ranking" — dismissing is what starts the next run (see **Save** below),
+  since the save itself already happened. If the save request itself fails,
+  the Results screen simply doesn't appear (the same inline-error path any
+  other API failure takes) — the completed state isn't lost, since the pool
+  is still fully ranked, so the save is retried the next time
+  `noteMoviesUpdate` runs (e.g. switching back to this subset).
 - **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
   for the visible, non-skipped pool (gathered from its own local ranking
   state — see
@@ -282,8 +297,8 @@ exposed in the UI.
   Family subset, leaving progress on the rest of the pool untouched; a save
   made with the PG-13-and-under toggle on resets only the toggle-filtered
   slice of whichever subset was active (#193).
-  This lets the pool be ranked repeatedly over time (e.g. "2026 Draft",
-  "2027 Redo") without the runs interfering with each other. Every saved
+  This lets the pool be ranked repeatedly over time (e.g. auto-named runs on
+  different dates) without the runs interfering with each other. Every saved
   snapshot is stamped with the creating browser's client id (see **Online
   deployment**), reserved for a future feature restricting edits/re-ranks to
   the ranking's creator (#115) — not yet enforced anywhere. It's also
