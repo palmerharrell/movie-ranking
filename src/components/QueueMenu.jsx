@@ -7,13 +7,13 @@ function QueuedPackCard({ pack, disabled, onSelect }) {
       type="button"
       onClick={onSelect}
       disabled={disabled}
-      className="queue-pack-card flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+      className="queue-pack-card flex w-full items-center gap-3.5 rounded-lg border px-3.5 py-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
     >
       <div className="flex shrink-0 -space-x-2.5">
         {pack.movies.map((movie) => (
           <div
             key={movie.id}
-            className="poster-placeholder queue-poster h-9 w-6 shrink-0 overflow-hidden rounded-[3px] bg-cover"
+            className="poster-placeholder queue-poster h-11 w-7 shrink-0 overflow-hidden rounded-[3px] bg-cover"
           >
             {movie.posterUrl && (
               <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
@@ -21,7 +21,7 @@ function QueuedPackCard({ pack, disabled, onSelect }) {
           </div>
         ))}
       </div>
-      <span className="queue-pack-label truncate text-sm font-medium">
+      <span className="queue-pack-label truncate text-base font-medium">
         {formatPackLabel(pack.label)}
       </span>
     </button>
@@ -89,7 +89,7 @@ export function QueueMenu({ queue, disabled, onSelect }) {
         <QueueIcon />
       </button>
       {open && (
-        <div className="queue-menu-dropdown absolute top-full right-0 z-50 mt-2 flex flex-col gap-2">
+        <div className="queue-menu-dropdown absolute top-full right-0 z-50 mt-2 flex flex-col gap-3">
           {queue.map((pack, index) => (
             <QueuedPackCard
               key={pack.movies.map((m) => m.id).join('-')}

@@ -10,6 +10,7 @@ import { LoadRankingView } from './components/LoadRankingView.jsx'
 import { SkippedView } from './components/SkippedView.jsx'
 import { BannerMenu } from './components/BannerMenu.jsx'
 import { InstructionsModal } from './components/InstructionsModal.jsx'
+import { MovieDetailModal } from './components/MovieDetailModal.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -27,8 +28,11 @@ const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
 // persistence, just as its own independent flag).
 const PG13_STORAGE_KEY = 'movie-ranking-pg13'
 // The "how it works" popup (replacing the old always-visible pack-card
-// captions) shows once per browser on startup unless dismissed with "Don't
-// show this again" — same shape as PG13_STORAGE_KEY's persistent flag.
+// captions) shows once per browser on startup unless its "Show on load"
+// checkbox (#236, checked by default) is unchecked — same shape as
+// PG13_STORAGE_KEY's persistent flag, just inverted (the stored value marks
+// "hidden", even though the checkbox itself reads as "show"). Also
+// reachable any time from the ☰ menu's "Instructions" item (#237).
 const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
 const QUEUE_SIZE = 8
 
@@ -96,6 +100,10 @@ function App() {
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const [showInstructionsModal, setShowInstructionsModal] = useState(initialShowInstructions)
+  // The movie shown in the big detail card (#222, #223) — tapping/clicking a
+  // movie in a pack, the standings, the skipped list, or a Head to Head
+  // card's own info button opens it; null when no detail card is showing.
+  const [detailMovie, setDetailMovie] = useState(null)
   // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
   // (#182/#183) — fetched once since it's independent of the active subset.
   const [allMoviesCount, setAllMoviesCount] = useState(null)
@@ -540,8 +548,12 @@ function App() {
     discardActivePack()
   }
 
-  function handleCloseInstructions(dontShowAgain) {
-    if (dontShowAgain) localStorage.setItem(INSTRUCTIONS_STORAGE_KEY, 'true')
+  function handleCloseInstructions(showOnLoad) {
+    if (showOnLoad) {
+      localStorage.removeItem(INSTRUCTIONS_STORAGE_KEY)
+    } else {
+      localStorage.setItem(INSTRUCTIONS_STORAGE_KEY, 'true')
+    }
     setShowInstructionsModal(false)
   }
 
@@ -625,6 +637,7 @@ function App() {
               onStandings={() => setShowStandingsDrawer(true)}
               onLoadRanking={() => setShowLoadView(true)}
               onSkipped={() => setShowSkippedView(true)}
+              onInstructions={() => setShowInstructionsModal(true)}
             />
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
             <label
@@ -684,7 +697,11 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel movies={movies} onReset={() => setShowResetModal(true)} />
+              <LeftPanel
+                movies={movies}
+                onReset={() => setShowResetModal(true)}
+                onOpenDetail={setDetailMovie}
+              />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (
@@ -704,6 +721,7 @@ function App() {
                     disabled={busy || switchingSubset}
                     queue={queue}
                     onSelectQueued={handleSelectQueued}
+                    onOpenDetail={setDetailMovie}
                   />
                 ) : (
                   <RightPanel
@@ -718,6 +736,7 @@ function App() {
                     disabled={busy || switchingSubset}
                     queue={queue}
                     onSelectQueued={handleSelectQueued}
+                    onOpenDetail={setDetailMovie}
                   />
                 )
               ) : error ? (
@@ -765,9 +784,21 @@ function App() {
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
-        <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
+        <SkippedView
+          onChange={handleSkippedViewChange}
+          onClose={() => setShowSkippedView(false)}
+          onOpenDetail={setDetailMovie}
+        />
       )}
-      {showInstructionsModal && <InstructionsModal onClose={handleCloseInstructions} />}
+      {showInstructionsModal && (
+        <InstructionsModal
+          onClose={handleCloseInstructions}
+          initialShowOnLoad={initialShowInstructions()}
+        />
+      )}
+      {detailMovie && (
+        <MovieDetailModal movie={detailMovie} onClose={() => setDetailMovie(null)} />
+      )}
     </div>
   )
 }

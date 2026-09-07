@@ -17,7 +17,7 @@ const HOLD_DURATION_MS = 1600
 // or 'loser' (slide further off in its own direction and fade out). `side`
 // says which half of the row this card started in, since the direction to
 // slide depends on that.
-function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
+function HeadToHeadCard({ movie, onPick, disabled, slide, side, onOpenDetail }) {
   const slideStyle =
     slide === 'winner'
       ? {
@@ -32,13 +32,37 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
           : undefined
 
   return (
-    <button
-      type="button"
-      onClick={() => onPick(movie.id)}
-      disabled={disabled}
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      onClick={() => !disabled && onPick(movie.id)}
+      onKeyDown={(event) => {
+        if (disabled) return
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onPick(movie.id)
+        }
+      }}
+      aria-disabled={disabled}
       style={slideStyle}
-      className="head-to-head-card flex min-w-0 flex-1 flex-col items-center gap-3 rounded-lg border p-4 text-center disabled:cursor-not-allowed disabled:opacity-50"
+      className={`head-to-head-card relative flex min-w-0 flex-1 flex-col items-center gap-3 rounded-lg border p-4 text-center ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
     >
+      {/* Info button (#223) — full titles get truncated below, this is the
+          only way to see one in full without picking a winner. Nested inside
+          the card's own click target, so it must stop propagation to avoid
+          also submitting a pick. */}
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          onOpenDetail(movie)
+        }}
+        disabled={disabled}
+        className="movie-detail-info-button absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold disabled:cursor-not-allowed"
+        aria-label={`See full details for ${movie.title}`}
+      >
+        i
+      </button>
       <div className="poster-placeholder h-44 w-[120px] shrink-0 overflow-hidden rounded-[6px] bg-cover sm:h-56 sm:w-[152px]">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
@@ -57,7 +81,7 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
           </div>
         )}
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -66,7 +90,14 @@ function HeadToHeadCard({ movie, onPick, disabled, slide, side }) {
 // pairwise Elo update (no drag-to-order, no "Rank ->" confirmation step,
 // and no "Haven't Seen" skip since both movies are, by construction, ones
 // the pool has already seen and ranked).
-export function HeadToHeadPanel({ category, onPick, disabled, queue, onSelectQueued }) {
+export function HeadToHeadPanel({
+  category,
+  onPick,
+  disabled,
+  queue,
+  onSelectQueued,
+  onOpenDetail,
+}) {
   const [first, second] = category.movies
   // Identifies this specific pack (not just a movie — the same movie can
   // reappear in the next pack) so each card can be keyed to remount cleanly
@@ -122,6 +153,7 @@ export function HeadToHeadPanel({ category, onPick, disabled, queue, onSelectQue
             disabled={disabled || !!pickedId}
             slide={slideFor(first.id)}
             side="left"
+            onOpenDetail={onOpenDetail}
           />
         )}
         {phase !== 'holding' && (
@@ -140,6 +172,7 @@ export function HeadToHeadPanel({ category, onPick, disabled, queue, onSelectQue
             disabled={disabled || !!pickedId}
             slide={slideFor(second.id)}
             side="right"
+            onOpenDetail={onOpenDetail}
           />
         )}
       </div>

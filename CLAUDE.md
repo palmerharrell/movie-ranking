@@ -339,7 +339,11 @@ exposed in the UI.
   checks for that query param before rendering `App` at all, and if it's
   present renders `SharedRankingView.jsx` instead — a small standalone page
   with no bearer-token pool fetch and no app shell, since anyone with the
-  link needs to be able to open it.
+  link needs to be able to open it. That page's footer has its own "Rank
+  your own movies →" link (#235) back to the app's root URL (`import.meta.env.BASE_URL`,
+  i.e. the same URL with no `?share=` param) — a visitor who lands on a
+  shared Top 10 has otherwise no way to reach the app itself from that
+  page.
   - **Slug, not the row's own id:** `saved_rankings.share_slug` is a random,
     unguessable id (12-char base64url, `server/db.js`'s
     `generateShareSlug`), deliberately not the row's sequential numeric
@@ -461,6 +465,22 @@ exposed in the UI.
   generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
+- **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
+  pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
+  — a bigger card with the poster, full (untruncated) title, director, full
+  cast list, and genres, since all three of those small-row views truncate
+  the title/cast to fit. Pack tiles use the plain `onClick` this opens with
+  every other row also uses; `RightPanel.jsx`'s `DndContext` sensor needs an
+  `activationConstraint: { distance: 4 }` for this to work at all — dnd-kit
+  activates a drag (and installs a capture-phase listener that swallows the
+  next click) on pointerdown with zero required movement by default, so
+  without a small movement threshold a tap could never fire `onClick` on a
+  draggable tile. Head to Head cards (see **Category generation & queue**)
+  are themselves one big click target for submitting a pick, so they get a
+  small "ⓘ" button in the card's own corner instead (`onClick` there stops
+  propagation so it opens the detail card without also submitting a pick)
+  — the only place this is needed, since it's the one view where a movie's
+  full title has no other way to be seen.
 - **Banner:** two rows. Top row: an app-icon (recolored to the active
   Neon-theme palette — see **Movie subsets**) on either side of the "Movie
   Ranking" title, all three sitting on a shared dark badge
@@ -470,18 +490,24 @@ exposed in the UI.
   button (`BannerMenu.jsx`, no text label) on the left — opening it reveals
   Standings (mobile-only; desktop already shows the standings panel
   in-line), a "Load Ranking" entry point for browsing saved snapshots (see
-  **Saved rankings**), and a "Skipped" entry point for browsing/un-skipping
-  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**) — then
-  the subset picker, then the PG-13-and-under toggle (#193, see **PG-13 and
-  under toggle**) flush right. A large, very-faint film-reel watermark
-  (baked-in low alpha, not CSS `opacity`, so it doesn't fade the banner's
-  own gradient) sits behind the whole app-shell under the Neon theme only —
-  see **Movie subsets**.
-- **Startup instructions:** a one-time popup (`InstructionsModal.jsx`,
-  shown unless dismissed with "Don't show this again",
-  `movie-ranking-hide-instructions` in `localStorage`) explains the drag/
-  Rank/Head-to-Head flow and what each banner control above does, replacing
-  the old always-visible per-pack captions.
+  **Saved rankings**), a "Skipped" entry point for browsing/un-skipping
+  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), and an
+  "Instructions" entry point (#237) that reopens the startup instructions
+  popup on demand — then the subset picker, then the PG-13-and-under toggle
+  (#193, see **PG-13 and under toggle**) flush right. A large, very-faint
+  film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
+  fade the banner's own gradient) sits behind the whole app-shell under the
+  Neon theme only — see **Movie subsets**.
+- **Startup instructions:** a one-time popup (`InstructionsModal.jsx`) shown
+  on startup unless its "Show on load" checkbox (#236, checked by default)
+  was left unchecked on a previous visit (`movie-ranking-hide-instructions`
+  in `localStorage` — presence of the key means "hidden," inverse of the
+  checkbox's own sense) — explains the drag/Rank/Head-to-Head flow and what
+  each banner control above does, replacing the old always-visible per-pack
+  captions. Also reachable any time via the ☰ menu's "Instructions" item
+  (#237, see banner row above), in which case the checkbox reflects
+  whatever the stored preference currently is rather than always defaulting
+  to checked.
 
 ## Movie subsets (#104, #146, #150, #151, #180, #181)
 There are no more cosmetic-only "themes" — the banner's picker
