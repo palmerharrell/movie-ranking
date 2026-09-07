@@ -19,6 +19,21 @@ describe('selectTopByVoteCount', () => {
     const movies = [movie('a', 1), movie('b', 5), movie('c', 3)]
     expect(selectTopByVoteCount(movies, 2).map((m) => m.id)).toEqual(['b', 'c'])
   })
+
+  // #230: the client derives its pool from an unfiltered API response while
+  // the server filters from its own internal list, so the two sides can see
+  // the same movies in different starting array order. Ties on voteCount
+  // (common — 0/null is frequent) must resolve identically regardless of
+  // that input order, or the client and server can select different top-N
+  // sets and a movie can become permanently unreachable in packs while
+  // still required for completion.
+  it('breaks voteCount ties deterministically by id, regardless of input order', () => {
+    const forward = [movie('a', 0), movie('b', 0), movie('c', 0), movie('winner', 10)]
+    const shuffled = [movie('c', 0), movie('winner', 10), movie('a', 0), movie('b', 0)]
+    expect(selectTopByVoteCount(forward, 3).map((m) => m.id)).toEqual(
+      selectTopByVoteCount(shuffled, 3).map((m) => m.id),
+    )
+  })
 })
 
 describe('selectPopular', () => {
@@ -163,5 +178,16 @@ describe('selectTopByVoteCountWithQuotas', () => {
     // classic-filler satisfies the era floor and must survive; modern (the
     // only unprotected entry) gets evicted for the canonical addition instead.
     expect(result.map((m) => m.id).sort()).toEqual(['best-canonical', 'classic-filler'])
+  })
+
+  // #230: same order-independence guarantee as selectTopByVoteCount above,
+  // since selectGenreSubset/selectFamilySubset/selectPopular all route
+  // through this function.
+  it('breaks voteCount ties deterministically regardless of input order', () => {
+    const forward = [movie('a', 0), movie('b', 0), movie('c', 0), movie('winner', 10)]
+    const shuffled = [movie('c', 0), movie('winner', 10), movie('a', 0), movie('b', 0)]
+    expect(selectTopByVoteCountWithQuotas(forward, 3, []).map((m) => m.id)).toEqual(
+      selectTopByVoteCountWithQuotas(shuffled, 3, []).map((m) => m.id),
+    )
   })
 })
