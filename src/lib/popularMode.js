@@ -3,14 +3,28 @@ import { isMarvelOrDc } from './comicBookMovies.js'
 // Tune later — not a hard requirement from #104, just a starting cutoff.
 export const POPULAR_POOL_SIZE = 300
 
+// Sorts by voteCount descending, then by id ascending as an explicit,
+// deterministic tiebreak. Movies tied on voteCount (common — many pool
+// entries have 0/null) must not fall back to incidental array order:
+// the client derives its pool from an unfiltered `GET /api/movies` while
+// the server filters from its own internal list, so the two sides see
+// different starting array orders for the same movies. Without an
+// explicit tiebreak, Array.sort's stability made the two sides pick
+// different top-N sets at the tied-voteCount boundary, which could
+// permanently exclude a movie from pack generation while still counting
+// it as required for completion (#230).
+function byVoteCountThenId(a, b) {
+  const voteDiff = (b.voteCount ?? 0) - (a.voteCount ?? 0)
+  if (voteDiff !== 0) return voteDiff
+  return String(a.id).localeCompare(String(b.id))
+}
+
 // Top-N by TMDb voteCount (a stable "how mainstream is this" proxy, unlike
 // TMDb's own day-to-day popularity score). A movie with no confirmed
 // voteCount sorts last, same as being excluded in practice. Shared with
 // genreSubsets.js's per-genre/language/keyword top-N cutoff (#150).
 export function selectTopByVoteCount(movies, n) {
-  return [...movies]
-    .sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0))
-    .slice(0, n)
+  return [...movies].sort(byVoteCountThenId).slice(0, n)
 }
 
 // A movie counts as "classic era" for the quota below if released before
@@ -99,7 +113,7 @@ export function isCanonicalSourced(movie) {
 // set of floors, not a fixed partition: a subset whose natural top-N
 // already meets every floor is returned unchanged.
 export function selectTopByVoteCountWithQuotas(movies, n, floors) {
-  const sorted = [...movies].sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0))
+  const sorted = [...movies].sort(byVoteCountThenId)
   let selected = sorted.slice(0, n)
 
   for (const { matches, quota } of floors) {
@@ -120,7 +134,7 @@ export function selectTopByVoteCountWithQuotas(movies, n, floors) {
     selected = [...selected.filter((m) => !toDrop.has(m)), ...extras.slice(0, dropCount)]
   }
 
-  return selected.sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0))
+  return selected.sort(byVoteCountThenId)
 }
 
 // Marvel/DC movies are excluded here (#180) — their sheer volume (dozens of
