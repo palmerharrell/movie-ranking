@@ -18,6 +18,7 @@ import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 import { generateRankingName } from './lib/rankingName.js'
+import { buildShareUrl } from './lib/shareLink.js'
 import filmReelBg from './assets/film-reel-bg.png'
 
 const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
@@ -86,6 +87,10 @@ function App() {
   // Name the just-completed ranking was auto-saved under (#227) — shown as
   // the Results screen's title so the user can see what it got called.
   const [resultsTitle, setResultsTitle] = useState(null)
+  // The auto-saved ranking's share slug (#220) — saveRanking hands one back
+  // immediately, so the Share button works right away with no extra round
+  // trip.
+  const [resultsShareSlug, setResultsShareSlug] = useState(null)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
@@ -162,8 +167,9 @@ function App() {
   // call (e.g. after switching back to this subset) will retry the save.
   async function autoSaveCompletedRanking() {
     const name = generateRankingName(subset, effectivePg13)
+    let saved
     try {
-      await api.saveRanking(name, {
+      saved = await api.saveRanking(name, {
         family: isFamily,
         popular: isPopular,
         genre: activeGenre,
@@ -175,7 +181,15 @@ function App() {
       return
     }
     setResultsTitle(name)
+    setResultsShareSlug(saved.shareSlug)
     setShowResultsScreen(true)
+  }
+
+  // The live Results screen's Share button (#220) — the slug is already
+  // known from the auto-save above, so this is just building the link and
+  // copying it; ResultsScreen owns the click-feedback state.
+  async function handleShareResults() {
+    await navigator.clipboard.writeText(buildShareUrl(resultsShareSlug))
   }
 
   useEffect(() => {
@@ -538,6 +552,7 @@ function App() {
   async function handleResultsDismiss() {
     setShowResultsScreen(false)
     setResultsTitle(null)
+    setResultsShareSlug(null)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
@@ -735,6 +750,7 @@ function App() {
           title={resultsTitle}
           subtitle="Saved automatically"
           onDismiss={handleResultsDismiss}
+          onShare={resultsShareSlug ? handleShareResults : undefined}
         />
       )}
       {showResetModal && (

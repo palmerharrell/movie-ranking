@@ -330,6 +330,40 @@ exposed in the UI.
   movies that were actually part of that saved run, not the current full
   pool — read-only (no Save Ranking button; a "Back to list" link replaces
   it), and it does not affect or restore live ranking state.
+- **Sharing (#220):** every saved snapshot gets a "Share" button in
+  `ResultsScreen.jsx`'s footer — both the live post-completion screen and
+  the read-only Load Ranking view — that copies a public link to that
+  ranking's Top 10 to the clipboard. The link is `?share=<slug>` on the
+  app's own URL (e.g. `https://.../movie-ranking/?share=ngfjyDxrZtbE`), not
+  a new path, so it needs no GitHub Pages routing/rewrite support; `main.jsx`
+  checks for that query param before rendering `App` at all, and if it's
+  present renders `SharedRankingView.jsx` instead — a small standalone page
+  with no bearer-token pool fetch and no app shell, since anyone with the
+  link needs to be able to open it.
+  - **Slug, not the row's own id:** `saved_rankings.share_slug` is a random,
+    unguessable id (12-char base64url, `server/db.js`'s
+    `generateShareSlug`), deliberately not the row's sequential numeric
+    `id` — that would let a shared link's neighbors (id-1, id+1) be
+    trivially browsed to see other people's saved rankings. Every new save
+    is assigned one immediately (`createSavedRanking`), so the Share button
+    works right away with no extra round trip; a snapshot saved before
+    sharing existed has `share_slug = NULL` until backfilled (see below).
+  - **Public endpoint:** `GET /api/rankings/share/:slug` is registered
+    before the bearer-token auth middleware in `server/index.js` (and
+    before the authenticated `GET /api/rankings/:id` route, so `:id` never
+    swallows the literal `share` segment) — anyone can call it, no
+    `Authorization` header needed. It returns far less than the
+    authenticated saved-ranking endpoints: just `{name, subset, pg13,
+    movies}`, where `movies` is only the Top 10 (`id`, `title`, `year`,
+    `posterUrl` — no `eloRating`/`timesRanked`/`ownerClientId`) — see
+    `getSharedRankingTopTen` in `server/rankingService.js`.
+  - **Legacy backfill:** a snapshot saved before this feature has no slug
+    yet. `LoadRankingView.jsx`'s Share button calls the authenticated
+    `POST /api/rankings/:id/share` the first time it's clicked on such a
+    snapshot, which lazily generates and persists one
+    (`ensureShareSlug`/`setShareSlug`) and reuses it on any later click in
+    that same session. The live post-completion screen never needs this
+    path, since a fresh save already has a slug.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
@@ -370,7 +404,13 @@ exposed in the UI.
       **Movie subsets**) was active for that save — a separate column from
       `subset` since the toggle is an independent, composable dimension
       rather than one of the subset ids; `NULL` for snapshots saved before
-      the toggle existed.
+      the toggle existed. `share_slug` (#220) is a random unguessable id for
+      the public share link (see **Sharing** under **Saved rankings**) —
+      `NULL` for a snapshot that hasn't had one assigned yet (every new save
+      gets one immediately; a legacy snapshot gets one lazily on first
+      Share click). Uniqueness is enforced via a separate index rather than
+      a column constraint, since SQLite's `ALTER TABLE ADD COLUMN` doesn't
+      support `UNIQUE` directly.
   - Endpoints:
     - `GET /api/movies` — the pool's static metadata only, no ranking state;
       `?family=true` restricts to the Family subset (see **Movie subsets**);
@@ -381,8 +421,9 @@ exposed in the UI.
       where `entries` is the `{movieId, eloRating, timesRanked}[]` the
       browser gathered from its own local ranking state; the server just
       persists it tagged with `clientId` as `owner_client_id` and
-      `subset`/`pg13` as-is. The browser resets its own local state for that
-      scope after a successful save.
+      `subset`/`pg13` as-is, and assigns a `shareSlug` (#220), returned in
+      the response alongside `id`/`name`. The browser resets its own local
+      state for that scope after a successful save.
     - `GET /api/rankings` — list of saved snapshots (`id`, `name`,
       `createdAt`, `movieCount`, `subset`, `pg13`); `?subset=<id>` restricts
       to snapshots saved from that subset, and `?pg13=<true|false>`
@@ -390,9 +431,22 @@ exposed in the UI.
       **Saved rankings**) — composable with each other
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
       snapshot-time `eloRating`, limited to the movies that were part of
-      that save), sorted descending, for read-only display
+      that save), sorted descending, for read-only display; also includes
+      `shareSlug` (`null` if not yet assigned)
+    - `POST /api/rankings/:id/share` (#220) — lazily assigns and persists a
+      share slug for a saved ranking that doesn't have one yet (a no-op,
+      returning the existing slug, if it already does); see **Sharing**
+      under **Saved rankings**
+    - `GET /api/rankings/share/:slug` (#220) — public, no `Authorization`
+      header required (registered ahead of the auth middleware) — a saved
+      ranking's public Top 10 by its share slug: `{name, subset, pg13,
+      movies}`, `movies` limited to `id`/`title`/`year`/`posterUrl` only;
+      see **Sharing** under **Saved rankings**
   - Auth: single-user app, so a shared bearer token in an env var, checked on
-    every request, is sufficient — no user accounts needed yet.
+    every request, is sufficient — no user accounts needed yet; the one
+    exception is the public share endpoint above, deliberately excluded
+    from that check since anyone with a shared link needs to be able to
+    open it.
   - CORS: restrict to the GitHub Pages origin.
   - Process management: `systemd` or `pm2` so it survives reboots/crashes;
     reverse-proxied through Caddy or nginx for TLS.

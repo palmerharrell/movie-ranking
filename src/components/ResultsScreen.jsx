@@ -10,7 +10,11 @@ function sortMovies(movies) {
   })
 }
 
-function TopTenTile({ movie, rank }) {
+// Exported for SharedRankingView.jsx (#220), the public standalone view for
+// a shared link — reuses this tile so a shared Top 10 looks like the same
+// tile the owner saw, without pulling in the rest of this authenticated
+// screen (mid/rest/outside tiers, Continue/Share footer, etc).
+export function TopTenTile({ movie, rank }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
   return (
     <li className={`results-top-tile flex flex-col ${topClass}`}>
@@ -87,7 +91,14 @@ function OutsideRow({ movie, rank }) {
 // `title` now (#227) — the ranking is auto-saved on completion rather than
 // through a naming modal, so this doubles as letting the user see what it
 // got auto-named; `subtitle` (live-only) clarifies that it already saved.
-export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, readOnly }) {
+// `onShare` (#220), when given, shows a "Share" button in both the live and
+// read-only footer — it's an async () => Promise<void> that resolves and
+// copies the share link itself (App.jsx already has the slug from
+// auto-save; LoadRankingView backfills one via api.shareRanking for a
+// legacy snapshot that predates sharing) — ResultsScreen only owns the
+// click-feedback state, not how the link is produced.
+export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onShare, readOnly }) {
+  const [shareState, setShareState] = useState('idle') // idle | pending | copied | error
   const sorted = sortMovies(movies)
   const topTen = sorted.slice(0, 10)
   const elevenToTwentyFive = sorted.slice(10, 25)
@@ -135,6 +146,21 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, read
     container.addEventListener('scroll', handleScroll, { passive: true })
     return () => container.removeEventListener('scroll', handleScroll)
   }, [])
+
+  async function handleShareClick() {
+    setShareState('pending')
+    try {
+      await onShare()
+      setShareState('copied')
+    } catch {
+      setShareState('error')
+    } finally {
+      setTimeout(() => setShareState('idle'), 2000)
+    }
+  }
+
+  const shareLabel =
+    shareState === 'copied' ? 'Link Copied!' : shareState === 'error' ? "Couldn't Copy" : 'Share'
 
   return (
     <div className="modal-overlay results-overlay">
@@ -225,11 +251,23 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, read
           )}
         </div>
 
-        {!readOnly && (
-          <div className="mt-4 flex shrink-0 justify-end">
-            <button type="button" onClick={onDismiss} className="modal-button-primary text-sm">
-              Continue Ranking
-            </button>
+        {(onShare || !readOnly) && (
+          <div className="mt-4 flex shrink-0 items-center justify-end gap-2">
+            {onShare && (
+              <button
+                type="button"
+                onClick={handleShareClick}
+                disabled={shareState === 'pending'}
+                className="modal-button-secondary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {shareLabel}
+              </button>
+            )}
+            {!readOnly && (
+              <button type="button" onClick={onDismiss} className="modal-button-primary text-sm">
+                Continue Ranking
+              </button>
+            )}
           </div>
         )}
       </div>

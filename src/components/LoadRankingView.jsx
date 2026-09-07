@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
 import { subsetLabel } from '../lib/genreSubsets.js'
+import { buildShareUrl } from '../lib/shareLink.js'
 import { ResultsScreen } from './ResultsScreen.jsx'
 
 // Saved rankings are scoped to the subset they were saved from (#186
@@ -22,6 +23,15 @@ export function LoadRankingView({ subset, pg13, onClose }) {
     api.getSavedRanking(id).then(setSelected).catch((err) => setError(err.message))
   }
 
+  // A snapshot saved before sharing existed (#220) has no shareSlug yet —
+  // back-fill one on first click rather than up front for every listed
+  // snapshot, then reuse it on any later click within this same session.
+  async function handleShare() {
+    const shareSlug = selected.shareSlug ?? (await api.shareRanking(selected.id)).shareSlug
+    if (!selected.shareSlug) setSelected((prev) => ({ ...prev, shareSlug }))
+    await navigator.clipboard.writeText(buildShareUrl(shareSlug))
+  }
+
   // A selected snapshot displays via the same tiered Results screen shown on
   // live completion (#107) — read-only, with a "Back to list" link in place
   // of the Save Ranking footer button.
@@ -32,6 +42,7 @@ export function LoadRankingView({ subset, pg13, onClose }) {
         title={selected.name}
         onBack={() => setSelected(null)}
         onDismiss={onClose}
+        onShare={handleShare}
         readOnly
       />
     )
