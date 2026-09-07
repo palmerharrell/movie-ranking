@@ -465,6 +465,22 @@ exposed in the UI.
   generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
+- **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
+  pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
+  — a bigger card with the poster, full (untruncated) title, director, full
+  cast list, and genres, since all three of those small-row views truncate
+  the title/cast to fit. Pack tiles use the plain `onClick` this opens with
+  every other row also uses; `RightPanel.jsx`'s `DndContext` sensor needs an
+  `activationConstraint: { distance: 4 }` for this to work at all — dnd-kit
+  activates a drag (and installs a capture-phase listener that swallows the
+  next click) on pointerdown with zero required movement by default, so
+  without a small movement threshold a tap could never fire `onClick` on a
+  draggable tile. Head to Head cards (see **Category generation & queue**)
+  are themselves one big click target for submitting a pick, so they get a
+  small "ⓘ" button in the card's own corner instead (`onClick` there stops
+  propagation so it opens the detail card without also submitting a pick)
+  — the only place this is needed, since it's the one view where a movie's
+  full title has no other way to be seen.
 - **Banner:** two rows. Top row: an app-icon (recolored to the active
   Neon-theme palette — see **Movie subsets**) on either side of the "Movie
   Ranking" title, all three sitting on a shared dark badge

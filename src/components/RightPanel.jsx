@@ -28,8 +28,15 @@ export function RightPanel({
   disabled,
   queue,
   onSelectQueued,
+  onOpenDetail,
 }) {
-  const sensors = useSensors(useSensor(PointerSensor))
+  // A distance constraint (rather than the default, which activates a drag
+  // on pointerdown with zero movement) is required for tiles to be
+  // click-to-open-detail (#222) at all — dnd-kit installs a capture-phase
+  // click-swallower the instant a drag activates, so with no constraint
+  // every tap, including ones with no movement, would silently eat its own
+  // click event before onOpenDetail ever saw it.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
   const tilesListRef = useRef(null)
 
   function handleDragEnd(event) {
@@ -81,6 +88,7 @@ export function RightPanel({
                 rank={index + 1}
                 onSkip={handleSkip}
                 disabled={disabled}
+                onOpenDetail={onOpenDetail}
               />
             ))}
           </div>

@@ -397,12 +397,23 @@ body {
   transition: border-color 0.15s, background 0.15s, transform 0.35s ease, opacity 0.35s ease;
 }
 
-.head-to-head-card:hover:not(:disabled) {
+.head-to-head-card:hover:not([aria-disabled='true']) {
   border-color: var(--accent);
 }
 
-[data-theme='popular'] .head-to-head-card:hover:not(:disabled) {
+[data-theme='popular'] .head-to-head-card:hover:not([aria-disabled='true']) {
   background: rgba(63, 210, 199, 0.08);
+}
+
+.movie-detail-info-button {
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-mid);
+  border: 1px solid var(--surface-border);
+}
+
+.movie-detail-info-button:hover:not(:disabled) {
+  color: var(--text-high);
+  border-color: var(--accent);
 }
 
 .head-to-head-vs {
