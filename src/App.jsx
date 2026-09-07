@@ -212,6 +212,19 @@ function App() {
     api.getMovies().then((allMovies) => setAllMoviesCount(allMovies.length))
   }, [])
 
+  // #247: the Standings drawer and Skipped view are both fixed-position
+  // overlays, which doesn't stop the page underneath from scrolling on
+  // touch devices — locking body scroll while either is open keeps the
+  // background still.
+  useEffect(() => {
+    if (!showStandingsDrawer && !showSkippedView) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [showStandingsDrawer, showSkippedView])
+
   // Fetches the active subset's movies/packs. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
   // retrying re-runs this without touching skip/prompt state, since those
@@ -701,6 +714,7 @@ function App() {
                 movies={movies}
                 onReset={() => setShowResetModal(true)}
                 onOpenDetail={setDetailMovie}
+                open={showStandingsDrawer}
               />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
@@ -758,6 +772,33 @@ function App() {
                   />
                 </div>
               )}
+              {movies &&
+                (() => {
+                  const eligibleMovies = movies.filter((m) => !m.skipped)
+                  const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
+                  const skippedCount = movies.filter((m) => m.skipped).length
+                  const eligibleCount = eligibleMovies.length
+                  return (
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowStandingsDrawer(true)}
+                        className="standings-reset-button font-mono text-xs"
+                      >
+                        {rankedCount}/{eligibleCount} ranked
+                      </button>
+                      {skippedCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowSkippedView(true)}
+                          className="standings-reset-button font-mono text-xs"
+                        >
+                          {skippedCount} skipped
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
             </div>
           </main>
         </div>

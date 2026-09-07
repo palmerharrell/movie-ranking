@@ -12,6 +12,7 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
   }
 
   const cast = movie.cast?.slice(0, 3) ?? []
+  const isUnranked = (movie.timesRanked || 0) === 0
 
   return (
     <div
@@ -20,8 +21,8 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
       {...attributes}
       {...listeners}
       onClick={() => onOpenDetail(movie)}
-      className="movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5"
-      aria-label={`Drag to reorder ${movie.title}, or click to see full details`}
+      className={`movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5 ${isUnranked ? 'movie-tile--unranked' : ''}`}
+      aria-label={`Drag to reorder ${movie.title}, or click to see full details${isUnranked ? ' (not yet ranked)' : ''}`}
     >
       <div className="flex shrink-0 flex-col items-center gap-1.5">
         <span className={`movie-tile-rank text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
@@ -33,7 +34,15 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
           onClick={(event) => {
             event.stopPropagation()
             event.currentTarget.blur()
-            onSkip(movie.id)
+            // Deferred a tick (#250): on mobile touchscreens, removing this
+            // tile synchronously (shrinking the pack and shifting the tiles
+            // below it up) still lands the browser's own post-tap focus
+            // handling on whatever tile's Skip button now occupies this
+            // button's former position, even though blur() above already
+            // cleared focus from this one. Letting the tap's own focus
+            // handling finish first, before the removal that reflows the
+            // list, keeps that from re-targeting a still-present button.
+            setTimeout(() => onSkip(movie.id), 0)
           }}
           disabled={disabled}
           className="skip-button flex h-9 w-9 items-center justify-center text-base leading-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-6 sm:w-6 sm:text-sm"

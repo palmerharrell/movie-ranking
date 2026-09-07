@@ -6,13 +6,8 @@
 export function MovieDetailModal({ movie, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card modal-card-wide" onClick={(event) => event.stopPropagation()}>
-        <div className="flex justify-end">
-          <button type="button" onClick={onClose} className="modal-close" aria-label="Close">
-            ×
-          </button>
-        </div>
-        <div className="-mt-2 flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
+      <div className="modal-card modal-card-wide">
+        <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
           <div className="poster-placeholder h-[240px] w-[160px] shrink-0 overflow-hidden rounded-[8px] bg-cover">
             {movie.posterUrl && (
               <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
