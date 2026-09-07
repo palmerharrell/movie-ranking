@@ -130,14 +130,21 @@ exposed in the UI.
   starts it back at those same defaults rather than restoring the old
   rating, since that data is gone. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
-  `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
-  banner next to "Load Ranking") lists every persistently-skipped movie
-  (poster/title/year, matching the Standings row styling) with a per-movie
-  "Un-skip" button and a "Clear All" action that un-skips everything at
-  once — both call `api.unmarkSkipped`/`localRankingStore.js`'s
-  `unmarkSkipped` directly, independent of whether the pack that skip
-  happened in is still active, so a skip can be reversed at any time, not
-  just immediately after it happens. Skipped state survives Reset/Save
+  `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
+  lists every persistently-skipped movie (poster/title/year, matching the
+  Standings row styling) with a per-movie "Un-skip" button and a "Clear All"
+  action that un-skips everything at once — both call
+  `api.unmarkSkipped`/`localRankingStore.js`'s `unmarkSkipped` directly,
+  independent of whether the pack that skip happened in is still active, so
+  a skip can be reversed at any time, not just immediately after it happens.
+  It renders as a slide-out drawer from the right edge (#269), mirroring the
+  Standings drawer's own always-mounted `aside` + backdrop overlay pattern
+  in `App.jsx` (kept mounted off-screen via `translate-x-full` rather than
+  conditionally rendered, so the slide transition has something to animate
+  on both open and close) rather than the centered `modal-overlay`/
+  `modal-card` it used before — that also means clicking the backdrop
+  outside the panel closes it (#268), the same as the Standings drawer,
+  which the old modal never supported. Skipped state survives Reset/Save
   (it's a fact about the viewer, not about a ranking run — see **Saved
   rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
