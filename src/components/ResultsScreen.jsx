@@ -83,9 +83,11 @@ function OutsideRow({ movie, rank }) {
 }
 
 // `title`/`onBack`/`readOnly` support the read-only saved-snapshot view
-// (#107, via LoadRankingView) — the live post-completion screen (no title)
-// keeps its original header with no "Save Ranking" button hidden.
-export function ResultsScreen({ movies, onSaveClick, onDismiss, title, onBack, readOnly }) {
+// (#107, via LoadRankingView). The live post-completion screen also passes
+// `title` now (#227) — the ranking is auto-saved on completion rather than
+// through a naming modal, so this doubles as letting the user see what it
+// got auto-named; `subtitle` (live-only) clarifies that it already saved.
+export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, readOnly }) {
   const sorted = sortMovies(movies)
   const topTen = sorted.slice(0, 10)
   const elevenToTwentyFive = sorted.slice(10, 25)
@@ -165,6 +167,9 @@ export function ResultsScreen({ movies, onSaveClick, onDismiss, title, onBack, r
                 ← Back to list
               </button>
             )}
+            {subtitle && !onBack && (
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-low)' }}>{subtitle}</p>
+            )}
           </div>
         ) : (
           <div className="relative shrink-0">
@@ -222,8 +227,8 @@ export function ResultsScreen({ movies, onSaveClick, onDismiss, title, onBack, r
 
         {!readOnly && (
           <div className="mt-4 flex shrink-0 justify-end">
-            <button type="button" onClick={onSaveClick} className="modal-button-primary text-sm">
-              Save Ranking
+            <button type="button" onClick={onDismiss} className="modal-button-primary text-sm">
+              Continue Ranking
             </button>
           </div>
         )}

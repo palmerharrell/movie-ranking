@@ -4,7 +4,6 @@ import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { SubsetPicker } from './components/SubsetPicker.jsx'
-import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
@@ -18,6 +17,7 @@ import { selectPg13OrUnder } from './lib/pg13Mode.js'
 import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
 import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
+import { generateRankingName } from './lib/rankingName.js'
 import filmReelBg from './assets/film-reel-bg.png'
 
 const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
@@ -83,7 +83,9 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
-  const [showSaveModal, setShowSaveModal] = useState(false)
+  // Name the just-completed ranking was auto-saved under (#227) — shown as
+  // the Results screen's title so the user can see what it got called.
+  const [resultsTitle, setResultsTitle] = useState(null)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
@@ -135,19 +137,45 @@ function App() {
     return result
   }
 
-  // Prompts to save once the currently-visible pool transitions into "every
-  // movie ranked at least once" — not on every subsequent Rank click while
-  // it stays there. In a filtered subset "the pool" means that subset (the
-  // save itself is scoped the same way — see handleSaveRanking), so this
+  // Auto-saves once the currently-visible pool transitions into "every movie
+  // ranked at least once" — not on every subsequent Rank click while it
+  // stays there. In a filtered subset "the pool" means that subset (the save
+  // itself is scoped the same way — see autoSaveCompletedRanking), so this
   // fires on subset completion too, independent of the rest of the pool.
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = computeVisibleMovies(updatedMovies)
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
-      setShowResultsScreen(true)
+      autoSaveCompletedRanking()
     }
     wasFullyRanked.current = fullyRanked
+  }
+
+  // Replaces the old "Ranking Complete" naming modal (#227): completion now
+  // auto-saves immediately under a generated name, and the Results screen
+  // (shown either way) just reports what it was saved as via `resultsTitle`.
+  // A failure here surfaces the same as any other API error — the Results
+  // screen simply doesn't appear, matching how a failed manual save used to
+  // leave the modal up with an inline error, just without a modal to retry
+  // from; the completed state isn't lost, so the next `noteMoviesUpdate`
+  // call (e.g. after switching back to this subset) will retry the save.
+  async function autoSaveCompletedRanking() {
+    const name = generateRankingName(subset, effectivePg13)
+    try {
+      await api.saveRanking(name, {
+        family: isFamily,
+        popular: isPopular,
+        genre: activeGenre,
+        pg13: effectivePg13,
+        subset,
+      })
+    } catch (err) {
+      setError(err.message)
+      return
+    }
+    setResultsTitle(name)
+    setShowResultsScreen(true)
   }
 
   useEffect(() => {
@@ -503,13 +531,13 @@ function App() {
     setShowInstructionsModal(false)
   }
 
-  async function handleSaveRanking(name) {
-    // Let a failure here propagate to the modal, which shows it inline.
-    // { family, popular } scopes the snapshot + reset to the active subset,
-    // leaving the rest of the pool's progress untouched.
-    await api.saveRanking(name, { family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13, subset })
-    setShowSaveModal(false)
+  // The ranking is already auto-saved by the time this runs (see
+  // autoSaveCompletedRanking) — dismissing the Results screen just starts a
+  // fresh run for this scope, the same reset-and-refetch that used to
+  // follow a manual save.
+  async function handleResultsDismiss() {
     setShowResultsScreen(false)
+    setResultsTitle(null)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
@@ -704,16 +732,9 @@ function App() {
       {showResultsScreen && movies && (
         <ResultsScreen
           movies={movies}
-          onSaveClick={() => setShowSaveModal(true)}
-          onDismiss={() => setShowResultsScreen(false)}
-        />
-      )}
-      {showSaveModal && (
-        <SaveRankingModal
-          onSave={handleSaveRanking}
-          onDismiss={() => setShowSaveModal(false)}
-          subset={subset}
-          pg13={effectivePg13}
+          title={resultsTitle}
+          subtitle="Saved automatically"
+          onDismiss={handleResultsDismiss}
         />
       )}
       {showResetModal && (
