@@ -760,7 +760,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStandingsDrawer(true)}
-              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
               style={{
                 top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
@@ -781,7 +781,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowSkippedView(true)}
-              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
               style={{
                 top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
