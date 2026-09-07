@@ -115,6 +115,39 @@ function sample(array, n, random) {
   return shuffle(array, random).slice(0, n)
 }
 
+// Weighted, without-replacement sample: on each draw, an item's chance of
+// being picked is proportional to `weightFn(item)`. Used in place of plain
+// `sample` wherever we're choosing among already-ranked movies, so movies
+// ranked only once or twice keep getting reinforced instead of the same
+// heavily-ranked handful being reused as overlap filler / Head to Head
+// opponents every time (#219).
+function weightedSample(array, n, weightFn, random) {
+  const pool = [...array]
+  const result = []
+  while (pool.length > 0 && result.length < n) {
+    const weights = pool.map(weightFn)
+    const total = weights.reduce((sum, w) => sum + w, 0)
+    let r = random() * total
+    let idx = pool.length - 1
+    for (let i = 0; i < pool.length; i++) {
+      r -= weights[i]
+      if (r <= 0) {
+        idx = i
+        break
+      }
+    }
+    result.push(pool[idx])
+    pool.splice(idx, 1)
+  }
+  return result
+}
+
+// Lower `timesRanked` -> higher weight, so less-reinforced movies are more
+// likely to be picked from an already-ranked pool.
+function rankedWeight(movie) {
+  return 1 / ((movie.timesRanked || 0) + 1)
+}
+
 function labelFor(picks) {
   if (picks.length === 1) return LABELS[picks[0].type](picks[0].value)
   return pairLabel(picks)
@@ -124,14 +157,23 @@ function labelFor(picks) {
 // attribute types, and returns the movies matching all picked values —
 // or null if fewer than 5 movies match. `excludedAttributes` (#160) keeps
 // the active subset's own defining attribute value out of the candidate
-// pool, whether picked solo or as one half of a pair.
-export function tryBuildCategory(movies, random, excludedAttributes = []) {
+// pool, whether picked solo or as one half of a pair. The candidate
+// attribute *values* are drawn from not-yet-ranked movies first (falling
+// back to the whole pool only when none remain) — this builds categories
+// around attributes an unranked movie actually has, rather than picking
+// blind, so unranked movies are far more likely to end up in `matches`
+// (#224) instead of the category happening to be built entirely around
+// movies that are already ranked.
+export function tryBuildCategory(movies, random, excludedAttributes = [], isRanked = () => false) {
   const usePair = random() < 0.5
   const types = shuffle(ATTRIBUTE_TYPES, random)
   const picks = []
 
+  const unranked = movies.filter((m) => !isRanked(m))
+  const firstSource = unranked.length > 0 ? unranked : movies
+
   const firstType = types[0]
-  const firstPool = movies
+  const firstPool = firstSource
     .flatMap((m) => attributeValues(m, firstType))
     .filter((value) => !isExcludedPick(firstType, value, excludedAttributes))
   if (firstPool.length === 0) return null
@@ -142,7 +184,9 @@ export function tryBuildCategory(movies, random, excludedAttributes = []) {
     const remaining = movies.filter((m) =>
       matchesAttribute(m, picks[0].type, picks[0].value),
     )
-    const secondPool = remaining
+    const remainingUnranked = remaining.filter((m) => !isRanked(m))
+    const secondSource = remainingUnranked.length > 0 ? remainingUnranked : remaining
+    const secondPool = secondSource
       .flatMap((m) => attributeValues(m, secondType))
       .filter((value) => !isExcludedPick(secondType, value, excludedAttributes))
     if (secondPool.length > 0) {
@@ -181,18 +225,34 @@ function selectFivePack(matches, { isRanked, random, totalRankedCount }) {
 
   const unrankedPicks = sample(unranked, Math.min(neededUnranked, unranked.length), random)
   const shortfall = 5 - unrankedPicks.length
-  const rankedPicks = sample(ranked, Math.min(shortfall, ranked.length), random)
+  const rankedPicks = weightedSample(ranked, Math.min(shortfall, ranked.length), rankedWeight, random)
 
   return shuffle([...unrankedPicks, ...rankedPicks], random)
 }
 
+// Swaps `forced` into `pack` if it isn't already there — preferring to
+// bump an already-ranked filler slot (there to provide overlap, not
+// precious) and only falling back to bumping an unranked slot if the pack
+// happens to have none.
+function ensureIncluded(pack, forced, isRanked) {
+  if (!forced || pack.some((m) => m.id === forced.id)) return pack
+  const result = [...pack]
+  const rankedIdx = result.findIndex((m) => isRanked(m))
+  const replaceIdx = rankedIdx !== -1 ? rankedIdx : result.length - 1
+  result[replaceIdx] = forced
+  return result
+}
+
 // A "Random Five" pack skips the attribute filter and draws from the whole
 // pool, still subject to the same overlap rule as attribute-based packs.
-// Returns null if the pool itself is smaller than 5.
-function randomFivePack(movies, selectOptions) {
+// Returns null if the pool itself is smaller than 5. `forced`, when given,
+// is guaranteed a slot in the pack (#224's forced-inclusion backstop — see
+// generateCategory below) — attribute-based packs are deliberately left
+// alone so a category's label stays accurate to its 5 movies.
+function randomFivePack(movies, selectOptions, forced) {
   const pack = selectFivePack(movies, selectOptions)
   if (pack.length !== 5) return null
-  return { label: RANDOM_FIVE_LABEL, movies: pack }
+  return { label: RANDOM_FIVE_LABEL, movies: ensureIncluded(pack, forced, selectOptions.isRanked) }
 }
 
 // Shared by "Head to Head" and "Top 10 Tough Choice": a 2-movie
@@ -207,7 +267,7 @@ function rankedTopPack(movies, { isRanked, random }, poolSize, label) {
     .sort((a, b) => b.eloRating - a.eloRating)
     .slice(0, poolSize)
   if (ranked.length < 2) return null
-  return { label, movies: sample(ranked, 2, random), type: HEAD_TO_HEAD_TYPE }
+  return { label, movies: weightedSample(ranked, 2, rankedWeight, random), type: HEAD_TO_HEAD_TYPE }
 }
 
 function headToHeadPack(movies, selectOptions) {
@@ -243,6 +303,18 @@ function toughChoicePack(movies, selectOptions) {
 // (HEAD_TO_HEAD_CHANCE), drawn from the current top 50 ranked movies, and
 // an even rarer "Top 10 Tough Choice" variant (TOP_10_TOUGH_CHOICE_CHANCE)
 // is checked first, drawn from just the top 10.
+//
+// Forced-inclusion backstop (#224): `tryBuildCategory`'s own bias toward
+// unranked movies (see above) and `selectFivePack`'s overlap rule make it
+// likely that any still-unranked movie eventually surfaces on its own, but
+// nothing guarantees it. As a backstop, whichever not-yet-ranked movie is
+// at `unranked[totalRankedCount % unranked.length]` is forced into every
+// Random Five pack this call produces (chance-triggered or the
+// attempt-exhausted fallback — never into an attribute pack, which would
+// make its label inaccurate). `totalRankedCount` only changes when a
+// "Rank ->" actually lands, so this deterministically rotates which
+// straggler gets forced next as ranking progresses, without needing any
+// new persisted state.
 export function generateCategory(
   movies,
   {
@@ -253,6 +325,8 @@ export function generateCategory(
   } = {},
 ) {
   const selectOptions = { isRanked, random, totalRankedCount }
+  const unranked = movies.filter((m) => !isRanked(m))
+  const forced = unranked.length > 0 ? unranked[totalRankedCount % unranked.length] : null
 
   if (random() < TOP_10_TOUGH_CHOICE_CHANCE) {
     const toughChoice = toughChoicePack(movies, selectOptions)
@@ -265,12 +339,12 @@ export function generateCategory(
   }
 
   if (random() < RANDOM_FIVE_CHANCE) {
-    const randomPack = randomFivePack(movies, selectOptions)
+    const randomPack = randomFivePack(movies, selectOptions, forced)
     if (randomPack) return randomPack
   }
 
   for (let attempt = 0; attempt < MAX_CATEGORY_ATTEMPTS; attempt++) {
-    const category = tryBuildCategory(movies, random, excludedAttributes)
+    const category = tryBuildCategory(movies, random, excludedAttributes, isRanked)
     if (!category) continue
     const pack = selectFivePack(category.movies, selectOptions)
     if (pack.length === 5) {
@@ -278,5 +352,5 @@ export function generateCategory(
     }
   }
 
-  return randomFivePack(movies, selectOptions)
+  return randomFivePack(movies, selectOptions, forced)
 }
