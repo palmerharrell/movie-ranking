@@ -250,11 +250,11 @@ exposed in the UI.
 - **Upcoming queue:** rather than a single "next category" generated on
   demand, the app keeps a small queue of pre-generated upcoming packs (8,
   `QUEUE_SIZE` in `App.jsx` — #134). Rather than a separate always-visible
-  list column, it's surfaced via an icon-only dropdown (`QueueMenu.jsx`, no
-  text label) in the pack card's own header, top-right, next to the pack's
-  category label — opening it shows the same queued-pack cards (poster
-  stack + label) as before, just on demand instead of permanently occupying
-  layout space.
+  list column, it's surfaced via a dropdown (`QueueMenu.jsx`) in the pack
+  card's own header, top-right, next to the pack's category label —
+  labeled "Up Next" (#275) beside its icon, rather than icon-only — opening
+  it shows the same queued-pack cards (poster stack + label) as before,
+  just on demand instead of permanently occupying layout space.
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
   - **Clicking a queued pack** (from the dropdown) discards the current
