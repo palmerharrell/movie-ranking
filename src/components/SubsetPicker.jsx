@@ -18,7 +18,7 @@ export function SubsetPicker({ subset, onChange, allMoviesCount }) {
       <select
         value={subset}
         onChange={(event) => onChange(event.target.value)}
-        className="subset-select text-[11px] font-medium uppercase tracking-[0.1em]"
+        className="subset-select text-[15px] font-medium uppercase tracking-[0.07em]"
       >
         <optgroup label="Curated Lists">
           {CURATED_SUBSETS.map((s) => (

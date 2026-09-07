@@ -119,10 +119,10 @@ body {
 }
 
 .subset-select {
-  width: 130px;
-  height: 37px;
+  width: 180px;
+  height: 46px;
   box-sizing: border-box;
-  padding: 6px 34px 6px 12px;
+  padding: 8px 38px 8px 14px;
   border: 1px solid var(--surface-border);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
@@ -146,10 +146,10 @@ body {
 .subset-select-arrow {
   position: absolute;
   top: 50%;
-  right: 16px;
+  right: 18px;
   transform: translateY(-50%);
   color: var(--text-mid);
-  font-size: 10px;
+  font-size: 13px;
   pointer-events: none;
 }
 
