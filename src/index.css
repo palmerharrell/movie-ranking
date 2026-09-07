@@ -5,6 +5,20 @@
   color-scheme: dark;
 }
 
+/* Locks the page itself so it can't scroll or rubber-band (#270) — the
+   app-shell (`h-screen overflow-hidden`) already constrains layout to the
+   viewport, but html/body themselves were still scrollable/bounceable as a
+   fallback (e.g. a mobile browser's URL bar collapsing can momentarily
+   change viewport height). Internal areas (main pack column, standings
+   list, drawers, etc.) keep scrolling normally via their own
+   `overflow-y-auto`. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
 }
