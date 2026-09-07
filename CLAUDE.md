@@ -485,7 +485,18 @@ exposed in the UI.
   drawer (#269) is a fixed overlay regardless of screen size. Each tab hides
   itself while its own drawer is open (the drawer already occupies that
   edge), and the Skipped tab only appears once `skippedCount > 0`, same as
-  the inline button it replaced.
+  the inline button it replaced. Vertically, the tabs align with the Rank
+  button (#289) rather than sitting at the viewport's fixed center —
+  `App.jsx`'s `tabsCenterY` measures the Rank button's own wrapping row
+  (`rankRowRef`) via `getBoundingClientRect()` in a `useLayoutEffect` keyed
+  on whatever could change its position (`category`, `packs`, `busy`,
+  `switchingSubset`), plus a window resize listener; a Head to Head pack
+  unmounts that row entirely (no Rank button there), so the tabs just keep
+  whatever position was last measured from a normal pack instead of
+  updating. The measured value is applied via inline `style={{ top:
+  tabsCenterY }}` rather than a CSS percentage, so `.edge-tab-left`/
+  `.edge-tab-right` in `index.css` only own the fixed positioning and the
+  horizontal peek/hover transform, not the vertical offset.
 - **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
   pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
   — a bigger card with the poster, full (untruncated) title, director, full
