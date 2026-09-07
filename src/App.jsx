@@ -11,6 +11,7 @@ import { SkippedView } from './components/SkippedView.jsx'
 import { BannerMenu } from './components/BannerMenu.jsx'
 import { InstructionsModal } from './components/InstructionsModal.jsx'
 import { MovieDetailModal } from './components/MovieDetailModal.jsx'
+import { PackIntroOverlay } from './components/PackIntroOverlay.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -40,6 +41,13 @@ const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
 // Persists across sessions like the other banner toggles above.
 const COLOR_MODE_STORAGE_KEY = 'movie-ranking-color-mode'
 const QUEUE_SIZE = 8
+// How long the Head to Head / Top 10 Tough Choice intro announcement
+// (#298) is shown before it starts fading, and how long the fade itself
+// takes — must match .pack-intro-overlay's own transition duration in
+// index.css so the overlay is actually gone (not just transparent and
+// still blocking clicks) by the time it unmounts.
+const PACK_INTRO_DISPLAY_MS = 1400
+const PACK_INTRO_FADE_MS = 300
 
 function initialSubset() {
   const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
@@ -140,6 +148,12 @@ function App() {
   // viewport's fixed vertical center.
   const rankRowRef = useRef(null)
   const [tabsCenterY, setTabsCenterY] = useState(null)
+  // Screen-filling "Head to Head!"/"Top 10 Tough Choice!" announcement
+  // (#298) shown for a beat before one of those packs becomes interactive
+  // — see the effect below. `label` is the announced pack's own category
+  // label (so the overlay text always matches); `fading` drives the CSS
+  // opacity transition before the overlay unmounts.
+  const [packIntro, setPackIntro] = useState(null) // { label, fading } | null
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -252,6 +266,33 @@ function App() {
       document.body.style.overflow = previousOverflow
     }
   }, [showStandingsDrawer, showSkippedView])
+
+  // Announces a Head to Head / Top 10 Tough Choice pack (#298) with a
+  // screen-filling "<label>!" overlay for a beat before it's shown — fires
+  // whenever `category` itself changes (a fresh reference every time a pack
+  // is promoted to active, whether via "Rank ->", a queued-pack pick, or a
+  // subset switch) and the newly-active pack is one of those two types.
+  // Distinguishing "Head to Head" from "Top 10 Tough Choice" is just a
+  // matter of using the pack's own label — both share HEAD_TO_HEAD_TYPE.
+  useEffect(() => {
+    if (!category || category.type !== HEAD_TO_HEAD_TYPE) {
+      setPackIntro(null)
+      return undefined
+    }
+    setPackIntro({ label: category.label, fading: false })
+    const fadeTimer = setTimeout(
+      () => setPackIntro((prev) => (prev ? { ...prev, fading: true } : prev)),
+      PACK_INTRO_DISPLAY_MS
+    )
+    const removeTimer = setTimeout(
+      () => setPackIntro(null),
+      PACK_INTRO_DISPLAY_MS + PACK_INTRO_FADE_MS
+    )
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(removeTimer)
+    }
+  }, [category])
 
   // Keeps the Ranked/Skipped edge tabs (#289) vertically aligned with the
   // Rank button rather than fixed at the viewport's vertical center — the
@@ -760,7 +801,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStandingsDrawer(true)}
-              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
               style={{
                 top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
@@ -781,7 +822,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowSkippedView(true)}
-              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
               style={{
                 top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
@@ -843,7 +884,7 @@ function App() {
                   <HeadToHeadPanel
                     category={category}
                     onPick={handleHeadToHeadPick}
-                    disabled={busy || switchingSubset}
+                    disabled={busy || switchingSubset || !!packIntro}
                     queue={queue}
                     onSelectQueued={handleSelectQueued}
                     onOpenDetail={setDetailMovie}
@@ -887,6 +928,8 @@ function App() {
           </main>
         </div>
       </div>
+
+      {packIntro && <PackIntroOverlay label={packIntro.label} fading={packIntro.fading} />}
 
       {showResultsScreen && movies && (
         <ResultsScreen
