@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-export function MovieTile({ movie, rank, onSkip, disabled }) {
+export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: movie.id })
 
@@ -19,8 +19,9 @@ export function MovieTile({ movie, rank, onSkip, disabled }) {
       style={style}
       {...attributes}
       {...listeners}
+      onClick={() => onOpenDetail(movie)}
       className="movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5"
-      aria-label={`Drag to reorder ${movie.title}`}
+      aria-label={`Drag to reorder ${movie.title}, or click to see full details`}
     >
       <div className="flex shrink-0 flex-col items-center gap-1.5">
         <span className={`movie-tile-rank text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>

@@ -7,14 +7,15 @@ function sortMovies(movies) {
   })
 }
 
-function StandingsRow({ movie, rank, isLast }) {
+function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
   const rankedClass = movie.timesRanked >= 1 ? 'ranked' : ''
   const tensClass = rank % 10 === 0 && !isLast ? 'tens-line' : ''
 
   return (
     <li
-      className={`standings-row flex items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
+      onClick={() => onOpenDetail(movie)}
+      className={`standings-row flex cursor-pointer items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
     >
       <span className="standings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
       <div className="poster-placeholder h-[56px] w-[38px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
@@ -34,7 +35,7 @@ function StandingsRow({ movie, rank, isLast }) {
   )
 }
 
-export function LeftPanel({ movies, onReset }) {
+export function LeftPanel({ movies, onReset, onOpenDetail }) {
   // Skipped ("haven't seen") movies are excluded from pack generation and
   // the progress denominator (#136) — the Standings list itself should
   // match, rather than still showing them at their default rank (#174).
@@ -75,6 +76,7 @@ export function LeftPanel({ movies, onReset }) {
             movie={movie}
             rank={index + 1}
             isLast={index === sorted.length - 1}
+            onOpenDetail={onOpenDetail}
           />
         ))}
       </ol>

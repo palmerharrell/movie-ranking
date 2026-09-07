@@ -13,7 +13,7 @@ import * as api from '../lib/api.js'
 // itself (api.getSkippedMovies) rather than relying on App.jsx's
 // subset-filtered `movies` — a movie skipped under one subset must still
 // show up here (and be reachable via "Clear all") after switching subsets.
-export function SkippedView({ onClose, onChange }) {
+export function SkippedView({ onClose, onChange, onOpenDetail }) {
   const [skipped, setSkipped] = useState(null)
   const [error, setError] = useState(null)
 
@@ -67,7 +67,11 @@ export function SkippedView({ onClose, onChange }) {
           skipped && (
             <ul className="standings-list mt-3 flex max-h-[60vh] flex-col overflow-y-auto pr-[15px]">
               {skipped.map((movie) => (
-                <li key={movie.id} className="standings-row flex items-center gap-3 px-2 py-1.5">
+                <li
+                  key={movie.id}
+                  onClick={() => onOpenDetail(movie)}
+                  className="standings-row flex cursor-pointer items-center gap-3 px-2 py-1.5"
+                >
                   <div className="poster-placeholder h-[56px] w-[38px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
                     {movie.posterUrl && (
                       <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
@@ -86,7 +90,10 @@ export function SkippedView({ onClose, onChange }) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleUnskip(movie.id)}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      handleUnskip(movie.id)
+                    }}
                     className="saved-ranking-row shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium"
                   >
                     Un-skip

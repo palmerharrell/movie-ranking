@@ -10,6 +10,7 @@ import { LoadRankingView } from './components/LoadRankingView.jsx'
 import { SkippedView } from './components/SkippedView.jsx'
 import { BannerMenu } from './components/BannerMenu.jsx'
 import { InstructionsModal } from './components/InstructionsModal.jsx'
+import { MovieDetailModal } from './components/MovieDetailModal.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -99,6 +100,10 @@ function App() {
   const [showSkippedView, setShowSkippedView] = useState(false)
   const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
   const [showInstructionsModal, setShowInstructionsModal] = useState(initialShowInstructions)
+  // The movie shown in the big detail card (#222, #223) — tapping/clicking a
+  // movie in a pack, the standings, the skipped list, or a Head to Head
+  // card's own info button opens it; null when no detail card is showing.
+  const [detailMovie, setDetailMovie] = useState(null)
   // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
   // (#182/#183) — fetched once since it's independent of the active subset.
   const [allMoviesCount, setAllMoviesCount] = useState(null)
@@ -692,7 +697,11 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel movies={movies} onReset={() => setShowResetModal(true)} />
+              <LeftPanel
+                movies={movies}
+                onReset={() => setShowResetModal(true)}
+                onOpenDetail={setDetailMovie}
+              />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (
@@ -712,6 +721,7 @@ function App() {
                     disabled={busy || switchingSubset}
                     queue={queue}
                     onSelectQueued={handleSelectQueued}
+                    onOpenDetail={setDetailMovie}
                   />
                 ) : (
                   <RightPanel
@@ -726,6 +736,7 @@ function App() {
                     disabled={busy || switchingSubset}
                     queue={queue}
                     onSelectQueued={handleSelectQueued}
+                    onOpenDetail={setDetailMovie}
                   />
                 )
               ) : error ? (
@@ -773,13 +784,20 @@ function App() {
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
-        <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
+        <SkippedView
+          onChange={handleSkippedViewChange}
+          onClose={() => setShowSkippedView(false)}
+          onOpenDetail={setDetailMovie}
+        />
       )}
       {showInstructionsModal && (
         <InstructionsModal
           onClose={handleCloseInstructions}
           initialShowOnLoad={initialShowInstructions()}
         />
+      )}
+      {detailMovie && (
+        <MovieDetailModal movie={detailMovie} onClose={() => setDetailMovie(null)} />
       )}
     </div>
   )
