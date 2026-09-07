@@ -163,24 +163,6 @@ body {
   color: var(--text-high);
 }
 
-/* PG-13-and-under toggle (#193) — global, composes with whichever subset is
-   active, so it's styled alongside the subset picker rather than as part of
-   any one theme. */
-.pg13-toggle {
-  color: var(--text-mid);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.pg13-toggle:hover {
-  color: var(--text-high);
-}
-
-.pg13-toggle input {
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 /* Body / standings column */
 
 .standings-divider {
@@ -769,6 +751,30 @@ body {
 .banner-menu-item:hover {
   background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-high);
+}
+
+.banner-menu-divider {
+  margin: 4px 2px;
+  border: none;
+  border-top: 1px solid var(--surface-border);
+}
+
+.banner-menu-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.banner-menu-checkbox-item input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.banner-menu-checkbox-item:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Light/Dark Mode toggle (#265) */
