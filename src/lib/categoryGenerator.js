@@ -17,6 +17,12 @@ const HEAD_TO_HEAD_CHANCE = 0.1
 const HEAD_TO_HEAD_LABEL = 'Head to Head'
 const HEAD_TO_HEAD_POOL_SIZE = 50
 export const HEAD_TO_HEAD_TYPE = 'head-to-head'
+// Below this many ranked movies, the "top 50 by eloRating" pool Head to
+// Head draws from is really just "every movie ranked so far" — no more
+// meaningful a "top" than the very first pack ranked (#217). Mirrors
+// MIN_RANKED_FOR_TOUGH_CHOICE below, just at a lower bar since Head to
+// Head's own pool (50) is already much larger than Tough Choice's (10).
+const MIN_RANKED_FOR_HEAD_TO_HEAD = 20
 // A rarer, tighter-pool variant of Head to Head (#131): 2 movies from the
 // current top 10 by eloRating instead of the top 50. Gated behind a higher
 // ranked-count threshold than the overlap requirement — with only a
@@ -205,6 +211,7 @@ function rankedTopPack(movies, { isRanked, random }, poolSize, label) {
 }
 
 function headToHeadPack(movies, selectOptions) {
+  if (selectOptions.totalRankedCount < MIN_RANKED_FOR_HEAD_TO_HEAD) return null
   return rankedTopPack(movies, selectOptions, HEAD_TO_HEAD_POOL_SIZE, HEAD_TO_HEAD_LABEL)
 }
 

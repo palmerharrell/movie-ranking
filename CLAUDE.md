@@ -112,8 +112,13 @@ exposed in the UI.
   the skipped movie out of any already-generated queued packs that include
   it (#155, `replaceDiscardedQueuePacks` in `App.jsx`) — otherwise a movie
   just marked "haven't seen" could resurface if that pre-generated queue
-  pack were later selected. A queued pack that drops to <=1 movie this way
-  is discarded and replaced with a freshly generated one. Skip is persistent
+  pack were later selected. Any queued pack containing the skipped movie is
+  discarded wholesale and replaced with a freshly generated one, rather than
+  just filtering the skipped movie out of it in place (#218) — packs are
+  always meant to be a fixed size (5, or 2 for Head to Head), so quietly
+  shrinking one in place instead of regenerating it could let a queued pack
+  lose several movies across separate skips over time and eventually
+  surface with too few tiles. Skip is persistent
   (#136), not just for the active pack: a skipped movie
   is marked "haven't seen" in this browser's local state
   (`src/lib/localRankingStore.js`) and is permanently excluded from future
@@ -172,7 +177,13 @@ exposed in the UI.
   ranked movies by `eloRating` — with a 10% chance on each pack generated
   (`HEAD_TO_HEAD_CHANCE`), checked before the Random Five chance. Falls
   through to the normal pack flow if fewer than 2 ranked movies (with a real
-  `eloRating`) are available yet. Since both movies are already-ranked, a
+  `eloRating`) are available yet, or if fewer than
+  `MIN_RANKED_FOR_HEAD_TO_HEAD` (20) movies have been ranked overall (#217)
+  — below that, "top 50 by eloRating" is really just every movie ranked so
+  far, no more meaningful a "top" than the very first pack ranked (mirrors
+  Top 10 Tough Choice's own higher `MIN_RANKED_FOR_TOUGH_CHOICE` floor
+  below, just set lower since Head to Head's pool (50) is already much
+  larger than Tough Choice's (10)). Since both movies are already-ranked, a
   Head to Head pack has no "Haven't Seen" skip button, no drag-and-drop, and
   no separate "Rank →" confirmation — clicking one of the two movies submits
   a single pairwise Elo update (`HeadToHeadPanel.jsx`) and advances the queue

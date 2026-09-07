@@ -354,11 +354,13 @@ function App() {
   // still discards immediately, since there's nothing left to show.
   //
   // Queued packs were pre-generated and may already include the
-  // now-skipped movie (#155) — filtering it out here (rather than waiting
-  // until that pack is promoted to active) keeps a skipped movie from
-  // surfacing again just because it was already baked into a
-  // not-yet-selected queue pack. A queued pack that drops to <=1 movie is
-  // unusable, so it's handed to replaceDiscardedQueuePacks above.
+  // now-skipped movie (#155) — any such pack is discarded and replaced
+  // wholesale via replaceDiscardedQueuePacks above, rather than just
+  // filtering the skipped movie out of it in place. Packs are always meant
+  // to be a fixed size (5, or 2 for Head to Head) — quietly shrinking one in
+  // place instead of regenerating it left the door open for a queued pack
+  // to lose several movies across separate skips over time and eventually
+  // surface with too few tiles (#218).
   function handleSkipMovie(movieId) {
     // The pack is already down to its one remaining movie and awaiting the
     // "skip this one too?" decision (#156) — clicking that same movie's own
@@ -380,20 +382,11 @@ function App() {
       } else if (remaining.length === 0) {
         pendingSkipOutcome.current = 'discard-empty'
       }
-      const discards = []
-      const updatedQueue = prev.slice(1).map((pack) => {
-        if (!pack.movies.some((m) => m.id === movieId)) return pack
-        const packRemaining = pack.movies.filter((m) => m.id !== movieId)
-        if (packRemaining.length <= 1) {
-          discards.push(pack)
-          return pack
-        }
-        return { ...pack, movies: packRemaining }
-      })
+      const discards = prev.slice(1).filter((pack) => pack.movies.some((m) => m.id === movieId))
       if (discards.length > 0) {
         pendingQueueDiscards.current = discards
       }
-      return [activePack, ...updatedQueue]
+      return [activePack, ...prev.slice(1)]
     })
     setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
