@@ -32,6 +32,16 @@ const TOP_10_TOUGH_CHOICE_CHANCE = 0.04
 const TOP_10_TOUGH_CHOICE_LABEL = 'Top 10 Tough Choice'
 const TOP_10_TOUGH_CHOICE_POOL_SIZE = 10
 const MIN_RANKED_FOR_TOUGH_CHOICE = 50
+// How often a turn offers 3 candidate packs to choose from instead of just
+// generating the next one (#297) — checked independently of, and before,
+// generateCategory's own Tough Choice/Head to Head/Random Five rolls (see
+// generateTurn below).
+export const PACK_CHOICE_CHANCE = 0.35
+const PACK_CHOICE_OPTION_COUNT = 3
+// Bounded retries for building 3 *distinct*-label candidates — a small/
+// heavily filtered pool may not have 3 distinct viable categories, so this
+// gives up and allows a repeat label rather than looping forever.
+const MAX_CHOICE_OPTION_ATTEMPTS = 10
 
 const ATTRIBUTE_TYPES = [
   'director',
@@ -314,7 +324,17 @@ function toughChoicePack(movies, selectOptions) {
 // make its label inaccurate). `totalRankedCount` only changes when a
 // "Rank ->" actually lands, so this deterministically rotates which
 // straggler gets forced next as ranking progresses, without needing any
-// new persisted state.
+// new persisted state. `forcedIndexOffset` (#297) shifts that rotation —
+// generateTurn's 3 choice candidates share the same `movies`/
+// `totalRankedCount` snapshot (none of them have been submitted yet), so
+// without an offset they'd all compute the identical forced movie if more
+// than one happens to roll Random Five; each candidate passes its own
+// offset instead.
+//
+// `allowHeadToHead` (#297, default true) lets generateTurn build a choice
+// candidate that skips the Tough Choice/Head to Head rolls entirely — those
+// two are never one of the 3 offered choices (a completely different
+// 2-movie, single-click UI), only ever appearing on their own forced turns.
 export function generateCategory(
   movies,
   {
@@ -322,18 +342,23 @@ export function generateCategory(
     totalRankedCount = 0,
     random = Math.random,
     excludedAttributes = [],
+    allowHeadToHead = true,
+    forcedIndexOffset = 0,
   } = {},
 ) {
   const selectOptions = { isRanked, random, totalRankedCount }
   const unranked = movies.filter((m) => !isRanked(m))
-  const forced = unranked.length > 0 ? unranked[totalRankedCount % unranked.length] : null
+  const forced =
+    unranked.length > 0
+      ? unranked[(totalRankedCount + forcedIndexOffset) % unranked.length]
+      : null
 
-  if (random() < TOP_10_TOUGH_CHOICE_CHANCE) {
+  if (allowHeadToHead && random() < TOP_10_TOUGH_CHOICE_CHANCE) {
     const toughChoice = toughChoicePack(movies, selectOptions)
     if (toughChoice) return toughChoice
   }
 
-  if (random() < HEAD_TO_HEAD_CHANCE) {
+  if (allowHeadToHead && random() < HEAD_TO_HEAD_CHANCE) {
     const headToHead = headToHeadPack(movies, selectOptions)
     if (headToHead) return headToHead
   }
@@ -353,4 +378,58 @@ export function generateCategory(
   }
 
   return randomFivePack(movies, selectOptions, forced)
+}
+
+// Decides whether the next turn is a single forced pack (today's exact
+// generateCategory behavior, Tough Choice/Head to Head/Random Five chances
+// included) or a 3-way choice of candidate packs (#297) — checked first,
+// independently of generateCategory's own internal rolls, via
+// PACK_CHOICE_CHANCE. Each choice candidate is built with
+// `allowHeadToHead: false` (Tough Choice/Head to Head only ever appear on
+// their own, un-chosen, forced turns) and its own `forcedIndexOffset` so the
+// three candidates — all drawn from the same movies/totalRankedCount
+// snapshot, since none of them have been submitted yet — don't all force in
+// the identical backstop movie if more than one rolls Random Five.
+export function generateTurn(
+  movies,
+  { isRanked = () => false, totalRankedCount = 0, random = Math.random, excludedAttributes = [] } = {},
+) {
+  if (random() < PACK_CHOICE_CHANCE) {
+    const buildCandidate = (index) =>
+      generateCategory(movies, {
+        isRanked,
+        totalRankedCount,
+        random,
+        excludedAttributes,
+        allowHeadToHead: false,
+        forcedIndexOffset: index,
+      })
+
+    const options = []
+    let attempts = 0
+    // A pool too small (< 5 movies, e.g. a heavily filtered subset) makes
+    // generateCategory itself return null — never push those, and never
+    // spin forever chasing a 3rd distinct-label option that can't exist.
+    while (options.length < PACK_CHOICE_OPTION_COUNT && attempts < MAX_CHOICE_OPTION_ATTEMPTS) {
+      const candidate = buildCandidate(options.length)
+      attempts++
+      if (candidate && !options.some((o) => o.label === candidate.label)) {
+        options.push(candidate)
+      }
+    }
+    // Still short (pool too small/filtered for 3 distinct labels) — fill
+    // the rest even with a repeat label or a null placeholder is never
+    // pushed, so this can legitimately return fewer than 3 options.
+    while (options.length < PACK_CHOICE_OPTION_COUNT && attempts < MAX_CHOICE_OPTION_ATTEMPTS * 2) {
+      const candidate = buildCandidate(options.length)
+      attempts++
+      if (candidate) options.push(candidate)
+    }
+    return { type: 'choice', options }
+  }
+
+  return {
+    type: 'pack',
+    pack: generateCategory(movies, { isRanked, totalRankedCount, random, excludedAttributes }),
+  }
 }

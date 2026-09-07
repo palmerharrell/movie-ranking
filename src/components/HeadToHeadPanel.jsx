@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
-import { QueueMenu } from './QueueMenu.jsx'
 import { formatPackLabel } from '../lib/labelWording.js'
 
 // How long the winner-slides-to-center / loser-slides-off animation plays
@@ -94,8 +93,6 @@ export function HeadToHeadPanel({
   category,
   onPick,
   disabled,
-  queue,
-  onSelectQueued,
   onOpenDetail,
 }) {
   const [first, second] = category.movies
@@ -142,7 +139,6 @@ export function HeadToHeadPanel({
     <div className="pack-card">
       <div className="mb-3 flex items-start justify-between gap-3">
         <h2 className="pack-category-label">{formatPackLabel(category.label)}</h2>
-        <QueueMenu queue={queue} disabled={disabled} onSelect={onSelectQueued} />
       </div>
       <div className="flex items-stretch gap-3 overflow-hidden">
         {(phase !== 'holding' || first.id === pickedId) && (
