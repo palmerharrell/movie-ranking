@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 // toggle. Standings only makes sense as a menu action on mobile: on desktop
 // the standings panel is always visible in the left column already, so that
 // item is hidden at the md breakpoint, same as the old standalone button was.
-export function BannerMenu({ onStandings, onLoadRanking, onSkipped }) {
+// Instructions (#237) reopens the startup InstructionsModal on demand.
+export function BannerMenu({ onStandings, onLoadRanking, onSkipped, onInstructions }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
 
@@ -59,6 +60,9 @@ export function BannerMenu({ onStandings, onLoadRanking, onSkipped }) {
           </button>
           <button type="button" onClick={() => pick(onSkipped)} className="banner-menu-item">
             Skipped
+          </button>
+          <button type="button" onClick={() => pick(onInstructions)} className="banner-menu-item">
+            Instructions
           </button>
         </div>
       )}

@@ -470,18 +470,24 @@ exposed in the UI.
   button (`BannerMenu.jsx`, no text label) on the left — opening it reveals
   Standings (mobile-only; desktop already shows the standings panel
   in-line), a "Load Ranking" entry point for browsing saved snapshots (see
-  **Saved rankings**), and a "Skipped" entry point for browsing/un-skipping
-  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**) — then
-  the subset picker, then the PG-13-and-under toggle (#193, see **PG-13 and
-  under toggle**) flush right. A large, very-faint film-reel watermark
-  (baked-in low alpha, not CSS `opacity`, so it doesn't fade the banner's
-  own gradient) sits behind the whole app-shell under the Neon theme only —
-  see **Movie subsets**.
-- **Startup instructions:** a one-time popup (`InstructionsModal.jsx`,
-  shown unless dismissed with "Don't show this again",
-  `movie-ranking-hide-instructions` in `localStorage`) explains the drag/
-  Rank/Head-to-Head flow and what each banner control above does, replacing
-  the old always-visible per-pack captions.
+  **Saved rankings**), a "Skipped" entry point for browsing/un-skipping
+  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), and an
+  "Instructions" entry point (#237) that reopens the startup instructions
+  popup on demand — then the subset picker, then the PG-13-and-under toggle
+  (#193, see **PG-13 and under toggle**) flush right. A large, very-faint
+  film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
+  fade the banner's own gradient) sits behind the whole app-shell under the
+  Neon theme only — see **Movie subsets**.
+- **Startup instructions:** a one-time popup (`InstructionsModal.jsx`) shown
+  on startup unless its "Show on load" checkbox (#236, checked by default)
+  was left unchecked on a previous visit (`movie-ranking-hide-instructions`
+  in `localStorage` — presence of the key means "hidden," inverse of the
+  checkbox's own sense) — explains the drag/Rank/Head-to-Head flow and what
+  each banner control above does, replacing the old always-visible per-pack
+  captions. Also reachable any time via the ☰ menu's "Instructions" item
+  (#237, see banner row above), in which case the checkbox reflects
+  whatever the stored preference currently is rather than always defaulting
+  to checked.
 
 ## Movie subsets (#104, #146, #150, #151, #180, #181)
 There are no more cosmetic-only "themes" — the banner's picker

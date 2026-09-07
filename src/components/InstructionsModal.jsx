@@ -4,9 +4,12 @@ import { useState } from 'react'
 // handling in App.jsx) in place of the old always-visible captions on the
 // pack card ("Drag to reorder...", "Click the one you'd rank higher") —
 // those took up header space on every pack; a one-time popup covers the
-// same ground without that per-pack cost.
-export function InstructionsModal({ onClose }) {
-  const [dontShowAgain, setDontShowAgain] = useState(false)
+// same ground without that per-pack cost. Also reachable any time from the
+// ☰ menu's "Instructions" item (#237), in which case `initialShowOnLoad`
+// reflects whatever the stored preference currently is rather than always
+// defaulting to checked.
+export function InstructionsModal({ onClose, initialShowOnLoad = true }) {
+  const [showOnLoad, setShowOnLoad] = useState(initialShowOnLoad)
 
   return (
     <div className="modal-overlay">
@@ -26,8 +29,9 @@ export function InstructionsModal({ onClose }) {
         >
           <li>
             <strong>☰ menu</strong> — Standings (this browser&rsquo;s live ranked
-            list), Load Ranking (browse saved rankings), and Skipped
-            (review/un-skip &ldquo;haven&rsquo;t seen&rdquo; movies).
+            list), Load Ranking (browse saved rankings), Skipped
+            (review/un-skip &ldquo;haven&rsquo;t seen&rdquo; movies), and
+            Instructions (reopen this guide).
           </li>
           <li>
             <strong>Queue button</strong> (top-right of the pack) — jump straight
@@ -49,15 +53,15 @@ export function InstructionsModal({ onClose }) {
         >
           <input
             type="checkbox"
-            checked={dontShowAgain}
-            onChange={(event) => setDontShowAgain(event.target.checked)}
+            checked={showOnLoad}
+            onChange={(event) => setShowOnLoad(event.target.checked)}
           />
-          Don&rsquo;t show this again
+          Show on load
         </label>
         <div className="mt-4 flex justify-end">
           <button
             type="button"
-            onClick={() => onClose(dontShowAgain)}
+            onClick={() => onClose(showOnLoad)}
             className="modal-button-primary text-sm"
           >
             Got it

@@ -27,8 +27,11 @@ const SUBSET_STORAGE_KEY = 'movie-ranking-subset'
 // persistence, just as its own independent flag).
 const PG13_STORAGE_KEY = 'movie-ranking-pg13'
 // The "how it works" popup (replacing the old always-visible pack-card
-// captions) shows once per browser on startup unless dismissed with "Don't
-// show this again" — same shape as PG13_STORAGE_KEY's persistent flag.
+// captions) shows once per browser on startup unless its "Show on load"
+// checkbox (#236, checked by default) is unchecked — same shape as
+// PG13_STORAGE_KEY's persistent flag, just inverted (the stored value marks
+// "hidden", even though the checkbox itself reads as "show"). Also
+// reachable any time from the ☰ menu's "Instructions" item (#237).
 const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
 const QUEUE_SIZE = 8
 
@@ -540,8 +543,12 @@ function App() {
     discardActivePack()
   }
 
-  function handleCloseInstructions(dontShowAgain) {
-    if (dontShowAgain) localStorage.setItem(INSTRUCTIONS_STORAGE_KEY, 'true')
+  function handleCloseInstructions(showOnLoad) {
+    if (showOnLoad) {
+      localStorage.removeItem(INSTRUCTIONS_STORAGE_KEY)
+    } else {
+      localStorage.setItem(INSTRUCTIONS_STORAGE_KEY, 'true')
+    }
     setShowInstructionsModal(false)
   }
 
@@ -625,6 +632,7 @@ function App() {
               onStandings={() => setShowStandingsDrawer(true)}
               onLoadRanking={() => setShowLoadView(true)}
               onSkipped={() => setShowSkippedView(true)}
+              onInstructions={() => setShowInstructionsModal(true)}
             />
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
             <label
@@ -767,7 +775,12 @@ function App() {
       {showSkippedView && (
         <SkippedView onChange={handleSkippedViewChange} onClose={() => setShowSkippedView(false)} />
       )}
-      {showInstructionsModal && <InstructionsModal onClose={handleCloseInstructions} />}
+      {showInstructionsModal && (
+        <InstructionsModal
+          onClose={handleCloseInstructions}
+          initialShowOnLoad={initialShowInstructions()}
+        />
+      )}
     </div>
   )
 }
