@@ -486,7 +486,18 @@ exposed in the UI.
   Ranking" title, all three sitting on a shared dark badge
   (`.app-title-badge`) so the icons and title read as one continuous piece
   rather than separate elements, without adding height beyond the icons'
-  own. Bottom row, spread across the full width: an icon-only "☰" menu
+  own. A small icon-only sun/moon toggle (#265) sits in the top row's own
+  top-right corner — clicking it flips `colorMode` (`'dark'`/`'light'`,
+  persisted in its own `localStorage` key, `movie-ranking-color-mode`,
+  independent of the subset picker's own persistence) between Dark Mode
+  (today's Neon palette, unchanged, and still the default) and a new Light
+  Mode palette. This is a second, orthogonal palette dimension from the
+  per-subset `data-theme` in **Movie subsets** below — every subset already
+  shares one `data-theme='popular'` look, so light/dark is applied via a
+  separate `data-color-mode` attribute overriding the same CSS custom
+  properties (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
+  `src/index.css`) rather than being folded into the subset theme system.
+  Bottom row, spread across the full width: an icon-only "☰" menu
   button (`BannerMenu.jsx`, no text label) on the left — opening it reveals
   Standings (mobile-only; desktop already shows the standings panel
   in-line), a "Load Ranking" entry point for browsing saved snapshots (see
