@@ -887,12 +887,21 @@ function App() {
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
+        <div
+          className="fixed inset-0 z-30 bg-black/55"
+          onClick={() => setShowSkippedView(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 min-h-0 w-[85vw] max-w-[380px] bg-[var(--bg-page)] shadow-[-8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 ${showSkippedView ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         <SkippedView
+          open={showSkippedView}
           onChange={handleSkippedViewChange}
           onClose={() => setShowSkippedView(false)}
           onOpenDetail={setDetailMovie}
         />
-      )}
+      </aside>
       {showInstructionsModal && (
         <InstructionsModal
           onClose={handleCloseInstructions}
