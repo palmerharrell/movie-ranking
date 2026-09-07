@@ -214,7 +214,30 @@ exposed in the UI.
   connectivity/island tracking, just this steady overlap rule is expected to
   merge things in practice. Before there are enough ranked movies to satisfy
   it (e.g. very first few packs), fall back to 0 required overlap and just
-  pick 5 at random from the matching set.
+  pick 5 at random from the matching set. The 1–2 already-ranked "filler"
+  slots (here and in Head to Head/Top 10 Tough Choice's own draws) are
+  chosen with a weighted pick favoring lower `timesRanked`
+  (`categoryGenerator.js`'s `weightedSample`/`rankedWeight`, weight `1 /
+  (timesRanked + 1)`) rather than uniformly at random — otherwise the same
+  heavily-reinforced movies keep getting reused as filler/opponents instead
+  of movies ranked only once or twice (#219).
+- **Full-coverage measures (#224):** nothing in the mechanic above
+  *guarantees* every movie eventually gets ranked — it's all probabilistic —
+  but two things push hard toward full coverage without needing new
+  persisted state:
+  - `tryBuildCategory` draws its candidate attribute *values* from
+    not-yet-ranked movies first, falling back to the whole pool only when
+    none remain — so categories tend to get built around an unranked
+    movie's own attributes instead of picking blind, making it far more
+    likely an unranked movie actually lands in `matches`.
+  - A forced-inclusion backstop: `unranked[totalRankedCount %
+    unranked.length]` is guaranteed a slot in every Random Five pack a call
+    to `generateCategory` produces (both the chance-triggered one and the
+    attempt-exhausted fallback) — never in an attribute pack, since forcing
+    a mismatched movie in would make the category's label inaccurate.
+    `totalRankedCount` only advances when a "Rank →" actually lands, so
+    this deterministically rotates which not-yet-ranked movie gets forced
+    next, without any new per-movie staleness tracking.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
 - **Upcoming queue:** rather than a single "next category" generated on
