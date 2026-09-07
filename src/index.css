@@ -265,6 +265,7 @@ body {
 /* Pack column */
 
 .undo-skip {
+  padding: 6px 0;
   font-family: var(--font-mono);
   color: var(--text-low);
 }
