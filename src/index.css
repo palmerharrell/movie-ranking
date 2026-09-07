@@ -99,6 +99,19 @@ body {
   border-bottom: 1px solid var(--surface-border);
 }
 
+/* Light Mode banner (#278) — the title badge stays its fixed dark navy
+   (it's a baked-in-pixels logo lockup with the flanking film-reel icons,
+   not something CSS can recolor), but in Light Mode the strip around it
+   otherwise just inherited the page background with no distinction of its
+   own. Giving the banner its own light surface + shadow frames the dark
+   badge as an accent within a header bar instead of it floating directly
+   on the page. Dark Mode is left alone — there the page background is
+   already the same dark tone the badge is designed against. */
+[data-color-mode='light'] .banner {
+  background: var(--surface);
+  box-shadow: var(--surface-shadow);
+}
+
 .app-title {
   font-family: var(--font-display);
   color: var(--accent);
