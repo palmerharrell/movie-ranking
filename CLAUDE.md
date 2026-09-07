@@ -472,6 +472,20 @@ exposed in the UI.
   generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
+- **Ranked/Skipped edge tabs (#271):** the ranked (`n/nnn`) and skipped (`n`)
+  counts that used to sit inline flanking the "Rank →" button are now two
+  tab handles pinned to the window edge (`App.jsx`, computed once from
+  `movies` rather than recomputed separately per pack type as before) —
+  clicking either doubles as the way to open that count's own drawer
+  (Standings on the left, Skipped on the right — see **Skip ("Haven't
+  Seen")** and **Left panel**/**Skipped Movies drawer** above). The Ranked
+  tab is mobile-only (`md:hidden`) since desktop already shows the Standings
+  panel inline at the left edge — a tab to open something already open would
+  be redundant; the Skipped tab shows on every breakpoint, since that
+  drawer (#269) is a fixed overlay regardless of screen size. Each tab hides
+  itself while its own drawer is open (the drawer already occupies that
+  edge), and the Skipped tab only appears once `skippedCount > 0`, same as
+  the inline button it replaced.
 - **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
   pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
   — a bigger card with the poster, full (untruncated) title, director, full
