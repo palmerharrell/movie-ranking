@@ -33,7 +33,15 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
           onClick={(event) => {
             event.stopPropagation()
             event.currentTarget.blur()
-            onSkip(movie.id)
+            // Deferred a tick (#250): on mobile touchscreens, removing this
+            // tile synchronously (shrinking the pack and shifting the tiles
+            // below it up) still lands the browser's own post-tap focus
+            // handling on whatever tile's Skip button now occupies this
+            // button's former position, even though blur() above already
+            // cleared focus from this one. Letting the tap's own focus
+            // handling finish first, before the removal that reflows the
+            // list, keeps that from re-targeting a still-present button.
+            setTimeout(() => onSkip(movie.id), 0)
           }}
           disabled={disabled}
           className="skip-button flex h-9 w-9 items-center justify-center text-base leading-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-6 sm:w-6 sm:text-sm"

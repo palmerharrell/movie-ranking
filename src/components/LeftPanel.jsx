@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 // Sorts by eloRating descending; movies never yet ranked (still at the
 // default 1000) are grouped alphabetically among themselves, per CLAUDE.md.
 function sortMovies(movies) {
@@ -35,7 +37,17 @@ function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
   )
 }
 
-export function LeftPanel({ movies, onReset, onOpenDetail }) {
+export function LeftPanel({ movies, onReset, onOpenDetail, open }) {
+  // #248: reset scroll position each time the (mobile) Standings drawer is
+  // opened, rather than leaving it wherever it was scrolled to last time —
+  // `open` only toggles for the drawer (desktop shows this panel inline and
+  // never flips it), so this is specifically an "on open" reset, not a
+  // reset on every re-render.
+  const listRef = useRef(null)
+  useEffect(() => {
+    if (open) listRef.current?.scrollTo({ top: 0 })
+  }, [open])
+
   // Skipped ("haven't seen") movies are excluded from pack generation and
   // the progress denominator (#136) — the Standings list itself should
   // match, rather than still showing them at their default rank (#174).
@@ -69,7 +81,7 @@ export function LeftPanel({ movies, onReset, onOpenDetail }) {
           Reset Ranking
         </button>
       )}
-      <ol className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
+      <ol ref={listRef} className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
         {sorted.map((movie, index) => (
           <StandingsRow
             key={movie.id}
