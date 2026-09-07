@@ -764,41 +764,78 @@ function App() {
                   Loading…
                 </p>
               )}
-              {category?.type !== HEAD_TO_HEAD_TYPE && (
-                <div className="mt-4">
-                  <RankButton
-                    onClick={handleRank}
-                    disabled={!category || busy || switchingSubset || category.movies.length < 2}
-                  />
-                </div>
-              )}
-              {movies &&
-                (() => {
-                  const eligibleMovies = movies.filter((m) => !m.skipped)
-                  const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
-                  const skippedCount = movies.filter((m) => m.skipped).length
-                  const eligibleCount = eligibleMovies.length
-                  return (
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowStandingsDrawer(true)}
-                        className="standings-reset-button font-mono text-xs"
-                      >
-                        {rankedCount}/{eligibleCount} ranked
-                      </button>
-                      {skippedCount > 0 && (
+              {category?.type === HEAD_TO_HEAD_TYPE
+                ? movies &&
+                  (() => {
+                    const eligibleMovies = movies.filter((m) => !m.skipped)
+                    const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
+                    const skippedCount = movies.filter((m) => m.skipped).length
+                    const eligibleCount = eligibleMovies.length
+                    return (
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowStandingsDrawer(true)}
+                          className="standings-reset-button font-mono text-xs"
+                        >
+                          {rankedCount}/{eligibleCount} ranked
+                        </button>
+                        {skippedCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowSkippedView(true)}
+                            className="standings-reset-button font-mono text-xs"
+                          >
+                            {skippedCount} skipped
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()
+                : (() => {
+                    let rankedButton = null
+                    let skippedButton = null
+                    if (movies) {
+                      const eligibleMovies = movies.filter((m) => !m.skipped)
+                      const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
+                      const skippedCount = movies.filter((m) => m.skipped).length
+                      const eligibleCount = eligibleMovies.length
+                      rankedButton = (
+                        <button
+                          type="button"
+                          onClick={() => setShowStandingsDrawer(true)}
+                          className="standings-reset-button flex flex-col items-center leading-tight font-mono text-xs"
+                        >
+                          <span>
+                            {rankedCount}/{eligibleCount}
+                          </span>
+                          <span>ranked</span>
+                        </button>
+                      )
+                      skippedButton = skippedCount > 0 && (
                         <button
                           type="button"
                           onClick={() => setShowSkippedView(true)}
-                          className="standings-reset-button font-mono text-xs"
+                          className="standings-reset-button flex flex-col items-center leading-tight font-mono text-xs"
                         >
-                          {skippedCount} skipped
+                          <span>{skippedCount}</span>
+                          <span>skipped</span>
                         </button>
-                      )}
-                    </div>
-                  )
-                })()}
+                      )
+                    }
+                    return (
+                      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                        <div className="flex justify-end">{rankedButton}</div>
+                        <RankButton
+                          onClick={handleRank}
+                          disabled={
+                            !category || busy || switchingSubset || category.movies.length < 2
+                          }
+                        />
+                        <div className="flex justify-start">{skippedButton}</div>
+                      </div>
+                    )
+                  })()}
             </div>
           </main>
         </div>
