@@ -13,7 +13,6 @@ import {
 } from '@dnd-kit/sortable'
 import { MovieTile } from './MovieTile.jsx'
 import { PackLoadingOverlay } from './PackLoadingOverlay.jsx'
-import { QueueMenu } from './QueueMenu.jsx'
 import { formatPackLabel } from '../lib/labelWording.js'
 
 export function RightPanel({
@@ -26,8 +25,6 @@ export function RightPanel({
   onConfirmSkipLast,
   onDeclineSkipLast,
   disabled,
-  queue,
-  onSelectQueued,
   onOpenDetail,
 }) {
   // A distance constraint (rather than the default, which activates a drag
@@ -69,7 +66,6 @@ export function RightPanel({
     <div className="pack-card">
       <div className="mb-3 flex items-start justify-between gap-3">
         <h2 className="pack-category-label">{formatPackLabel(category.label)}</h2>
-        <QueueMenu queue={queue} disabled={disabled} onSelect={onSelectQueued} />
       </div>
       <DndContext
         sensors={sensors}

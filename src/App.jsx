@@ -12,12 +12,12 @@ import { BannerMenu } from './components/BannerMenu.jsx'
 import { InstructionsModal } from './components/InstructionsModal.jsx'
 import { MovieDetailModal } from './components/MovieDetailModal.jsx'
 import { PackIntroOverlay } from './components/PackIntroOverlay.jsx'
+import { PackChoiceScreen } from './components/PackChoiceScreen.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
 import { selectPg13OrUnder } from './lib/pg13Mode.js'
 import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
-import { fetchCategoryAvoidingDuplicateLabel } from './lib/packQueue.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 import { generateRankingName } from './lib/rankingName.js'
 import { buildShareUrl } from './lib/shareLink.js'
@@ -40,7 +40,6 @@ const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
 // index.css); this just flips a separate set of CSS custom properties.
 // Persists across sessions like the other banner toggles above.
 const COLOR_MODE_STORAGE_KEY = 'movie-ranking-color-mode'
-const QUEUE_SIZE = 8
 // How long the Head to Head / Top 10 Tough Choice intro announcement
 // (#298) is shown before it starts fading, and how long the fade itself
 // takes — must match .pack-intro-overlay's own transition duration in
@@ -68,20 +67,6 @@ function initialColorMode() {
   return stored === 'light' ? 'light' : 'dark'
 }
 
-async function fetchPacks(family, popular, genre, pg13) {
-  const packs = []
-  for (let i = 0; i < QUEUE_SIZE + 1; i++) {
-    const queueLabels = packs.slice(1).map((p) => p.label)
-    packs.push(
-      await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family, popular, genre, pg13 }),
-        queueLabels,
-      ),
-    )
-  }
-  return packs
-}
-
 // Skipped ("haven't seen") movies are excluded from the pool being ranked
 // (#136), so completion only requires every non-skipped movie to be ranked.
 function isFullyRanked(movies) {
@@ -94,13 +79,16 @@ function App() {
   const [pg13, setPg13] = useState(initialPg13)
   const [colorMode, setColorMode] = useState(initialColorMode)
   const [movies, setMovies] = useState(null)
-  // packs[0] is the active pack; packs[1..] is the upcoming queue.
-  const [packs, setPacks] = useState(null)
+  // The current turn (#297): either a single forced pack to rank
+  // (`{ type: 'pack', pack }`) or a 3-way choice of candidate packs
+  // (`{ type: 'choice', options }`) — replacing the old pre-generated
+  // "Up Next" queue. `null` while nothing has loaded yet.
+  const [turn, setTurn] = useState(null)
   const [error, setError] = useState(null)
   // Set when a subset-switch fetch fails while stale (previous-subset)
-  // movies/packs are still on screen — see the effect below and #178.
+  // movies/turn are still on screen — see the effect below and #178.
   // Kept separate from `error` because the full-page error branches key off
-  // `movies`/`category` being falsy, which isn't true during a subset
+  // `movies`/`activePack` being falsy, which isn't true during a subset
   // switch; this instead drives an inline banner alongside the stale
   // content, with a retry action.
   const [subsetSwitchError, setSubsetSwitchError] = useState(null)
@@ -132,12 +120,11 @@ function App() {
   // older switch's fetch resolving after a newer one can't clobber the
   // newer subset's data or hide its still-in-flight loading overlay.
   const subsetFetchId = useRef(0)
-  // Set inside handleSkipMovie's setPacks updater, acted on by the effect
-  // below once the resulting pack state has actually committed — see the
+  // Set inside handleSkipMovie's setTurn updater, acted on by the effect
+  // below once the resulting turn state has actually committed — see the
   // comment on handleSkipMovie for why this can't just be a synchronous
-  // local variable read right after calling setPacks.
+  // local variable read right after calling setTurn.
   const pendingSkipOutcome = useRef(null)
-  const pendingQueueDiscards = useRef([])
   const [skippedMovies, setSkippedMovies] = useState([])
   // True once a skip has dropped the active pack to its last remaining
   // movie — see handleSkipMovie. While true, RightPanel shows an inline
@@ -155,8 +142,10 @@ function App() {
   // opacity transition before the overlay unmounts.
   const [packIntro, setPackIntro] = useState(null) // { label, fading } | null
 
-  const category = packs?.[0] ?? null
-  const queue = packs?.slice(1) ?? []
+  // The single active pack when the current turn is a normal (or Head to
+  // Head/Tough Choice) pack — null while a 3-way choice is pending or
+  // nothing has loaded yet.
+  const activePack = turn?.type === 'pack' ? turn.pack : null
   // Backs the two edge tabs (#271) as well as the old inline ranked/skipped
   // counts they replaced — hoisted here since both needed the same three
   // values, previously recomputed separately in the Head to Head and normal
@@ -269,17 +258,17 @@ function App() {
 
   // Announces a Head to Head / Top 10 Tough Choice pack (#298) with a
   // screen-filling "<label>!" overlay for a beat before it's shown — fires
-  // whenever `category` itself changes (a fresh reference every time a pack
-  // is promoted to active, whether via "Rank ->", a queued-pack pick, or a
-  // subset switch) and the newly-active pack is one of those two types.
-  // Distinguishing "Head to Head" from "Top 10 Tough Choice" is just a
-  // matter of using the pack's own label — both share HEAD_TO_HEAD_TYPE.
+  // whenever `activePack` itself changes (a fresh reference every time a
+  // pack is promoted to active, whether via "Rank ->", a pack-choice pick,
+  // or a subset switch) and the newly-active pack is one of those two
+  // types. Distinguishing "Head to Head" from "Top 10 Tough Choice" is just
+  // a matter of using the pack's own label — both share HEAD_TO_HEAD_TYPE.
   useEffect(() => {
-    if (!category || category.type !== HEAD_TO_HEAD_TYPE) {
+    if (!activePack || activePack.type !== HEAD_TO_HEAD_TYPE) {
       setPackIntro(null)
       return undefined
     }
-    setPackIntro({ label: category.label, fading: false })
+    setPackIntro({ label: activePack.label, fading: false })
     const fadeTimer = setTimeout(
       () => setPackIntro((prev) => (prev ? { ...prev, fading: true } : prev)),
       PACK_INTRO_DISPLAY_MS
@@ -292,17 +281,18 @@ function App() {
       clearTimeout(fadeTimer)
       clearTimeout(removeTimer)
     }
-  }, [category])
+  }, [activePack])
 
   // Keeps the Ranked/Skipped edge tabs (#289) vertically aligned with the
   // Rank button rather than fixed at the viewport's vertical center — the
-  // button's own position shifts with pack/category content (a longer
-  // category label, a Head to Head pack with no Rank button at all, etc.),
-  // so this re-measures whenever that content could have changed size, plus
-  // on window resize. Head to Head packs unmount the row entirely
-  // (rankRowRef.current is null), so the measurement there just keeps
-  // whatever position was last known from a normal pack instead of
-  // updating — reasonable since there's no Rank button to align to anyway.
+  // button's own position shifts with pack content (a longer category
+  // label, a Head to Head pack with no Rank button at all, etc.), so this
+  // re-measures whenever that content could have changed size, plus on
+  // window resize. Head to Head packs and pack-choice turns (#297) both
+  // unmount the row entirely (rankRowRef.current is null), so the
+  // measurement there just keeps whatever position was last known from a
+  // normal pack instead of updating — reasonable since there's no Rank
+  // button to align to anyway.
   useLayoutEffect(() => {
     function measure() {
       if (rankRowRef.current) {
@@ -313,16 +303,16 @@ function App() {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [category, packs, busy, switchingSubset])
+  }, [turn, busy, switchingSubset])
 
-  // Fetches the active subset's movies/packs. Used both by the effect below
+  // Fetches the active subset's movies/turn. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
   // retrying re-runs this without touching skip/prompt state, since those
   // were already reset by the switch that triggered the failed attempt.
-  // A failure while `movies`/`category` are still populated (a subset
+  // A failure while `movies`/`activePack` are still populated (a subset
   // switch, since old data stays on screen — see #175) surfaces as an
   // inline banner (`subsetSwitchError`) instead of the full-page error
-  // branches, which only render when `movies`/`category` are falsy (#178).
+  // branches, which only render when `movies`/`activePack` are falsy (#178).
   function loadSubset() {
     const hadMovies = movies !== null
     setSwitchingSubset(true)
@@ -335,9 +325,11 @@ function App() {
         .then((updated) => {
           if (!isStale()) noteMoviesUpdate(updated)
         }),
-      fetchPacks(isFamily, isPopular, activeGenre, effectivePg13).then((freshPacks) => {
-        if (!isStale()) setPacks(freshPacks)
-      }),
+      api
+        .getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
+        .then((nextTurn) => {
+          if (!isStale()) setTurn(nextTurn)
+        }),
     ])
       .catch((err) => {
         if (isStale()) return
@@ -355,11 +347,11 @@ function App() {
   // Every subset is a different pool, so always re-fetch on change — and the
   // PG-13-and-under toggle (#193) changes the pool the same way a subset
   // switch does, despite being a global flag rather than the subset itself.
-  // Old `movies`/`packs` stay on screen (not reset to null) while this is in
+  // Old `movies`/`turn` stay on screen (not reset to null) while this is in
   // flight, so `switchingSubset` drives a loading overlay over the stale
-  // pack/queue rather than the "Loading…" text used for the initial load,
-  // which would otherwise flash the previous subset's content for a beat
-  // before this settles (#175).
+  // pack rather than the "Loading…" text used for the initial load, which
+  // would otherwise flash the previous subset's content for a beat before
+  // this settles (#175).
   useEffect(() => {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
@@ -368,7 +360,7 @@ function App() {
   }, [subset, pg13])
 
   function handleReorder(reorderedMovies) {
-    setPacks((prev) => [{ ...prev[0], movies: reorderedMovies }, ...prev.slice(1)])
+    setTurn((prev) => ({ type: 'pack', pack: { ...prev.pack, movies: reorderedMovies } }))
   }
 
   async function handleRank() {
@@ -376,16 +368,18 @@ function App() {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     try {
-      const movieIds = category.movies.map((m) => m.id)
-      // Sequential: the fresh pack's overlap calculation reads timesRanked
+      const movieIds = activePack.movies.map((m) => m.id)
+      // Sequential: the fresh turn's overlap calculation reads timesRanked
       // from local storage, so it must run after the rank submission commits.
       const updatedMovies = await api.rankPack(movieIds)
-      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        queue.slice(1).map((p) => p.label),
-      )
+      const nextTurn = await api.getNextTurn({
+        family: isFamily,
+        popular: isPopular,
+        genre: activeGenre,
+        pg13: effectivePg13,
+      })
       noteMoviesUpdate(updatedMovies)
-      setPacks((prev) => [...prev.slice(1), freshPack])
+      setTurn(nextTurn)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -399,14 +393,16 @@ function App() {
   async function handleHeadToHeadPick(winnerId) {
     setBusy(true)
     try {
-      const loserId = category.movies.find((m) => m.id !== winnerId).id
+      const loserId = activePack.movies.find((m) => m.id !== winnerId).id
       const updatedMovies = await api.rankPack([winnerId, loserId])
-      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        queue.slice(1).map((p) => p.label),
-      )
+      const nextTurn = await api.getNextTurn({
+        family: isFamily,
+        popular: isPopular,
+        genre: activeGenre,
+        pg13: effectivePg13,
+      })
       noteMoviesUpdate(updatedMovies)
-      setPacks((prev) => [...prev.slice(1), freshPack])
+      setTurn(nextTurn)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -414,42 +410,30 @@ function App() {
     }
   }
 
-  async function handleSelectQueued(queueIndex) {
-    setBusy(true)
+  // Picking one of the 3 offered candidate packs (#297) — the other two are
+  // simply discarded (never submitted, never shown again). No network call:
+  // unlike the old "Up Next" queue, there's nothing to backfill here — the
+  // *next* turn is only generated once this chosen pack actually gets
+  // ranked/submitted.
+  function handleChoosePack(index) {
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
-    try {
-      const remainingLabels = queue
-        .filter((_, i) => i !== queueIndex)
-        .map((p) => p.label)
-      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        remainingLabels,
-      )
-      setPacks((prev) => {
-        const packIndex = queueIndex + 1
-        const selected = prev[packIndex]
-        const rest = prev.filter((_, i) => i !== 0 && i !== packIndex)
-        return [selected, ...rest, freshPack]
-      })
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+    setTurn((prev) => (prev?.type === 'choice' ? { type: 'pack', pack: prev.options[index] } : prev))
   }
 
   // Discards the active pack without submitting any ranking data and
-  // promotes/refills from the queue — used both when the pack empties out
-  // entirely and when the user confirms skipping the last remaining movie.
+  // fetches the next turn — used both when the pack empties out entirely
+  // and when the user confirms skipping the last remaining movie.
   async function discardActivePack() {
     setBusy(true)
     try {
-      const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-        () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        queue.slice(1).map((p) => p.label),
-      )
-      setPacks((prev) => [...prev.slice(1), freshPack])
+      const nextTurn = await api.getNextTurn({
+        family: isFamily,
+        popular: isPopular,
+        genre: activeGenre,
+        pg13: effectivePg13,
+      })
+      setTurn(nextTurn)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -457,44 +441,14 @@ function App() {
     }
   }
 
-  // Replaces any queued pack that a skip (#155) dropped to <=1 movie —
-  // matched by object identity rather than index/label since packs shift
-  // position as the queue advances and labels can repeat. `packs`/`queue`
-  // here are the pre-skip render closure values, which is fine: a skip only
-  // ever removes movies from queued packs, never changes the label of a
-  // pack that's kept, so labels used to avoid duplicates stay accurate.
-  async function replaceDiscardedQueuePacks(toReplace) {
-    setBusy(true)
-    try {
-      const replacements = []
-      for (const pack of toReplace) {
-        const avoidLabels = [
-          ...packs.filter((p) => !toReplace.includes(p)).map((p) => p.label),
-          ...replacements.map((r) => r.fresh.label),
-        ]
-        const freshPack = await fetchCategoryAvoidingDuplicateLabel(
-          () => api.getCategory({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-          avoidLabels,
-        )
-        replacements.push({ old: pack, fresh: freshPack })
-      }
-      setPacks((prev) => prev.map((p) => replacements.find((r) => r.old === p)?.fresh ?? p))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // Derive `remaining` from `prev` (not the render-time `category` closure)
-  // so two near-simultaneous skip clicks can't have the second overwrite
-  // the first's result. Since the setPacks updater's return value is what
-  // gets committed — not a side effect you can safely read back
-  // synchronously right after calling setPacks — the "what happens next"
-  // decision (ask to skip the last movie? discard the empty pack? replace a
-  // gutted queue pack?) is recorded into refs from inside the updater and
-  // acted on from the effects below, once React has actually committed the
-  // new `packs` state.
+  // Derive `remaining` from `prev` (not the render-time `activePack`
+  // closure) so two near-simultaneous skip clicks can't have the second
+  // overwrite the first's result. Since the setTurn updater's return value
+  // is what gets committed — not a side effect you can safely read back
+  // synchronously right after calling setTurn — the "what happens next"
+  // decision (ask to skip the last movie? discard the empty pack?) is
+  // recorded into a ref from inside the updater and acted on from the
+  // effect below, once React has actually committed the new `turn` state.
   //
   // If a skip would drop the pack to its last movie, it's no longer
   // immediately discarded (#156) — a 1-movie pack can't meaningfully be
@@ -506,14 +460,11 @@ function App() {
   // movies (declining, then skipping the last one via its own tile button)
   // still discards immediately, since there's nothing left to show.
   //
-  // Queued packs were pre-generated and may already include the
-  // now-skipped movie (#155) — any such pack is discarded and replaced
-  // wholesale via replaceDiscardedQueuePacks above, rather than just
-  // filtering the skipped movie out of it in place. Packs are always meant
-  // to be a fixed size (5, or 2 for Head to Head) — quietly shrinking one in
-  // place instead of regenerating it left the door open for a queued pack
-  // to lose several movies across separate skips over time and eventually
-  // surface with too few tiles (#218).
+  // Unlike the old pre-generated "Up Next" queue (#155/#218), there's no
+  // separate queued-pack staleness problem to handle here anymore — every
+  // turn (forced pack or 3-way choice) is generated fresh, on demand, from
+  // the pool's current eligible movies, so a newly-skipped movie can never
+  // resurface in one.
   function handleSkipMovie(movieId) {
     // The pack is already down to its one remaining movie and awaiting the
     // "skip this one too?" decision (#156) — clicking that same movie's own
@@ -521,25 +472,20 @@ function App() {
     // an unconfirmed skip (#195). Without this guard, filtering it out here
     // would drop `remaining` to 0 and hit the discard-empty branch below,
     // silently marking it skipped with no confirmation at all.
-    if (category.movies.length === 1 && category.movies[0].id === movieId) {
+    if (activePack.movies.length === 1 && activePack.movies[0].id === movieId) {
       setAwaitingLastSkipConfirm(true)
       return
     }
-    const skipIndex = category.movies.findIndex((m) => m.id === movieId)
-    const skippedMovieRecord = category.movies[skipIndex]
-    setPacks((prev) => {
-      const remaining = prev[0].movies.filter((m) => m.id !== movieId)
-      const activePack = { ...prev[0], movies: remaining }
+    const skipIndex = activePack.movies.findIndex((m) => m.id === movieId)
+    const skippedMovieRecord = activePack.movies[skipIndex]
+    setTurn((prev) => {
+      const remaining = prev.pack.movies.filter((m) => m.id !== movieId)
       if (remaining.length === 1) {
         pendingSkipOutcome.current = 'await-confirm'
       } else if (remaining.length === 0) {
         pendingSkipOutcome.current = 'discard-empty'
       }
-      const discards = prev.slice(1).filter((pack) => pack.movies.some((m) => m.id === movieId))
-      if (discards.length > 0) {
-        pendingQueueDiscards.current = discards
-      }
-      return [activePack, ...prev.slice(1)]
+      return { type: 'pack', pack: { ...prev.pack, movies: remaining } }
     })
     setSkippedMovies((prev) => [...prev, { movie: skippedMovieRecord, index: skipIndex }])
     // "Haven't seen" is a persistent fact (#136) — mark it right away, not
@@ -567,26 +513,16 @@ function App() {
     }
   })
 
-  // Replaces any queued pack `handleSkipMovie` flagged via
-  // `pendingQueueDiscards`, once the pack state it depends on has actually
-  // committed (see replaceDiscardedQueuePacks above).
-  useEffect(() => {
-    if (pendingQueueDiscards.current.length === 0) return
-    const toReplace = pendingQueueDiscards.current
-    pendingQueueDiscards.current = []
-    replaceDiscardedQueuePacks(toReplace)
-  })
-
   // Any movie skipped from the active pack can be restored, as long as that
   // pack is still active — identified by movie id rather than list position
   // since several skips can be pending restoration at once.
   function handleUndoSkip(movieId) {
     const entry = skippedMovies.find((s) => s.movie.id === movieId)
     if (!entry) return
-    setPacks((prev) => {
-      const movies = [...prev[0].movies]
+    setTurn((prev) => {
+      const movies = [...prev.pack.movies]
       movies.splice(Math.min(entry.index, movies.length), 0, entry.movie)
-      return [{ ...prev[0], movies }, ...prev.slice(1)]
+      return { type: 'pack', pack: { ...prev.pack, movies } }
     })
     setSkippedMovies((prev) => prev.filter((s) => s.movie.id !== movieId))
     // Full reversal (#169), unlike the persistent Skipped-view unmarkSkipped
@@ -629,7 +565,7 @@ function App() {
   // remaining movie the same way any other tile-skip does, then discard the
   // now-empty pack and advance, mirroring the old auto-discard behavior.
   function handleConfirmSkipLast() {
-    const lastMovie = category.movies[0]
+    const lastMovie = activePack.movies[0]
     setAwaitingLastSkipConfirm(false)
     api.markSkipped(lastMovie.id)
     setMovies((prev) =>
@@ -641,10 +577,10 @@ function App() {
 
   // "No" on the prompt (#195): leave the lone remaining movie unskipped, but
   // don't strand the user on a pack that can't be ranked (Rank → is disabled
-  // below 2 movies) — discard it and advance to the next queued pack, the
-  // same way declining a full-empty pack already does. Mirrors "Yes"
-  // (handleConfirmSkipLast) in advancing the queue; the only difference is
-  // this one never calls api.markSkipped.
+  // below 2 movies) — discard it and advance to the next turn, the same way
+  // declining a full-empty pack already does. Mirrors "Yes"
+  // (handleConfirmSkipLast) in advancing; the only difference is this one
+  // never calls api.markSkipped.
   function handleDeclineSkipLast() {
     setAwaitingLastSkipConfirm(false)
     setSkippedMovies([])
@@ -673,17 +609,17 @@ function App() {
     wasFullyRanked.current = false
 
     try {
-      const [updatedMovies, freshPacks] = await Promise.all([
+      const [updatedMovies, nextTurn] = await Promise.all([
         api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
+        api.getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
       ])
       noteMoviesUpdate(updatedMovies)
-      setPacks(freshPacks)
+      setTurn(nextTurn)
     } catch (err) {
       // The save already committed (snapshot posted, local state reset), so
       // drop the now-stale board rather than silently leaving it displayed.
       setMovies(null)
-      setPacks(null)
+      setTurn(null)
       setError(err.message)
     }
   }
@@ -697,17 +633,17 @@ function App() {
     wasFullyRanked.current = false
 
     try {
-      const [updatedMovies, freshPacks] = await Promise.all([
+      const [updatedMovies, nextTurn] = await Promise.all([
         api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        fetchPacks(isFamily, isPopular, activeGenre, effectivePg13),
+        api.getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
       ])
       noteMoviesUpdate(updatedMovies)
-      setPacks(freshPacks)
+      setTurn(nextTurn)
     } catch (err) {
       // The reset already committed (local state cleared), so drop the
       // now-stale board rather than silently leaving it displayed.
       setMovies(null)
-      setPacks(null)
+      setTurn(null)
       setError(err.message)
     }
   }
@@ -879,19 +815,23 @@ function App() {
 
           <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 py-4 md:px-8">
             <div className="w-full max-w-xl">
-              {category ? (
-                category.type === HEAD_TO_HEAD_TYPE ? (
+              {turn?.type === 'choice' ? (
+                <PackChoiceScreen
+                  options={turn.options}
+                  onChoose={handleChoosePack}
+                  disabled={switchingSubset}
+                />
+              ) : activePack ? (
+                activePack.type === HEAD_TO_HEAD_TYPE ? (
                   <HeadToHeadPanel
-                    category={category}
+                    category={activePack}
                     onPick={handleHeadToHeadPick}
                     disabled={busy || switchingSubset || !!packIntro}
-                    queue={queue}
-                    onSelectQueued={handleSelectQueued}
                     onOpenDetail={setDetailMovie}
                   />
                 ) : (
                   <RightPanel
-                    category={category}
+                    category={activePack}
                     onReorder={handleReorder}
                     onSkip={handleSkipMovie}
                     skippedMovies={skippedMovies}
@@ -900,8 +840,6 @@ function App() {
                     onConfirmSkipLast={handleConfirmSkipLast}
                     onDeclineSkipLast={handleDeclineSkipLast}
                     disabled={busy || switchingSubset}
-                    queue={queue}
-                    onSelectQueued={handleSelectQueued}
                     onOpenDetail={setDetailMovie}
                   />
                 )
@@ -916,11 +854,11 @@ function App() {
                   Loading…
                 </p>
               )}
-              {category?.type !== HEAD_TO_HEAD_TYPE && (
+              {activePack && activePack.type !== HEAD_TO_HEAD_TYPE && (
                 <div ref={rankRowRef} className="mt-4 flex justify-center">
                   <RankButton
                     onClick={handleRank}
-                    disabled={!category || busy || switchingSubset || category.movies.length < 2}
+                    disabled={busy || switchingSubset || activePack.movies.length < 2}
                   />
                 </div>
               )}
