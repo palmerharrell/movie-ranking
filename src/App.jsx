@@ -684,20 +684,12 @@ function App() {
               onLoadRanking={() => setShowLoadView(true)}
               onSkipped={() => setShowSkippedView(true)}
               onInstructions={() => setShowInstructionsModal(true)}
+              pg13Checked={effectivePg13}
+              pg13Disabled={isFamily}
+              pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
+              onPg13Change={setPg13}
             />
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
-            <label
-              className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]"
-              title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
-            >
-              PG-13 &amp; Under
-              <input
-                type="checkbox"
-                checked={effectivePg13}
-                disabled={isFamily}
-                onChange={(event) => setPg13(event.target.checked)}
-              />
-            </label>
           </div>
         </header>
 

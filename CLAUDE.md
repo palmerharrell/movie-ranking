@@ -523,13 +523,19 @@ exposed in the UI.
   Standings (mobile-only; desktop already shows the standings panel
   in-line), a "Load Ranking" entry point for browsing saved snapshots (see
   **Saved rankings**), a "Skipped" entry point for browsing/un-skipping
-  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), and an
+  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), an
   "Instructions" entry point (#237) that reopens the startup instructions
-  popup on demand — then the subset picker, then the PG-13-and-under toggle
-  (#193, see **PG-13 and under toggle**) flush right. A large, very-faint
-  film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
-  fade the banner's own gradient) sits behind the whole app-shell under the
-  Neon theme only — see **Movie subsets**.
+  popup on demand, and (below a divider) the PG-13-and-under checkbox
+  (#193, #272, see **PG-13 and under toggle**) — moved in here from its own
+  spot in the banner row to free up room there for the subset picker
+  (#274). Unlike the other menu items, picking the checkbox doesn't close
+  the menu, since it's a toggle the user may want to flip more than once in
+  a row and closing on every click would hide the checked-state feedback.
+  The banner row itself then holds just the ☰ button and the subset picker,
+  flush right. A large, very-faint film-reel watermark (baked-in low alpha,
+  not CSS `opacity`, so it doesn't fade the banner's own gradient) sits
+  behind the whole app-shell under the Neon theme only — see **Movie
+  subsets**.
 - **Startup instructions:** a one-time popup (`InstructionsModal.jsx`) shown
   on startup unless its "Show on load" checkbox (#236, checked by default)
   was left unchecked on a previous visit (`movie-ranking-hide-instructions`
@@ -703,11 +709,13 @@ language entries, and 1 country entry, grouped in the picker:
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
 
-## PG-13 and under toggle (#193, #200)
-A global checkbox in the banner, next to the subset picker (`pg13` state in
-`App.jsx`, persisted in its own `localStorage` key — unlike the subset
-picker's own key, it survives subset switches rather than being tied to
-one) — labeled "PG-13 & Under." Family always applies this filter
+## PG-13 and under toggle (#193, #200, #272)
+A global checkbox in the ☰ menu (`BannerMenu.jsx`, below a divider — moved
+out of the banner row itself in #272 to make room for a larger subset
+picker, see **UI layout**) — `pg13` state in `App.jsx`, persisted in its
+own `localStorage` key — unlike the subset picker's own key, it survives
+subset switches rather than being tied to one — labeled "PG-13 & Under."
+Family always applies this filter
 regardless of the checkbox's own state (#200, see **Movie subsets** above) —
 while Family is active, the checkbox itself shows checked and disabled (with
 a tooltip explaining why) rather than actually flipping the underlying
