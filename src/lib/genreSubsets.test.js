@@ -46,10 +46,12 @@ describe('selectGenreSubset', () => {
       movie({ id: 'thoroughly-modern-millie', tmdbId: 32489, keywords: [] }),
       movie({ id: 'unrelated', tmdbId: 999, keywords: [] }),
     ]
+    // All four are tied on voteCount, so order reflects the deterministic
+    // id-ascending tiebreak (#230), not the order they're listed above.
     expect(selectGenreSubset(movies, 'musicals').map((m) => m.id)).toEqual([
       'coco',
-      'sister-act',
       'flower-drum-song',
+      'sister-act',
       'thoroughly-modern-millie',
     ])
   })
