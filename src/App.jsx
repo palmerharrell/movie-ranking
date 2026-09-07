@@ -654,6 +654,18 @@ function App() {
     >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
         <header className="banner relative flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
+          <div className="absolute left-3 top-3 md:left-8 md:top-4">
+            <BannerMenu
+              onStandings={() => setShowStandingsDrawer(true)}
+              onLoadRanking={() => setShowLoadView(true)}
+              onSkipped={() => setShowSkippedView(true)}
+              onInstructions={() => setShowInstructionsModal(true)}
+              pg13Checked={effectivePg13}
+              pg13Disabled={isFamily}
+              pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
+              onPg13Change={setPg13}
+            />
+          </div>
           <button
             type="button"
             onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
@@ -678,17 +690,7 @@ function App() {
               className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
             />
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <BannerMenu
-              onStandings={() => setShowStandingsDrawer(true)}
-              onLoadRanking={() => setShowLoadView(true)}
-              onSkipped={() => setShowSkippedView(true)}
-              onInstructions={() => setShowInstructionsModal(true)}
-              pg13Checked={effectivePg13}
-              pg13Disabled={isFamily}
-              pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
-              onPg13Change={setPg13}
-            />
+          <div className="flex items-center justify-center gap-3">
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
           </div>
         </header>
