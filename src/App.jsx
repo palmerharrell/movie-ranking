@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
@@ -135,6 +135,11 @@ function App() {
   // movie — see handleSkipMovie. While true, RightPanel shows an inline
   // "skip this one too?" prompt instead of the Rank button (#156).
   const [awaitingLastSkipConfirm, setAwaitingLastSkipConfirm] = useState(false)
+  // Backs the edge tabs' vertical position (#289) — the row wrapping the
+  // Rank button, measured below, rather than the tabs sitting at the
+  // viewport's fixed vertical center.
+  const rankRowRef = useRef(null)
+  const [tabsCenterY, setTabsCenterY] = useState(null)
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
@@ -247,6 +252,27 @@ function App() {
       document.body.style.overflow = previousOverflow
     }
   }, [showStandingsDrawer, showSkippedView])
+
+  // Keeps the Ranked/Skipped edge tabs (#289) vertically aligned with the
+  // Rank button rather than fixed at the viewport's vertical center — the
+  // button's own position shifts with pack/category content (a longer
+  // category label, a Head to Head pack with no Rank button at all, etc.),
+  // so this re-measures whenever that content could have changed size, plus
+  // on window resize. Head to Head packs unmount the row entirely
+  // (rankRowRef.current is null), so the measurement there just keeps
+  // whatever position was last known from a normal pack instead of
+  // updating — reasonable since there's no Rank button to align to anyway.
+  useLayoutEffect(() => {
+    function measure() {
+      if (rankRowRef.current) {
+        const rect = rankRowRef.current.getBoundingClientRect()
+        setTabsCenterY(rect.top + rect.height / 2)
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [category, packs, busy, switchingSubset])
 
   // Fetches the active subset's movies/packs. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
@@ -724,13 +750,19 @@ function App() {
               stays on desktop too, since that drawer (#269) is a fixed
               overlay on every breakpoint, not just mobile. Each hides
               itself while its own drawer is open, since the drawer already
-              occupies that edge. */}
+              occupies that edge. Vertically aligned with the Rank button
+              (#289, `tabsCenterY` above) rather than the viewport's fixed
+              center — `.edge-tab-left`/`.edge-tab-right` in index.css own
+              the horizontal peek/hover transform, since `top` here already
+              needs the plain (non-percentage) pixel value from that
+              measurement. */}
           {movies && (
             <button
               type="button"
               onClick={() => setShowStandingsDrawer(true)}
-              className={`edge-tab fixed top-1/2 left-0 z-20 -translate-x-1 -translate-y-1/2 flex-col items-center gap-0.5 rounded-r-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide transition-transform duration-150 hover:translate-x-0 md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
               style={{
+                top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderRight: '1px solid var(--surface-border)',
@@ -749,8 +781,9 @@ function App() {
             <button
               type="button"
               onClick={() => setShowSkippedView(true)}
-              className={`edge-tab fixed top-1/2 right-0 z-20 translate-x-1 -translate-y-1/2 flex-col items-center gap-0.5 rounded-l-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide transition-transform duration-150 hover:translate-x-0 ${showSkippedView ? 'hidden' : 'flex'}`}
+              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
               style={{
+                top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderLeft: '1px solid var(--surface-border)',
@@ -843,7 +876,7 @@ function App() {
                 </p>
               )}
               {category?.type !== HEAD_TO_HEAD_TYPE && (
-                <div className="mt-4 flex justify-center">
+                <div ref={rankRowRef} className="mt-4 flex justify-center">
                   <RankButton
                     onClick={handleRank}
                     disabled={!category || busy || switchingSubset || category.movies.length < 2}
