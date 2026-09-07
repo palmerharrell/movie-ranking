@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateCategory, tryBuildCategory } from './categoryGenerator.js'
+import { generateCategory, generateTurn, tryBuildCategory } from './categoryGenerator.js'
 
 // Forces the first random() draw (Tough Choice check) and second draw (Head
 // to Head check) above their chance so both are skipped, the third draw
@@ -602,6 +602,116 @@ describe('generateCategory', () => {
         random: forceRandomFiveThenSeeded(totalRankedCount),
       })
       expect(result.movies.some((m) => m.id === expectedForcedId)).toBe(true)
+    }
+  })
+})
+
+describe('generateCategory allowHeadToHead / forcedIndexOffset (#297)', () => {
+  it('never returns Head to Head or Top 10 Tough Choice when allowHeadToHead is false', () => {
+    const movies = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+
+    for (let seed = 0; seed < 30; seed++) {
+      const toughResult = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: 50,
+        allowHeadToHead: false,
+        random: forceToughChoiceThenSeeded(seed),
+      })
+      expect(toughResult.type).not.toBe('head-to-head')
+
+      const headResult = generateCategory(movies, {
+        isRanked,
+        totalRankedCount: 50,
+        allowHeadToHead: false,
+        random: forceHeadToHeadThenSeeded(seed),
+      })
+      expect(headResult.type).not.toBe('head-to-head')
+    }
+  })
+
+  it('shifts the forced-inclusion backstop by forcedIndexOffset', () => {
+    const unrankedIds = ['u0', 'u1', 'u2', 'u3']
+    const movies = [
+      ...unrankedIds.map((id) => ({ id, title: id, ranked: false })),
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `r${i}`, title: `R${i}`, ranked: true })),
+    ]
+    const isRanked = (m) => m.ranked
+    const totalRankedCount = 1
+
+    for (let forcedIndexOffset = 0; forcedIndexOffset < unrankedIds.length; forcedIndexOffset++) {
+      const expectedForcedId = unrankedIds[(totalRankedCount + forcedIndexOffset) % unrankedIds.length]
+      const result = generateCategory(movies, {
+        isRanked,
+        totalRankedCount,
+        forcedIndexOffset,
+        random: forceRandomFiveThenSeeded(forcedIndexOffset),
+      })
+      expect(result.movies.some((m) => m.id === expectedForcedId)).toBe(true)
+    }
+  })
+})
+
+describe('generateTurn (#297)', () => {
+  // Forces generateTurn's own PACK_CHOICE_CHANCE roll below its threshold
+  // (hit — a choice turn), then delegates to a seeded PRNG.
+  function forceChoiceThenSeeded(seed) {
+    let call = 0
+    const seeded = seededRandom(seed)
+    return () => {
+      call += 1
+      if (call === 1) return 0
+      return seeded()
+    }
+  }
+
+  // Forces generateTurn's own PACK_CHOICE_CHANCE roll above its threshold
+  // (miss — a forced turn), then forces generateCategory's own Tough
+  // Choice/Head to Head/Random Five rolls above their thresholds too, so
+  // the forced turn falls through to a normal attribute-based pack.
+  function forceForcedTurnThenSeeded(seed) {
+    let call = 0
+    const seeded = seededRandom(seed)
+    return () => {
+      call += 1
+      if (call <= 4) return 0.99
+      return seeded()
+    }
+  }
+
+  function makeDiversePool() {
+    return Array.from({ length: 30 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      year: 1980 + (i % 10),
+      decade: i % 3 === 0 ? '80s' : i % 3 === 1 ? '90s' : '00s',
+      director: `director-${i % 5}`,
+      genres: [i % 2 === 0 ? 'Comedy' : 'Drama'],
+      cast: [`actor-${i % 4}`],
+    }))
+  }
+
+  it('returns a single forced pack when the choice roll misses', () => {
+    const movies = makeDiversePool()
+    const result = generateTurn(movies, { random: forceForcedTurnThenSeeded(1) })
+    expect(result.type).toBe('pack')
+    expect(result.pack.movies).toHaveLength(5)
+  })
+
+  it('returns exactly 3 choice options, none of them Head to Head/Tough Choice, when the choice roll hits', () => {
+    const movies = makeDiversePool()
+    for (let seed = 0; seed < 20; seed++) {
+      const result = generateTurn(movies, { random: forceChoiceThenSeeded(seed) })
+      expect(result.type).toBe('choice')
+      expect(result.options).toHaveLength(3)
+      for (const option of result.options) {
+        expect(option.type).not.toBe('head-to-head')
+        expect(option.movies.length).toBeGreaterThan(0)
+      }
     }
   })
 })

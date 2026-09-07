@@ -1,4 +1,4 @@
-import { generateCategory } from './categoryGenerator.js'
+import { generateCategory, generateTurn } from './categoryGenerator.js'
 import { genreSubsetExclusions } from './genreSubsets.js'
 import { familySubsetExclusions } from './familyMode.js'
 import {
@@ -62,6 +62,24 @@ export async function getCategory({ family, popular, genre, pg13 } = {}) {
   const eligible = movies.filter((m) => !m.skipped)
   const rankedCount = eligible.filter((m) => m.timesRanked > 0).length
   return generateCategory(eligible, {
+    isRanked: (m) => m.timesRanked > 0,
+    totalRankedCount: rankedCount,
+    excludedAttributes: [
+      ...(family ? familySubsetExclusions() : []),
+      ...(genre ? genreSubsetExclusions(genre) : []),
+    ],
+  })
+}
+
+// The next turn (#297) — either a single forced pack (same shape/behavior as
+// getCategory above) or a 3-way choice of candidate packs. Fetches movies
+// once and derives everything from that one snapshot, rather than the old
+// "Up Next" queue's pattern of one network round trip per queue slot.
+export async function getNextTurn({ family, popular, genre, pg13 } = {}) {
+  const movies = await getMovies({ family, popular, genre, pg13 })
+  const eligible = movies.filter((m) => !m.skipped)
+  const rankedCount = eligible.filter((m) => m.timesRanked > 0).length
+  return generateTurn(eligible, {
     isRanked: (m) => m.timesRanked > 0,
     totalRankedCount: rankedCount,
     excludedAttributes: [

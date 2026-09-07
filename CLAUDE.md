@@ -157,7 +157,7 @@ exposed in the UI.
 - See **Saved rankings** below for what happens once every movie has been
   ranked at least once.
 
-## Category generation & queue (right panel)
+## Category generation & turns (right panel)
 - Categories are built from single or paired attributes: director, genre, release
   year, decade, cast member, studio, franchise/collection, original language, or
   keyword/tag.
@@ -259,22 +259,33 @@ exposed in the UI.
     next, without any new per-movie staleness tracking.
 - Display a plain-language label above the list, e.g. "Directed by Wes Anderson",
   "90s Comedies", "80s movies starring Harrison Ford", "Random Five".
-- **Upcoming queue:** rather than a single "next category" generated on
-  demand, the app keeps a small queue of pre-generated upcoming packs (8,
-  `QUEUE_SIZE` in `App.jsx` — #134). Rather than a separate always-visible
-  list column, it's surfaced via a dropdown (`QueueMenu.jsx`) in the pack
-  card's own header, top-right, next to the pack's category label —
-  labeled "Up Next" (#275) beside its icon, rather than icon-only — opening
-  it shows the same queued-pack cards (poster stack + label) as before,
-  just on demand instead of permanently occupying layout space.
-  - **"Rank →"** submits the active pack's Elo update, promotes the first
-    queued pack to active, and generates one fresh pack to refill the queue.
-  - **Clicking a queued pack** (from the dropdown) discards the current
-    active pack without submitting it, promotes the clicked pack to active,
-    and generates one fresh pack to refill the queue.
-  - Queued packs are generated independently and may overlap each other in
-    which movies they include — that's expected, not a bug, since only one of
-    them will ever actually get submitted.
+- **Turns, and the pack-choice screen (#297):** rather than a persisted
+  "Up Next" queue of pre-generated packs (the app's earlier design, #134),
+  every turn is generated fresh, on demand, the moment it's needed
+  (`api.getNextTurn` in `api.js`, `generateTurn` in `categoryGenerator.js`).
+  A turn is either a single forced pack — a normal attribute pack, Random
+  Five, Head to Head, or Top 10 Tough Choice, exactly as generated before —
+  or, with `PACK_CHOICE_CHANCE` (35%) probability checked first, a 3-way
+  **choice** of candidate packs (`PackChoiceScreen.jsx`) that the user picks
+  between instead of one just appearing. Choice candidates are always 3
+  normal 5-tile packs (attribute-based or Random Five); Head to Head and Top
+  10 Tough Choice never appear as one of the 3 options (`allowHeadToHead:
+  false` when building each candidate) — those two only ever show up on
+  their own, un-chosen, forced turns, same frequency/logic as before. Each
+  candidate also gets its own `forcedIndexOffset` into the #224
+  forced-inclusion backstop, since all 3 are drawn from the same
+  `movies`/`totalRankedCount` snapshot (none have been submitted yet) and
+  would otherwise all force in the identical backstop movie if more than one
+  rolled Random Five. Picking a candidate (`onChoose`/`handleChoosePack` in
+  `App.jsx`) needs no network round trip — the other two are simply
+  discarded; the *next* turn is only generated once the chosen pack actually
+  gets ranked/submitted. This is an explicit, acknowledged trade-off left
+  unresolved by this feature: since only one of the three offered packs ever
+  gets ranked, a movie that keeps losing out across choice rounds could in
+  principle delay the pool reaching "every movie ranked once" (see
+  **Progress tracking**/**Saved rankings** below) — there's no new
+  persisted "offered but not chosen" tracking to prevent that, just the
+  existing forced-turn cadence and backstop.
 
 ## Progress tracking
 - `LeftPanel.jsx` shows a label near the standings header: `n/nnn ranked` —
@@ -479,11 +490,13 @@ exposed in the UI.
   sorted by eloRating. Progress label (`n/nnn ranked`) near the header — see
   **Progress tracking**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
-  label, reorderable via drag-and-drop (`@dnd-kit`) — plus the icon-only
-  queue dropdown in the card's own header described in **Category
-  generation & queue**.
+  label, reorderable via drag-and-drop (`@dnd-kit`). Occasionally this is
+  replaced by the pack-choice screen (`PackChoiceScreen.jsx`) instead — see
+  **Category generation & turns**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
-  resort, and queue advance.
+  resort, and generates the next turn. Not shown during a Head to Head/Top
+  10 Tough Choice pack (single-click submit instead) or a pack-choice turn
+  (picking a candidate is the action).
 - **Ranked/Skipped edge tabs (#271):** the ranked (`n/nnn`) and skipped (`n`)
   counts that used to sit inline flanking the "Rank →" button are now two
   tab handles pinned to the window edge (`App.jsx`, computed once from
@@ -519,7 +532,7 @@ exposed in the UI.
   activates a drag (and installs a capture-phase listener that swallows the
   next click) on pointerdown with zero required movement by default, so
   without a small movement threshold a tap could never fire `onClick` on a
-  draggable tile. Head to Head cards (see **Category generation & queue**)
+  draggable tile. Head to Head cards (see **Category generation & turns**)
   are themselves one big click target for submitting a pick, so they get a
   small "ⓘ" button in the card's own corner instead (`onClick` there stops
   propagation so it opens the detail card without also submitting a pick)

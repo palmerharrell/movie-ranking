@@ -34,8 +34,8 @@ export function InstructionsModal({ onClose, initialShowOnLoad = true }) {
             Instructions (reopen this guide).
           </li>
           <li>
-            <strong>Queue button</strong> (top-right of the pack) — jump straight
-            to one of the upcoming packs instead of ranking the current one.
+            Every so often you&rsquo;ll get to <strong>choose your next
+            pack</strong> from 3 options instead of one just appearing.
           </li>
           <li>
             <strong>Subset picker</strong> — switch which pool of movies
