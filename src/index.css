@@ -99,6 +99,19 @@ body {
   border-bottom: 1px solid var(--surface-border);
 }
 
+/* Light Mode banner (#278) — the title badge stays its fixed dark navy
+   (it's a baked-in-pixels logo lockup with the flanking film-reel icons,
+   not something CSS can recolor), but in Light Mode the strip around it
+   otherwise just inherited the page background with no distinction of its
+   own. Giving the banner its own light surface + shadow frames the dark
+   badge as an accent within a header bar instead of it floating directly
+   on the page. Dark Mode is left alone — there the page background is
+   already the same dark tone the badge is designed against. */
+[data-color-mode='light'] .banner {
+  background: var(--surface);
+  box-shadow: var(--surface-shadow);
+}
+
 .app-title {
   font-family: var(--font-display);
   color: var(--accent);
@@ -265,6 +278,7 @@ body {
 /* Pack column */
 
 .undo-skip {
+  padding: 6px 0;
   font-family: var(--font-mono);
   color: var(--text-low);
 }
@@ -276,6 +290,34 @@ body {
 
 .undo-skip-button:hover:not(:disabled) {
   color: var(--text-high);
+}
+
+/* Ranked/Skipped edge tabs (#271, #289) — `top` is set inline from a
+   measured pixel value (App.jsx's `tabsCenterY`, aligning the tabs with
+   the Rank button) rather than a percentage, so these own only the fixed
+   positioning and the horizontal peek/hover transform, not the vertical
+   offset itself. */
+.edge-tab {
+  position: fixed;
+  transition: transform 150ms ease;
+}
+
+.edge-tab-left {
+  left: 0;
+  transform: translate(-4px, -50%);
+}
+
+.edge-tab-left:hover {
+  transform: translate(0, -50%);
+}
+
+.edge-tab-right {
+  right: 0;
+  transform: translate(4px, -50%);
+}
+
+.edge-tab-right:hover {
+  transform: translate(0, -50%);
 }
 
 .last-skip-prompt {
@@ -801,8 +843,11 @@ body {
   opacity: 0.6;
 }
 
-/* Light/Dark Mode toggle (#265) */
-
+/* Light/Dark Mode toggle (#265, #279) — border and background tint use the
+   active theme's own --accent rather than the neutral --surface-border
+   every other icon button uses, so the toggle itself visibly matches
+   whichever mode is currently active instead of looking identical in
+   both. */
 .theme-toggle-button {
   display: flex;
   align-items: center;
@@ -810,12 +855,14 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 6px;
-  border: 1px solid var(--surface-border);
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   font-size: 16px;
   line-height: 1;
   z-index: 1;
 }
 
 .theme-toggle-button:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-hover);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
