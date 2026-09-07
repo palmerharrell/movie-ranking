@@ -772,6 +772,33 @@ function App() {
                   />
                 </div>
               )}
+              {movies &&
+                (() => {
+                  const eligibleMovies = movies.filter((m) => !m.skipped)
+                  const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
+                  const skippedCount = movies.filter((m) => m.skipped).length
+                  const eligibleCount = eligibleMovies.length
+                  return (
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowStandingsDrawer(true)}
+                        className="standings-reset-button font-mono text-xs"
+                      >
+                        {rankedCount}/{eligibleCount} ranked
+                      </button>
+                      {skippedCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowSkippedView(true)}
+                          className="standings-reset-button font-mono text-xs"
+                        >
+                          {skippedCount} skipped
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
             </div>
           </main>
         </div>
