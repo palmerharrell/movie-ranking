@@ -7,7 +7,22 @@ import { useEffect, useRef, useState } from 'react'
 // the standings panel is always visible in the left column already, so that
 // item is hidden at the md breakpoint, same as the old standalone button was.
 // Instructions (#237) reopens the startup InstructionsModal on demand.
-export function BannerMenu({ onStandings, onLoadRanking, onSkipped, onInstructions }) {
+//
+// The PG-13 & Under checkbox (#272) moved in here from its own spot in the
+// banner row, freeing up space there for the subset picker (#274). Unlike
+// the other items, picking it doesn't close the menu (no `pick()` call) —
+// it's a toggle the user may want to flip more than once in a row, and
+// closing on every click would hide the checked-state feedback.
+export function BannerMenu({
+  onStandings,
+  onLoadRanking,
+  onSkipped,
+  onInstructions,
+  pg13Checked,
+  pg13Disabled,
+  pg13Title,
+  onPg13Change,
+}) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
 
@@ -64,6 +79,19 @@ export function BannerMenu({ onStandings, onLoadRanking, onSkipped, onInstructio
           <button type="button" onClick={() => pick(onInstructions)} className="banner-menu-item">
             Instructions
           </button>
+          <hr className="banner-menu-divider" />
+          <label
+            className="banner-menu-item banner-menu-checkbox-item"
+            title={pg13Title}
+          >
+            PG-13 &amp; Under
+            <input
+              type="checkbox"
+              checked={pg13Checked}
+              disabled={pg13Disabled}
+              onChange={(event) => onPg13Change(event.target.checked)}
+            />
+          </label>
         </div>
       )}
     </div>

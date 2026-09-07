@@ -138,6 +138,14 @@ function App() {
 
   const category = packs?.[0] ?? null
   const queue = packs?.slice(1) ?? []
+  // Backs the two edge tabs (#271) as well as the old inline ranked/skipped
+  // counts they replaced — hoisted here since both needed the same three
+  // values, previously recomputed separately in the Head to Head and normal
+  // pack branches below.
+  const eligibleMovies = movies ? movies.filter((m) => !m.skipped) : []
+  const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
+  const skippedCount = movies ? movies.filter((m) => m.skipped).length : 0
+  const eligibleCount = eligibleMovies.length
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
   const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) ? subset : null
@@ -646,6 +654,18 @@ function App() {
     >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
         <header className="banner relative flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
+          <div className="absolute left-3 top-3 md:left-8 md:top-4">
+            <BannerMenu
+              onStandings={() => setShowStandingsDrawer(true)}
+              onLoadRanking={() => setShowLoadView(true)}
+              onSkipped={() => setShowSkippedView(true)}
+              onInstructions={() => setShowInstructionsModal(true)}
+              pg13Checked={effectivePg13}
+              pg13Disabled={isFamily}
+              pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
+              onPg13Change={setPg13}
+            />
+          </div>
           <button
             type="button"
             onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
@@ -670,26 +690,8 @@ function App() {
               className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
             />
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <BannerMenu
-              onStandings={() => setShowStandingsDrawer(true)}
-              onLoadRanking={() => setShowLoadView(true)}
-              onSkipped={() => setShowSkippedView(true)}
-              onInstructions={() => setShowInstructionsModal(true)}
-            />
+          <div className="flex items-center justify-center gap-3">
             <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
-            <label
-              className="pg13-toggle flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em]"
-              title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
-            >
-              PG-13 &amp; Under
-              <input
-                type="checkbox"
-                checked={effectivePg13}
-                disabled={isFamily}
-                onChange={(event) => setPg13(event.target.checked)}
-              />
-            </label>
           </div>
         </header>
 
@@ -713,6 +715,57 @@ function App() {
         )}
 
         <div className="relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[340px_1fr]">
+          {/* Edge tabs (#271): replace the old inline ranked/skipped counts
+              with tab handles pinned to the window edge, doubling as the
+              way to slide out their respective drawer. The Ranked tab is
+              mobile-only (md:hidden) since desktop already shows the
+              Standings panel inline at the left edge — a tab to open
+              something already open would be redundant. The Skipped tab
+              stays on desktop too, since that drawer (#269) is a fixed
+              overlay on every breakpoint, not just mobile. Each hides
+              itself while its own drawer is open, since the drawer already
+              occupies that edge. */}
+          {movies && (
+            <button
+              type="button"
+              onClick={() => setShowStandingsDrawer(true)}
+              className={`edge-tab fixed top-1/2 left-0 z-20 -translate-x-1 -translate-y-1/2 flex-col items-center gap-0.5 rounded-r-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide transition-transform duration-150 hover:translate-x-0 md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
+              style={{
+                background: 'var(--surface)',
+                borderTop: '1px solid var(--surface-border)',
+                borderRight: '1px solid var(--surface-border)',
+                borderBottom: '1px solid var(--surface-border)',
+                boxShadow: 'var(--surface-shadow)',
+                color: 'var(--text-low)',
+              }}
+            >
+              <span className="text-[13px] font-semibold normal-case" style={{ color: 'var(--text-high)' }}>
+                {rankedCount}/{eligibleCount}
+              </span>
+              <span>Ranked</span>
+            </button>
+          )}
+          {skippedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowSkippedView(true)}
+              className={`edge-tab fixed top-1/2 right-0 z-20 translate-x-1 -translate-y-1/2 flex-col items-center gap-0.5 rounded-l-lg px-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide transition-transform duration-150 hover:translate-x-0 ${showSkippedView ? 'hidden' : 'flex'}`}
+              style={{
+                background: 'var(--surface)',
+                borderTop: '1px solid var(--surface-border)',
+                borderLeft: '1px solid var(--surface-border)',
+                borderBottom: '1px solid var(--surface-border)',
+                boxShadow: 'var(--surface-shadow)',
+                color: 'var(--text-low)',
+              }}
+            >
+              <span className="text-[13px] font-semibold normal-case" style={{ color: 'var(--text-high)' }}>
+                {skippedCount}
+              </span>
+              <span>Skipped</span>
+            </button>
+          )}
+
           {showStandingsDrawer && (
             <div
               className="fixed inset-0 z-30 bg-black/55 md:hidden"
@@ -789,78 +842,14 @@ function App() {
                   Loading…
                 </p>
               )}
-              {category?.type === HEAD_TO_HEAD_TYPE
-                ? movies &&
-                  (() => {
-                    const eligibleMovies = movies.filter((m) => !m.skipped)
-                    const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
-                    const skippedCount = movies.filter((m) => m.skipped).length
-                    const eligibleCount = eligibleMovies.length
-                    return (
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setShowStandingsDrawer(true)}
-                          className="standings-reset-button font-mono text-xs"
-                        >
-                          {rankedCount}/{eligibleCount} ranked
-                        </button>
-                        {skippedCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setShowSkippedView(true)}
-                            className="standings-reset-button font-mono text-xs"
-                          >
-                            {skippedCount} skipped
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })()
-                : (() => {
-                    let rankedButton = null
-                    let skippedButton = null
-                    if (movies) {
-                      const eligibleMovies = movies.filter((m) => !m.skipped)
-                      const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
-                      const skippedCount = movies.filter((m) => m.skipped).length
-                      const eligibleCount = eligibleMovies.length
-                      rankedButton = (
-                        <button
-                          type="button"
-                          onClick={() => setShowStandingsDrawer(true)}
-                          className="standings-reset-button flex flex-col items-center leading-tight font-mono text-xs"
-                        >
-                          <span>
-                            {rankedCount}/{eligibleCount}
-                          </span>
-                          <span>ranked</span>
-                        </button>
-                      )
-                      skippedButton = skippedCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowSkippedView(true)}
-                          className="standings-reset-button flex flex-col items-center leading-tight font-mono text-xs"
-                        >
-                          <span>{skippedCount}</span>
-                          <span>skipped</span>
-                        </button>
-                      )
-                    }
-                    return (
-                      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                        <div className="flex justify-end">{rankedButton}</div>
-                        <RankButton
-                          onClick={handleRank}
-                          disabled={
-                            !category || busy || switchingSubset || category.movies.length < 2
-                          }
-                        />
-                        <div className="flex justify-start">{skippedButton}</div>
-                      </div>
-                    )
-                  })()}
+              {category?.type !== HEAD_TO_HEAD_TYPE && (
+                <div className="mt-4 flex justify-center">
+                  <RankButton
+                    onClick={handleRank}
+                    disabled={!category || busy || switchingSubset || category.movies.length < 2}
+                  />
+                </div>
+              )}
             </div>
           </main>
         </div>
@@ -887,12 +876,21 @@ function App() {
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
       {showSkippedView && (
+        <div
+          className="fixed inset-0 z-30 bg-black/55"
+          onClick={() => setShowSkippedView(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 min-h-0 w-[85vw] max-w-[380px] bg-[var(--bg-page)] shadow-[-8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 ${showSkippedView ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         <SkippedView
+          open={showSkippedView}
           onChange={handleSkippedViewChange}
           onClose={() => setShowSkippedView(false)}
           onOpenDetail={setDetailMovie}
         />
-      )}
+      </aside>
       {showInstructionsModal && (
         <InstructionsModal
           onClose={handleCloseInstructions}

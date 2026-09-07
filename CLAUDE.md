@@ -130,14 +130,21 @@ exposed in the UI.
   starts it back at those same defaults rather than restoring the old
   rating, since that data is gone. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
-  `src/components/SkippedView.jsx`, opened via a "Skipped" button in the
-  banner next to "Load Ranking") lists every persistently-skipped movie
-  (poster/title/year, matching the Standings row styling) with a per-movie
-  "Un-skip" button and a "Clear All" action that un-skips everything at
-  once — both call `api.unmarkSkipped`/`localRankingStore.js`'s
-  `unmarkSkipped` directly, independent of whether the pack that skip
-  happened in is still active, so a skip can be reversed at any time, not
-  just immediately after it happens. Skipped state survives Reset/Save
+  `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
+  lists every persistently-skipped movie (poster/title/year, matching the
+  Standings row styling) with a per-movie "Un-skip" button and a "Clear All"
+  action that un-skips everything at once — both call
+  `api.unmarkSkipped`/`localRankingStore.js`'s `unmarkSkipped` directly,
+  independent of whether the pack that skip happened in is still active, so
+  a skip can be reversed at any time, not just immediately after it happens.
+  It renders as a slide-out drawer from the right edge (#269), mirroring the
+  Standings drawer's own always-mounted `aside` + backdrop overlay pattern
+  in `App.jsx` (kept mounted off-screen via `translate-x-full` rather than
+  conditionally rendered, so the slide transition has something to animate
+  on both open and close) rather than the centered `modal-overlay`/
+  `modal-card` it used before — that also means clicking the backdrop
+  outside the panel closes it (#268), the same as the Standings drawer,
+  which the old modal never supported. Skipped state survives Reset/Save
   (it's a fact about the viewer, not about a ranking run — see **Saved
   rankings**).
 - A movie appearing in two different 5-packs is how the pool becomes
@@ -243,11 +250,11 @@ exposed in the UI.
 - **Upcoming queue:** rather than a single "next category" generated on
   demand, the app keeps a small queue of pre-generated upcoming packs (8,
   `QUEUE_SIZE` in `App.jsx` — #134). Rather than a separate always-visible
-  list column, it's surfaced via an icon-only dropdown (`QueueMenu.jsx`, no
-  text label) in the pack card's own header, top-right, next to the pack's
-  category label — opening it shows the same queued-pack cards (poster
-  stack + label) as before, just on demand instead of permanently occupying
-  layout space.
+  list column, it's surfaced via a dropdown (`QueueMenu.jsx`) in the pack
+  card's own header, top-right, next to the pack's category label —
+  labeled "Up Next" (#275) beside its icon, rather than icon-only — opening
+  it shows the same queued-pack cards (poster stack + label) as before,
+  just on demand instead of permanently occupying layout space.
   - **"Rank →"** submits the active pack's Elo update, promotes the first
     queued pack to active, and generates one fresh pack to refill the queue.
   - **Clicking a queued pack** (from the dropdown) discards the current
@@ -465,6 +472,20 @@ exposed in the UI.
   generation & queue**.
 - **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
   resort, and queue advance.
+- **Ranked/Skipped edge tabs (#271):** the ranked (`n/nnn`) and skipped (`n`)
+  counts that used to sit inline flanking the "Rank →" button are now two
+  tab handles pinned to the window edge (`App.jsx`, computed once from
+  `movies` rather than recomputed separately per pack type as before) —
+  clicking either doubles as the way to open that count's own drawer
+  (Standings on the left, Skipped on the right — see **Skip ("Haven't
+  Seen")** and **Left panel**/**Skipped Movies drawer** above). The Ranked
+  tab is mobile-only (`md:hidden`) since desktop already shows the Standings
+  panel inline at the left edge — a tab to open something already open would
+  be redundant; the Skipped tab shows on every breakpoint, since that
+  drawer (#269) is a fixed overlay regardless of screen size. Each tab hides
+  itself while its own drawer is open (the drawer already occupies that
+  edge), and the Skipped tab only appears once `skippedCount > 0`, same as
+  the inline button it replaced.
 - **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
   pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
   — a bigger card with the poster, full (untruncated) title, director, full
@@ -481,31 +502,37 @@ exposed in the UI.
   propagation so it opens the detail card without also submitting a pick)
   — the only place this is needed, since it's the one view where a movie's
   full title has no other way to be seen.
-- **Banner:** two rows. Top row: an app-icon (recolored to the active
-  Neon-theme palette — see **Movie subsets**) on either side of the "Movie
-  Ranking" title, all three sitting on a shared dark badge
-  (`.app-title-badge`) so the icons and title read as one continuous piece
-  rather than separate elements, without adding height beyond the icons'
-  own. A small icon-only sun/moon toggle (#265) sits in the top row's own
-  top-right corner — clicking it flips `colorMode` (`'dark'`/`'light'`,
-  persisted in its own `localStorage` key, `movie-ranking-color-mode`,
-  independent of the subset picker's own persistence) between Dark Mode
-  (today's Neon palette, unchanged, and still the default) and a new Light
-  Mode palette. This is a second, orthogonal palette dimension from the
-  per-subset `data-theme` in **Movie subsets** below — every subset already
-  shares one `data-theme='popular'` look, so light/dark is applied via a
-  separate `data-color-mode` attribute overriding the same CSS custom
-  properties (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
-  `src/index.css`) rather than being folded into the subset theme system.
-  Bottom row, spread across the full width: an icon-only "☰" menu
-  button (`BannerMenu.jsx`, no text label) on the left — opening it reveals
+- **Banner:** two rows. Top row: an icon-only "☰" menu button
+  (`BannerMenu.jsx`, no text label) sits in the top row's own top-left
+  corner (#273, moved up from its own bottom-row spot so the bottom row
+  could hold just the subset picker — see below) — opening it reveals
   Standings (mobile-only; desktop already shows the standings panel
   in-line), a "Load Ranking" entry point for browsing saved snapshots (see
   **Saved rankings**), a "Skipped" entry point for browsing/un-skipping
-  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), and an
+  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), an
   "Instructions" entry point (#237) that reopens the startup instructions
-  popup on demand — then the subset picker, then the PG-13-and-under toggle
-  (#193, see **PG-13 and under toggle**) flush right. A large, very-faint
+  popup on demand, and (below a divider) the PG-13-and-under checkbox
+  (#193, #272, see **PG-13 and under toggle**). Unlike the other menu
+  items, picking the checkbox doesn't close the menu, since it's a toggle
+  the user may want to flip more than once in a row and closing on every
+  click would hide the checked-state feedback. An app-icon (recolored to
+  the active Neon-theme palette — see **Movie subsets**) sits on either
+  side of the "Movie Ranking" title, all three sitting on a shared dark
+  badge (`.app-title-badge`) so the icons and title read as one continuous
+  piece rather than separate elements, without adding height beyond the
+  icons' own. A small icon-only sun/moon toggle (#265) sits in the top
+  row's own top-right corner, mirroring the ☰ button's position on the
+  left — clicking it flips `colorMode` (`'dark'`/`'light'`, persisted in
+  its own `localStorage` key, `movie-ranking-color-mode`, independent of
+  the subset picker's own persistence) between Dark Mode (today's Neon
+  palette, unchanged, and still the default) and a new Light Mode palette.
+  This is a second, orthogonal palette dimension from the per-subset
+  `data-theme` in **Movie subsets** below — every subset already shares one
+  `data-theme='popular'` look, so light/dark is applied via a separate
+  `data-color-mode` attribute overriding the same CSS custom properties
+  (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
+  `src/index.css`) rather than being folded into the subset theme system.
+  Bottom row holds just the subset picker, centered. A large, very-faint
   film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
   fade the banner's own gradient) sits behind the whole app-shell under the
   Neon theme only — see **Movie subsets**.
@@ -682,11 +709,13 @@ language entries, and 1 country entry, grouped in the picker:
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
 
-## PG-13 and under toggle (#193, #200)
-A global checkbox in the banner, next to the subset picker (`pg13` state in
-`App.jsx`, persisted in its own `localStorage` key — unlike the subset
-picker's own key, it survives subset switches rather than being tied to
-one) — labeled "PG-13 & Under." Family always applies this filter
+## PG-13 and under toggle (#193, #200, #272)
+A global checkbox in the ☰ menu (`BannerMenu.jsx`, below a divider — moved
+out of the banner row itself in #272 to make room for a larger subset
+picker, see **UI layout**) — `pg13` state in `App.jsx`, persisted in its
+own `localStorage` key — unlike the subset picker's own key, it survives
+subset switches rather than being tied to one — labeled "PG-13 & Under."
+Family always applies this filter
 regardless of the checkbox's own state (#200, see **Movie subsets** above) —
 while Family is active, the checkbox itself shows checked and disabled (with
 a tooltip explaining why) rather than actually flipping the underlying

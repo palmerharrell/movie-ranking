@@ -5,6 +5,20 @@
   color-scheme: dark;
 }
 
+/* Locks the page itself so it can't scroll or rubber-band (#270) — the
+   app-shell (`h-screen overflow-hidden`) already constrains layout to the
+   viewport, but html/body themselves were still scrollable/bounceable as a
+   fallback (e.g. a mobile browser's URL bar collapsing can momentarily
+   change viewport height). Internal areas (main pack column, standings
+   list, drawers, etc.) keep scrolling normally via their own
+   `overflow-y-auto`. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
 }
@@ -119,10 +133,10 @@ body {
 }
 
 .subset-select {
-  width: 130px;
-  height: 37px;
+  width: 180px;
+  height: 46px;
   box-sizing: border-box;
-  padding: 6px 34px 6px 12px;
+  padding: 8px 38px 8px 14px;
   border: 1px solid var(--surface-border);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
@@ -146,10 +160,10 @@ body {
 .subset-select-arrow {
   position: absolute;
   top: 50%;
-  right: 16px;
+  right: 18px;
   transform: translateY(-50%);
   color: var(--text-mid);
-  font-size: 10px;
+  font-size: 13px;
   pointer-events: none;
 }
 
@@ -161,24 +175,6 @@ body {
 .subset-select optgroup {
   background: var(--surface);
   color: var(--text-high);
-}
-
-/* PG-13-and-under toggle (#193) — global, composes with whichever subset is
-   active, so it's styled alongside the subset picker rather than as part of
-   any one theme. */
-.pg13-toggle {
-  color: var(--text-mid);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.pg13-toggle:hover {
-  color: var(--text-high);
-}
-
-.pg13-toggle input {
-  accent-color: var(--accent);
-  cursor: pointer;
 }
 
 /* Body / standings column */
@@ -334,11 +330,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  gap: 6px;
   height: 32px;
+  padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--surface-border);
   color: var(--text-mid);
+}
+
+.queue-menu-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .queue-menu-button:hover:not(:disabled),
@@ -769,6 +775,30 @@ body {
 .banner-menu-item:hover {
   background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-high);
+}
+
+.banner-menu-divider {
+  margin: 4px 2px;
+  border: none;
+  border-top: 1px solid var(--surface-border);
+}
+
+.banner-menu-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.banner-menu-checkbox-item input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.banner-menu-checkbox-item:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Light/Dark Mode toggle (#265) */
