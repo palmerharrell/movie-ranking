@@ -34,6 +34,11 @@ const PG13_STORAGE_KEY = 'movie-ranking-pg13'
 // "hidden", even though the checkbox itself reads as "show"). Also
 // reachable any time from the ☰ menu's "Instructions" item (#237).
 const INSTRUCTIONS_STORAGE_KEY = 'movie-ranking-hide-instructions'
+// Light/Dark Mode (#265) — independent of the subset picker's own palette
+// (every subset already shares one look, see data-theme='popular' in
+// index.css); this just flips a separate set of CSS custom properties.
+// Persists across sessions like the other banner toggles above.
+const COLOR_MODE_STORAGE_KEY = 'movie-ranking-color-mode'
 const QUEUE_SIZE = 8
 
 function initialSubset() {
@@ -48,6 +53,11 @@ function initialPg13() {
 
 function initialShowInstructions() {
   return localStorage.getItem(INSTRUCTIONS_STORAGE_KEY) !== 'true'
+}
+
+function initialColorMode() {
+  const stored = localStorage.getItem(COLOR_MODE_STORAGE_KEY)
+  return stored === 'light' ? 'light' : 'dark'
 }
 
 async function fetchPacks(family, popular, genre, pg13) {
@@ -74,6 +84,7 @@ function isFullyRanked(movies) {
 function App() {
   const [subset, setSubset] = useState(initialSubset)
   const [pg13, setPg13] = useState(initialPg13)
+  const [colorMode, setColorMode] = useState(initialColorMode)
   const [movies, setMovies] = useState(null)
   // packs[0] is the active pack; packs[1..] is the upcoming queue.
   const [packs, setPacks] = useState(null)
@@ -207,6 +218,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(PG13_STORAGE_KEY, String(pg13))
   }, [pg13])
+
+  useEffect(() => {
+    localStorage.setItem(COLOR_MODE_STORAGE_KEY, colorMode)
+  }, [colorMode])
 
   useEffect(() => {
     api.getMovies().then((allMovies) => setAllMoviesCount(allMovies.length))
@@ -625,11 +640,21 @@ function App() {
   return (
     <div
       data-theme="popular"
+      data-color-mode={colorMode}
       className="app-shell flex h-screen flex-col overflow-hidden"
       style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
     >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
-        <header className="banner flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
+        <header className="banner relative flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
+          <button
+            type="button"
+            onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
+            className="theme-toggle-button absolute right-3 top-3 md:right-8 md:top-4"
+            aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {colorMode === 'dark' ? '☀️' : '🌙'}
+          </button>
           <div className="app-title-badge flex w-fit items-center justify-center self-center gap-2 rounded-full px-1 md:gap-3 md:px-1.5">
             <img
               src={`${import.meta.env.BASE_URL}favicon.svg`}
