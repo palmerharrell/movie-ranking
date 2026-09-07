@@ -3,7 +3,14 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDb } from './db.js'
-import { getMovies, saveRanking, listSavedRankings, getSavedRankingMovies } from './rankingService.js'
+import {
+  getMovies,
+  saveRanking,
+  listSavedRankings,
+  getSavedRankingMovies,
+  getSharedRankingTopTen,
+  ensureShareSlug,
+} from './rankingService.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
@@ -11,6 +18,7 @@ const EMPTY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'empty')
 const FAMILY_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'family-data')
 const GROWN_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'grown-data')
 const POPULAR_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'popular-data')
+const LARGE_FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'large-data')
 
 function freshDb() {
   return createDb(':memory:')
@@ -219,4 +227,70 @@ test('getSavedRankingMovies stays frozen when the pool grows after save (#51)', 
   const saved = getSavedRankingMovies(db, GROWN_FIXTURES_DIR, id)
   assert.equal(saved.movies.length, 5, 'movie added to the pool after save must not appear')
   assert.ok(!saved.movies.some((m) => m.id === '6'))
+})
+
+test('saveRanking assigns a share slug up front (#220)', () => {
+  const db = freshDb()
+  const { shareSlug } = saveRanking(db, 'Snapshot', fullPoolEntries())
+  assert.equal(typeof shareSlug, 'string')
+  assert.ok(shareSlug.length > 0)
+})
+
+test('getSavedRankingMovies surfaces the share slug', () => {
+  const db = freshDb()
+  const { id, shareSlug } = saveRanking(db, 'Snapshot', fullPoolEntries())
+  const saved = getSavedRankingMovies(db, FIXTURES_DIR, id)
+  assert.equal(saved.shareSlug, shareSlug)
+})
+
+test('getSharedRankingTopTen returns only the top 10 by eloRating, public fields only', () => {
+  const db = freshDb()
+  const entries = Array.from({ length: 12 }, (_, i) => ({
+    movieId: String(i + 1),
+    eloRating: 2000 - i, // movie 1 highest, movie 12 lowest
+    timesRanked: 3,
+  }))
+  const { shareSlug } = saveRanking(db, 'Big Snapshot', entries, { subset: 'all', pg13: false })
+
+  const shared = getSharedRankingTopTen(db, LARGE_FIXTURES_DIR, shareSlug)
+  assert.equal(shared.name, 'Big Snapshot')
+  assert.equal(shared.subset, 'all')
+  assert.equal(shared.pg13, false)
+  assert.equal(shared.movies.length, 10)
+  assert.deepEqual(
+    shared.movies.map((m) => m.id),
+    Array.from({ length: 10 }, (_, i) => String(i + 1)),
+  )
+  // Public fields only — no eloRating/timesRanked/ownerClientId leaked.
+  for (const movie of shared.movies) {
+    assert.deepEqual(Object.keys(movie).sort(), ['id', 'posterUrl', 'title', 'year'])
+  }
+})
+
+test('getSharedRankingTopTen returns null for an unknown slug', () => {
+  const db = freshDb()
+  assert.equal(getSharedRankingTopTen(db, FIXTURES_DIR, 'nonexistent-slug'), null)
+})
+
+test('ensureShareSlug is a no-op that returns the existing slug when one is already set', () => {
+  const db = freshDb()
+  const { id, shareSlug } = saveRanking(db, 'Snapshot', fullPoolEntries())
+  assert.equal(ensureShareSlug(db, id), shareSlug)
+})
+
+test('ensureShareSlug generates and persists a slug for a legacy row (simulated by clearing it)', () => {
+  const db = freshDb()
+  const { id } = saveRanking(db, 'Snapshot', fullPoolEntries())
+  db.prepare('UPDATE saved_rankings SET share_slug = NULL WHERE id = ?').run(id)
+  assert.equal(getSavedRankingMovies(db, FIXTURES_DIR, id).shareSlug, null)
+
+  const newSlug = ensureShareSlug(db, id)
+  assert.equal(typeof newSlug, 'string')
+  assert.ok(newSlug.length > 0)
+  assert.equal(getSavedRankingMovies(db, FIXTURES_DIR, id).shareSlug, newSlug)
+})
+
+test('ensureShareSlug returns null for an unknown id', () => {
+  const db = freshDb()
+  assert.equal(ensureShareSlug(db, 999), null)
 })
