@@ -28,11 +28,11 @@ function QueuedPackCard({ pack, disabled, onSelect }) {
   )
 }
 
-// Icon-only dropdown (no "Up Next" label) replacing the old always-visible
-// side column — sits in the pack card's own header, top-right, next to the
-// pack's category label. Lines of decreasing width plus a forward arrow
-// reads as "queue/up next" without needing a text label, distinct from
-// BannerMenu's plain hamburger.
+// Dropdown replacing the old always-visible side column — sits in the pack
+// card's own header, top-right, next to the pack's category label. Lines of
+// decreasing width plus a forward arrow reads as "queue/up next" on its
+// own, but pairs it with an "Up Next" label (#275) rather than relying on
+// the icon alone, distinct from BannerMenu's plain hamburger.
 function QueueIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -82,10 +82,10 @@ export function QueueMenu({ queue, disabled, onSelect }) {
         onClick={() => setOpen((prev) => !prev)}
         disabled={disabled}
         className="queue-menu-button"
-        aria-label="Upcoming packs"
         aria-haspopup="true"
         aria-expanded={open}
       >
+        <span className="queue-menu-label">Up Next</span>
         <QueueIcon />
       </button>
       {open && (
