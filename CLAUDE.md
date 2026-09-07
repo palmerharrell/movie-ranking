@@ -339,7 +339,11 @@ exposed in the UI.
   checks for that query param before rendering `App` at all, and if it's
   present renders `SharedRankingView.jsx` instead — a small standalone page
   with no bearer-token pool fetch and no app shell, since anyone with the
-  link needs to be able to open it.
+  link needs to be able to open it. That page's footer has its own "Rank
+  your own movies →" link (#235) back to the app's root URL (`import.meta.env.BASE_URL`,
+  i.e. the same URL with no `?share=` param) — a visitor who lands on a
+  shared Top 10 has otherwise no way to reach the app itself from that
+  page.
   - **Slug, not the row's own id:** `saved_rankings.share_slug` is a random,
     unguessable id (12-char base64url, `server/db.js`'s
     `generateShareSlug`), deliberately not the row's sequential numeric

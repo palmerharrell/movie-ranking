@@ -48,6 +48,11 @@ export function SharedRankingView({ slug }) {
                 <TopTenTile key={movie.id} movie={movie} rank={index + 1} />
               ))}
             </ol>
+            <div className="mt-4 flex justify-end">
+              <a href={import.meta.env.BASE_URL} className="modal-button-primary text-sm">
+                Rank your own movies →
+              </a>
+            </div>
           </>
         )}
       </div>
