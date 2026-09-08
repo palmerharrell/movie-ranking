@@ -553,10 +553,19 @@ exposed in the UI.
   the user may want to flip more than once in a row and closing on every
   click would hide the checked-state feedback. An app-icon (recolored to
   the active Neon-theme palette — see **Movie subsets**) sits on either
-  side of the "Movie Ranking" title, all three sitting on a shared dark
-  badge (`.app-title-badge`) so the icons and title read as one continuous
-  piece rather than separate elements, without adding height beyond the
-  icons' own. A small icon-only sun/moon toggle (#265) sits in the top
+  side of the "Movie Ranking" title, all three sitting on a shared badge
+  (`.app-title-badge`) so the icons and title read as one continuous piece
+  rather than separate elements, without adding height beyond the icons'
+  own. In Dark Mode the badge's own background matches the icons' baked-in
+  navy exactly, reading as one continuous dark bar (unchanged since before
+  Light Mode existed); in Light Mode (#310) the badge's own background goes
+  transparent instead — using that same dark navy there just dropped a
+  dark bar onto the now-light banner surface (see **Light Mode banner**
+  below) — so each icon instead shows its own separately-recolored pale
+  mint background (`public/favicon-light.svg`, swapped in for
+  `public/favicon.svg` based on `colorMode`, see below), reading as two
+  self-contained light logo chips against the light banner instead. A
+  small icon-only sun/moon toggle (#265) sits in the top
   row's own top-right corner, mirroring the ☰ button's position on the
   left — clicking it flips `colorMode` (`'dark'`/`'light'`, persisted in
   its own `localStorage` key, `movie-ranking-color-mode`, independent of
@@ -602,7 +611,15 @@ language entries, and 1 country entry, grouped in the picker:
   original clip-art master), recolored via a one-off Pillow script (not
   checked in) into `public/favicon.svg`, `public/apple-touch-icon.png`,
   `public/pwa-192.png`, `public/pwa-512.png`, `public/pwa-maskable-512.png`,
-  and `src/assets/film-reel-bg.png`.
+  and `src/assets/film-reel-bg.png`. `public/favicon-light.svg` (#310) is a
+  second variant of just the title-badge icon, used only in Light Mode (see
+  **UI layout**/**Banner**) — since the original clip-art master isn't in
+  the repo, this one was produced by chroma-keying the flat navy background
+  out of the already-recolored `favicon.svg` bitmap and replacing it with a
+  pale mint (`#eaf8f6`), rather than re-running the original Pillow script
+  against source art. The OS-level icons (`apple-touch-icon.png`,
+  `pwa-*.png`) and the film-reel watermark stay navy in both modes — they
+  aren't part of the in-app banner badge this toggle affects.
 - **Family** (`subset: 'family'`) — movies tagged with TMDb's own "Family"
   genre (`genres[]` includes `"Family"`) — see `src/lib/familyMode.js`'s
   `isFamilyGenre`/`selectFamilySubset` (#152). The genre tag alone isn't a

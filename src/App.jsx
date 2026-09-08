@@ -680,14 +680,14 @@ function App() {
           </button>
           <div className="app-title-badge flex w-fit items-center justify-center self-center gap-2 rounded-full px-1 md:gap-3 md:px-1.5">
             <img
-              src={`${import.meta.env.BASE_URL}favicon.svg`}
+              src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
               alt=""
               aria-hidden="true"
               className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
             />
             <h1 className="app-title text-center text-[22px] md:text-[30px]">Movie Ranking</h1>
             <img
-              src={`${import.meta.env.BASE_URL}favicon.svg`}
+              src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
               alt=""
               aria-hidden="true"
               className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
