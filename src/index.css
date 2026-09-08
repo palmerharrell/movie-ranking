@@ -138,6 +138,19 @@ body {
   background: #0b1224;
 }
 
+/* Light Mode title badge (#310) — the icons themselves are baked-in navy
+   raster art (see above) and can't be recolored via CSS, so matching the
+   pill's own background to them, like Dark Mode does, would just be the
+   same dark navy bar dropped onto a white banner — it looked good against
+   the dark page it was designed for, not against a light one. Dropping the
+   pill's own background instead lets the banner's already-light surface
+   (see the `.banner` override above) show through between the icons, so
+   each icon reads as its own self-contained dark logo chip rather than
+   one continuous dark bar. */
+[data-color-mode='light'] .app-title-badge {
+  background: transparent;
+}
+
 /* Subset picker */
 
 .subset-select-wrap {
