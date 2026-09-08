@@ -2,13 +2,16 @@
 // tile/row views have to truncate to fit (full title, full cast list). Opened
 // by tapping/clicking a movie in a pack, the standings, or the skipped list
 // (#222), and via the head-to-head cards' own info button (#223), since
-// those are otherwise the one place a movie's full title never fits.
+// those are otherwise the one place a movie's full title never fits. Uses
+// its own `movie-detail-card` width (#302) rather than the shared
+// `modal-card-wide` other modals use, since this one's poster needs more
+// room than those modals want.
 export function MovieDetailModal({ movie, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card modal-card-wide">
+      <div className="modal-card movie-detail-card">
         <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
-          <div className="poster-placeholder h-[240px] w-[160px] shrink-0 overflow-hidden rounded-[8px] bg-cover">
+          <div className="poster-placeholder aspect-[2/3] w-full max-w-[320px] shrink-0 overflow-hidden rounded-[8px] bg-cover sm:w-[280px]">
             {movie.posterUrl && (
               <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
             )}
