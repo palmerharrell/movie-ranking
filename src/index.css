@@ -560,6 +560,10 @@ body {
   max-width: 480px;
 }
 
+.movie-detail-card {
+  max-width: 640px;
+}
+
 .modal-eyebrow {
   font-family: var(--font-mono);
   color: var(--accent);
