@@ -47,6 +47,14 @@ const COLOR_MODE_STORAGE_KEY = 'movie-ranking-color-mode'
 // still blocking clicks) by the time it unmounts.
 const PACK_INTRO_DISPLAY_MS = 1400
 const PACK_INTRO_FADE_MS = 300
+// Fallback for the Ranked/Skipped edge tabs' vertical position (#289) before
+// any normal pack's Rank row has been measured yet this session — e.g. the
+// very first turn happens to be a pack-choice screen. Approximates how far
+// above the viewport's bottom edge the Rank button normally sits, so the
+// tabs start out already fixed in roughly that spot (#312) rather than at
+// the viewport's vertical center, which can land in the middle of whatever
+// tall content (a 3-card pack-choice grid, say) is showing instead.
+const DEFAULT_TABS_BOTTOM_MARGIN = 110
 
 function initialSubset() {
   const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
@@ -285,14 +293,18 @@ function App() {
 
   // Keeps the Ranked/Skipped edge tabs (#289) vertically aligned with the
   // Rank button rather than fixed at the viewport's vertical center — the
-  // button's own position shifts with pack content (a longer category
-  // label, a Head to Head pack with no Rank button at all, etc.), so this
-  // re-measures whenever that content could have changed size, plus on
-  // window resize. Head to Head packs and pack-choice turns (#297) both
-  // unmount the row entirely (rankRowRef.current is null), so the
-  // measurement there just keeps whatever position was last known from a
-  // normal pack instead of updating — reasonable since there's no Rank
-  // button to align to anyway.
+  // button's own position shifts a little with pack content (a longer
+  // category label, etc.), so this re-measures whenever that content could
+  // have changed size, plus on window resize. Only ever measures off the
+  // Rank row itself: a Head to Head pack, Top 10 Tough Choice pack, or
+  // pack-choice turn (#297) all unmount that row (rankRowRef.current is
+  // null), and deliberately leave `tabsCenterY` untouched rather than
+  // re-deriving a position from whatever *their* own content looks like —
+  // those screens vary a lot in height (a 2-card Head to Head vs. a
+  // 3-card-stacked pack-choice grid on mobile), and re-measuring against
+  // them drifted the tabs into the middle of whichever one was showing
+  // instead of leaving them fixed at the one familiar spot from the last
+  // normal pack, which is where they're meant to stay (#312).
   useLayoutEffect(() => {
     function measure() {
       if (rankRowRef.current) {
@@ -739,7 +751,7 @@ function App() {
               onClick={() => setShowStandingsDrawer(true)}
               className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
               style={{
-                top: tabsCenterY ?? '50%',
+                top: tabsCenterY ?? window.innerHeight - DEFAULT_TABS_BOTTOM_MARGIN,
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderRight: '1px solid var(--surface-border)',
@@ -760,7 +772,7 @@ function App() {
               onClick={() => setShowSkippedView(true)}
               className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
               style={{
-                top: tabsCenterY ?? '50%',
+                top: tabsCenterY ?? window.innerHeight - DEFAULT_TABS_BOTTOM_MARGIN,
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderLeft: '1px solid var(--surface-border)',
