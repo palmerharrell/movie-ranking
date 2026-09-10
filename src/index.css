@@ -304,32 +304,46 @@ body {
   color: var(--text-high);
 }
 
-/* Ranked/Skipped edge tabs (#271, #289) — `top` is set inline from a
-   measured pixel value (App.jsx's `tabsCenterY`, aligning the tabs with
-   the Rank button) rather than a percentage, so these own only the fixed
-   positioning and the horizontal peek/hover transform, not the vertical
-   offset itself. */
+/* Ranked/Skipped edge tabs and the Rank button (#271, #289, #312 follow-up)
+   all anchor to this same `bottom` distance so the three stay aligned with
+   each other, always, regardless of pack content — none of them float in
+   normal document flow anymore (a longer category label, a pack with no
+   Rank button at all, etc. used to shift the Rank button and throw the
+   trio out of alignment). `env(safe-area-inset-bottom)` keeps them clear
+   of the home indicator on notched phones. The scrollable pack content
+   gets matching bottom padding (see `main` in App.jsx) so this fixed row
+   never covers it. */
+:root {
+  --fixed-bar-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+}
+
 .edge-tab {
   position: fixed;
+  bottom: var(--fixed-bar-bottom);
   transition: transform 150ms ease;
 }
 
 .edge-tab-left {
   left: 0;
-  transform: translate(-4px, -50%);
+  transform: translateX(-4px);
 }
 
 .edge-tab-left:hover {
-  transform: translate(0, -50%);
+  transform: translateX(0);
 }
 
 .edge-tab-right {
   right: 0;
-  transform: translate(4px, -50%);
+  transform: translateX(4px);
 }
 
 .edge-tab-right:hover {
-  transform: translate(0, -50%);
+  transform: translateX(0);
+}
+
+.rank-button-row-fixed {
+  position: fixed;
+  bottom: var(--fixed-bar-bottom);
 }
 
 .last-skip-prompt {
