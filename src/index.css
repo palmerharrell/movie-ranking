@@ -419,7 +419,7 @@ body {
   box-shadow: var(--surface-shadow);
 }
 
-[data-theme='popular'] .movie-tile.movie-tile--unranked {
+[data-theme='popular'] .movie-tile.movie-tile--already-ranked {
   background: color-mix(in srgb, var(--accent2) 7%, transparent);
   border-color: color-mix(in srgb, var(--accent2) 35%, transparent);
 }

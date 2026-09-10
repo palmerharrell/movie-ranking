@@ -12,7 +12,7 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
   }
 
   const cast = movie.cast?.slice(0, 3) ?? []
-  const isUnranked = (movie.timesRanked || 0) === 0
+  const isAlreadyRanked = (movie.timesRanked || 0) > 0
 
   return (
     <div
@@ -21,8 +21,8 @@ export function MovieTile({ movie, rank, onSkip, disabled, onOpenDetail }) {
       {...attributes}
       {...listeners}
       onClick={() => onOpenDetail(movie)}
-      className={`movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5 ${isUnranked ? 'movie-tile--unranked' : ''}`}
-      aria-label={`Drag to reorder ${movie.title}, or click to see full details${isUnranked ? ' (not yet ranked)' : ''}`}
+      className={`movie-tile flex cursor-grab touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 active:cursor-grabbing sm:gap-3 sm:px-3.5 ${isAlreadyRanked ? 'movie-tile--already-ranked' : ''}`}
+      aria-label={`Drag to reorder ${movie.title}, or click to see full details${isAlreadyRanked ? ' (already ranked)' : ''}`}
     >
       <div className="flex shrink-0 flex-col items-center gap-1.5">
         <span className={`movie-tile-rank text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
