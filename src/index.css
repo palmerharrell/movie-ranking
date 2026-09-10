@@ -494,12 +494,19 @@ body {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.pack-choice-card:hover:not(:disabled) {
-  border-color: var(--accent);
-}
+/* Guarded to real-hover pointers only (#315) — on iOS Safari, tapping
+   "Rank →" (or a Head to Head card) swaps in this whole 3-card grid within
+   the same tap, and touch has no real hover to release, so whichever card
+   ends up under the fingertip gets stuck showing its :hover highlight as
+   if it were focused/selected. */
+@media (hover: hover) and (pointer: fine) {
+  .pack-choice-card:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
 
-[data-theme='popular'] .pack-choice-card:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  [data-theme='popular'] .pack-choice-card:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
 }
 
 .pack-choice-poster-stack .poster-placeholder {

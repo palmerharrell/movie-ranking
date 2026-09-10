@@ -134,6 +134,12 @@ function App() {
   // Rank button, measured below, rather than the tabs sitting at the
   // viewport's fixed vertical center.
   const rankRowRef = useRef(null)
+  // A pack-choice turn (#297) has no Rank row to measure — its own
+  // candidate grid can be much taller (stacks to 1 column below 640px,
+  // see .pack-choice-grid), so falling back to the last normal pack's
+  // Rank-row position left the tabs overlapping the 2nd/3rd choice card
+  // (#312). Measured separately so the choice screen gets its own center.
+  const choiceScreenRef = useRef(null)
   const [tabsCenterY, setTabsCenterY] = useState(null)
   // Screen-filling "Head to Head!"/"Top 10 Tough Choice!" announcement
   // (#298) shown for a beat before one of those packs becomes interactive
@@ -295,8 +301,9 @@ function App() {
   // button to align to anyway.
   useLayoutEffect(() => {
     function measure() {
-      if (rankRowRef.current) {
-        const rect = rankRowRef.current.getBoundingClientRect()
+      const anchor = choiceScreenRef.current ?? rankRowRef.current
+      if (anchor) {
+        const rect = anchor.getBoundingClientRect()
         setTabsCenterY(rect.top + rect.height / 2)
       }
     }
@@ -816,11 +823,13 @@ function App() {
           <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 py-4 md:px-8">
             <div className="w-full max-w-xl">
               {turn?.type === 'choice' ? (
-                <PackChoiceScreen
-                  options={turn.options}
-                  onChoose={handleChoosePack}
-                  disabled={switchingSubset}
-                />
+                <div ref={choiceScreenRef}>
+                  <PackChoiceScreen
+                    options={turn.options}
+                    onChoose={handleChoosePack}
+                    disabled={switchingSubset}
+                  />
+                </div>
               ) : activePack ? (
                 activePack.type === HEAD_TO_HEAD_TYPE ? (
                   <HeadToHeadPanel
