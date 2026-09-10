@@ -314,7 +314,7 @@ body {
    gets matching bottom padding (see `main` in App.jsx) so this fixed row
    never covers it. */
 :root {
-  --fixed-bar-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  --fixed-bar-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
 }
 
 .edge-tab {
