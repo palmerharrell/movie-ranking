@@ -181,8 +181,11 @@ exposed in the UI.
   overlap requirement below, same as attribute-based packs.
 - **Head to Head packs:** `categoryGenerator.js` also throws in a "Head to
   Head" pack — 2 movies instead of 5, drawn at random from the current top 50
-  ranked movies by `eloRating` — with a 10% chance on each pack generated
-  (`HEAD_TO_HEAD_CHANCE`), checked before the Random Five chance. Falls
+  ranked movies by `eloRating` — with a 20% chance on each pack generated
+  (`HEAD_TO_HEAD_CHANCE`, raised from 10% in #330 — at 10%, a full
+  100-movie genre subset run worked out to an expected ~1.5 Head to Head
+  packs, which read as "basically never" in practice), checked before the
+  Random Five chance. Falls
   through to the normal pack flow if fewer than 2 ranked movies (with a real
   `eloRating`) are available yet, or if fewer than
   `MIN_RANKED_FOR_HEAD_TO_HEAD` (20) movies have been ranked overall (#217)
@@ -671,13 +674,16 @@ language entries, and 1 country entry, grouped in the picker:
   keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
   genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
   which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
-  (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (100) via
-  the shared `selectTopByVoteCountWithQuotas` (`src/lib/popularMode.js`) —
-  smaller than Popular's `POPULAR_POOL_SIZE` (300), since niche genre/
-  language/country subsets don't have as much depth of genuinely popular
-  titles as Popular/Family/All Movies do; sharing Popular's cap left a long
-  tail of obscure matches that users ended up skipping en masse (#165, e.g.
-  nearly a third of the Sci-Fi subset). A flat voteCount cutoff also
+  (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (150,
+  raised from 100 in #330 — 100 gave too few packs per full subset run for
+  Head to Head to show up more than once or twice, on top of just being
+  more depth generally) via the shared `selectTopByVoteCountWithQuotas`
+  (`src/lib/popularMode.js`) — smaller than Popular's `POPULAR_POOL_SIZE`
+  (300), since niche genre/language/country subsets don't have as much
+  depth of genuinely popular titles as Popular/Family/All Movies do;
+  sharing Popular's cap left a long tail of obscure matches that users
+  ended up skipping en masse (#165, e.g. nearly a third of the Sci-Fi
+  subset). A flat voteCount cutoff also
   systematically favors modern/mainstream titles — TMDb engagement skews
   heavily toward recent, streamed releases — so `selectTopByVoteCountWithQuotas`
   reserves two independent floors within the cap, each topped up from
@@ -717,7 +723,7 @@ language entries, and 1 country entry, grouped in the picker:
   #151) — filters by `productionCountries` including `"GB"` (unlike the
   genre/language subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
-  caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
+  caps to `GENRE_SUBSET_POOL_SIZE` (150) via `selectTopByVoteCountWithQuotas`,
   same smaller-than-Popular cap and classic-era/canonical-source quotas as
   the genre/language subsets above (#165, #203, #207).
   Grouped under its own "Country" optgroup in the picker (`COUNTRY_SUBSET_IDS`
@@ -750,7 +756,7 @@ language entries, and 1 country entry, grouped in the picker:
   unaffected by any of this — it stays the one place showing the entire
   unfiltered pool, Marvel/DC included, since `selectPopular`/
   `selectGenreSubset` (where the exclusion lives) are never applied there.
-  Caps to `GENRE_SUBSET_POOL_SIZE` (100) via `selectTopByVoteCountWithQuotas`,
+  Caps to `GENRE_SUBSET_POOL_SIZE` (150) via `selectTopByVoteCountWithQuotas`,
   same as the other genre subsets. Shares Popular's palette.
 - `GET /api/movies?family=true&popular=true&genre=comedy&pg13=true` composes
   server-side filters (family applied first, then the pg13 toggle if on,
