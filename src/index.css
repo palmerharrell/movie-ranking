@@ -379,9 +379,18 @@ body {
   transform: translateX(0);
 }
 
+/* Shrink-wrapped and horizontally centered via `left: 50%` + translateX,
+   not a full-width `inset-x-0` row — a full-width fixed box, even with
+   only the button itself visible in the middle, still captures clicks
+   across its *entire* box (including the empty flanking space over the
+   edge tabs), and being both same z-index and later in the DOM than the
+   tabs, was winning that hit-test and silently swallowing taps on them
+   whenever a normal pack (with a Rank button) was active (#328). */
 .rank-button-row-fixed {
   position: fixed;
   bottom: var(--fixed-bar-bottom);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .last-skip-prompt {
