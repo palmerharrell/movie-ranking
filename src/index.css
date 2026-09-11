@@ -150,56 +150,94 @@ body {
   background: transparent;
 }
 
-/* Subset picker */
+/* Subset picker (#316) — the active subset is a big banner headline, with
+   a small "Switch" button underneath to change it. */
 
-.subset-select-wrap {
-  position: relative;
-  display: inline-block;
+.subset-banner {
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
-.subset-select {
-  width: 180px;
-  height: 46px;
+/* The "Switch" trigger button and its dropdown — a custom, themed listbox
+   (mirroring .banner-menu-button/.banner-menu-dropdown's own look and
+   open/close pattern) rather than a native `<select>`, since a native
+   select's own OS-rendered popup can't be styled to match the app's dark
+   surfaces/accent colors. */
+.subset-switch-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
   box-sizing: border-box;
-  padding: 8px 38px 8px 14px;
+  padding: 0 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 6px;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-mid);
   font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
-.subset-select:hover,
-.subset-select:focus {
+.subset-switch-button:hover,
+.subset-switch-button[aria-expanded='true'] {
   border-color: var(--accent);
   color: var(--text-high);
-  outline: none;
 }
 
-.subset-select-arrow {
-  position: absolute;
-  top: 50%;
-  right: 18px;
-  transform: translateY(-50%);
-  color: var(--text-mid);
-  font-size: 13px;
-  pointer-events: none;
+.subset-switch-arrow {
+  font-size: 12px;
 }
 
-.subset-select-wrap:hover .subset-select-arrow {
-  color: var(--text-high);
-}
-
-.subset-select option,
-.subset-select optgroup {
+.subset-dropdown {
+  display: flex;
+  width: 220px;
+  max-height: 360px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
   background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.subset-dropdown-group-label {
+  padding: 8px 10px 4px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.subset-dropdown-item {
+  padding: 9px 10px;
+  border-radius: 5px;
+  text-align: left;
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.subset-dropdown-item:hover {
+  background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-high);
+}
+
+.subset-dropdown-item--active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* Body / standings column */
@@ -304,32 +342,55 @@ body {
   color: var(--text-high);
 }
 
-/* Ranked/Skipped edge tabs (#271, #289) — `top` is set inline from a
-   measured pixel value (App.jsx's `tabsCenterY`, aligning the tabs with
-   the Rank button) rather than a percentage, so these own only the fixed
-   positioning and the horizontal peek/hover transform, not the vertical
-   offset itself. */
+/* Ranked/Skipped edge tabs and the Rank button (#271, #289, #312 follow-up)
+   all anchor to this same `bottom` distance so the three stay aligned with
+   each other, always, regardless of pack content — none of them float in
+   normal document flow anymore (a longer category label, a pack with no
+   Rank button at all, etc. used to shift the Rank button and throw the
+   trio out of alignment). `env(safe-area-inset-bottom)` keeps them clear
+   of the home indicator on notched phones. The scrollable pack content
+   gets matching bottom padding (see `main` in App.jsx) so this fixed row
+   never covers it. */
+:root {
+  --fixed-bar-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
 .edge-tab {
   position: fixed;
+  bottom: var(--fixed-bar-bottom);
   transition: transform 150ms ease;
 }
 
 .edge-tab-left {
   left: 0;
-  transform: translate(-4px, -50%);
+  transform: translateX(-4px);
 }
 
 .edge-tab-left:hover {
-  transform: translate(0, -50%);
+  transform: translateX(0);
 }
 
 .edge-tab-right {
   right: 0;
-  transform: translate(4px, -50%);
+  transform: translateX(4px);
 }
 
 .edge-tab-right:hover {
-  transform: translate(0, -50%);
+  transform: translateX(0);
+}
+
+/* Shrink-wrapped and horizontally centered via `left: 50%` + translateX,
+   not a full-width `inset-x-0` row — a full-width fixed box, even with
+   only the button itself visible in the middle, still captures clicks
+   across its *entire* box (including the empty flanking space over the
+   edge tabs), and being both same z-index and later in the DOM than the
+   tabs, was winning that hit-test and silently swallowing taps on them
+   whenever a normal pack (with a Rank button) was active (#328). */
+.rank-button-row-fixed {
+  position: fixed;
+  bottom: var(--fixed-bar-bottom);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .last-skip-prompt {
@@ -419,7 +480,7 @@ body {
   box-shadow: var(--surface-shadow);
 }
 
-[data-theme='popular'] .movie-tile.movie-tile--unranked {
+[data-theme='popular'] .movie-tile.movie-tile--already-ranked {
   background: color-mix(in srgb, var(--accent2) 7%, transparent);
   border-color: color-mix(in srgb, var(--accent2) 35%, transparent);
 }
@@ -494,12 +555,19 @@ body {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.pack-choice-card:hover:not(:disabled) {
-  border-color: var(--accent);
-}
+/* Guarded to real-hover pointers only (#315) — on iOS Safari, tapping
+   "Rank →" (or a Head to Head card) swaps in this whole 3-card grid within
+   the same tap, and touch has no real hover to release, so whichever card
+   ends up under the fingertip gets stuck showing its :hover highlight as
+   if it were focused/selected. */
+@media (hover: hover) and (pointer: fine) {
+  .pack-choice-card:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
 
-[data-theme='popular'] .pack-choice-card:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  [data-theme='popular'] .pack-choice-card:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
 }
 
 .pack-choice-poster-stack .poster-placeholder {
@@ -520,9 +588,16 @@ body {
   color: var(--text-low);
 }
 
-.skip-button:hover:not(:disabled) {
-  color: var(--text-high);
-  border-color: var(--accent);
+/* Guarded to real-hover pointers only (same iOS sticky-hover issue as
+   #315's pack-choice cards): tapping a Skip button removes its tile,
+   sliding the tile below up into the same screen position — since touch
+   has no real hover to release, the Skip button that ends up under the
+   fingertip gets stuck showing this highlight as if it were focused. */
+@media (hover: hover) and (pointer: fine) {
+  .skip-button:hover:not(:disabled) {
+    color: var(--text-high);
+    border-color: var(--accent);
+  }
 }
 
 /* Rank button */

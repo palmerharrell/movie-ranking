@@ -12,8 +12,10 @@ import { isComicBook, isMarvelOrDc } from './comicBookMovies.js'
 // have as much depth of genuinely popular titles as Popular/Family/All
 // Movies do, so sharing the same 300-movie cap left a long tail of obscure
 // matches users ended up skipping en masse (#165, e.g. nearly a third of the
-// Sci-Fi subset).
-export const GENRE_SUBSET_POOL_SIZE = 100
+// Sci-Fi subset). Raised from 100 to 150 (#330) — 100 gave a full subset run
+// too few packs for Head to Head to show up more than once or twice (see
+// HEAD_TO_HEAD_CHANCE below), on top of just being more depth generally.
+export const GENRE_SUBSET_POOL_SIZE = 150
 
 // Coco, Sister Act, Flower Drum Song (1961), and Thoroughly Modern Millie
 // (1967) are real musicals TMDb doesn't tag with the `musical` keyword

@@ -84,6 +84,14 @@ export function RightPanel({
                 rank={index + 1}
                 onSkip={handleSkip}
                 disabled={disabled}
+                // While the "skip this one too?" prompt is up (#313), the
+                // lone remaining tile's drag and click-to-detail are frozen
+                // — answering Yes/No should be the only thing to do. Its own
+                // Skip button stays governed by `disabled` alone (not
+                // `frozen`), since re-tapping it while the prompt is up is
+                // meant to just re-offer the same prompt (#195), not be
+                // inert.
+                frozen={awaitingLastSkipConfirm}
                 onOpenDetail={onOpenDetail}
               />
             ))}
@@ -125,7 +133,9 @@ export function RightPanel({
               <button
                 type="button"
                 onClick={() => onUndoSkip(movie.id)}
-                disabled={disabled}
+                // Frozen too while the "skip this one too?" prompt is up
+                // (#313) — Yes/No is the only decision to make right now.
+                disabled={disabled || awaitingLastSkipConfirm}
                 className="undo-skip-button font-medium underline disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Undo

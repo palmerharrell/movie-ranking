@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { subsetLabel } from '../lib/genreSubsets.js'
 
 // Sorts by eloRating descending; movies never yet ranked (still at the
 // default 1000) are grouped alphabetically among themselves, per CLAUDE.md.
@@ -37,7 +38,7 @@ function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
   )
 }
 
-export function LeftPanel({ movies, onReset, onOpenDetail, open }) {
+export function LeftPanel({ movies, subset, onOpenDetail, open }) {
   // #248: reset scroll position each time the (mobile) Standings drawer is
   // opened, rather than leaving it wherever it was scrolled to last time —
   // `open` only toggles for the drawer (desktop shows this panel inline and
@@ -61,7 +62,9 @@ export function LeftPanel({ movies, onReset, onOpenDetail, open }) {
     <div className="flex h-full flex-col">
       <div className="mb-3 flex shrink-0 flex-col gap-0.5">
         <div className="flex items-baseline justify-between">
-          <span className="standings-label text-xs font-medium uppercase">The Standings</span>
+          <span className="standings-label text-xs font-medium uppercase">
+            {subsetLabel(subset)} Standings
+          </span>
           <span className="font-mono text-xs" style={{ color: 'var(--text-low)' }}>
             {rankedCount}/{eligibleCount} ranked
           </span>
@@ -72,15 +75,6 @@ export function LeftPanel({ movies, onReset, onOpenDetail, open }) {
           </span>
         )}
       </div>
-      {rankedCount > 0 && (
-        <button
-          type="button"
-          onClick={onReset}
-          className="standings-reset-button mb-3 shrink-0 self-start text-xs font-medium uppercase"
-        >
-          Reset Ranking
-        </button>
-      )}
       <ol ref={listRef} className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
         {sorted.map((movie, index) => (
           <StandingsRow

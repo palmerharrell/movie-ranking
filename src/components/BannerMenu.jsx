@@ -13,6 +13,14 @@ import { useEffect, useRef, useState } from 'react'
 // the other items, picking it doesn't close the menu (no `pick()` call) —
 // it's a toggle the user may want to flip more than once in a row, and
 // closing on every click would hide the checked-state feedback.
+//
+// Reset Ranking (#325) moved in here, below the PG-13 checkbox, from its
+// old spot as an inline button atop the Standings panel — that put a
+// destructive, rarely-used action right next to routine Standings
+// scrolling/tapping, more exposed to an accidental hit than sitting
+// alongside the app's other global controls in the menu. `showReset`
+// mirrors the old inline button's own visibility condition (only once
+// something's actually been ranked).
 export function BannerMenu({
   onStandings,
   onLoadRanking,
@@ -22,6 +30,8 @@ export function BannerMenu({
   pg13Disabled,
   pg13Title,
   onPg13Change,
+  onReset,
+  showReset,
 }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
@@ -92,6 +102,11 @@ export function BannerMenu({
               onChange={(event) => onPg13Change(event.target.checked)}
             />
           </label>
+          {showReset && (
+            <button type="button" onClick={() => pick(onReset)} className="banner-menu-item">
+              Reset Ranking
+            </button>
+          )}
         </div>
       )}
     </div>

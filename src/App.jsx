@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
@@ -47,7 +47,6 @@ const COLOR_MODE_STORAGE_KEY = 'movie-ranking-color-mode'
 // still blocking clicks) by the time it unmounts.
 const PACK_INTRO_DISPLAY_MS = 1400
 const PACK_INTRO_FADE_MS = 300
-
 function initialSubset() {
   const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
   const validIds = ['popular', 'family', 'all', ...GENRE_SUBSETS.map((g) => g.id)]
@@ -130,11 +129,6 @@ function App() {
   // movie — see handleSkipMovie. While true, RightPanel shows an inline
   // "skip this one too?" prompt instead of the Rank button (#156).
   const [awaitingLastSkipConfirm, setAwaitingLastSkipConfirm] = useState(false)
-  // Backs the edge tabs' vertical position (#289) — the row wrapping the
-  // Rank button, measured below, rather than the tabs sitting at the
-  // viewport's fixed vertical center.
-  const rankRowRef = useRef(null)
-  const [tabsCenterY, setTabsCenterY] = useState(null)
   // Screen-filling "Head to Head!"/"Top 10 Tough Choice!" announcement
   // (#298) shown for a beat before one of those packs becomes interactive
   // — see the effect below. `label` is the announced pack's own category
@@ -282,28 +276,6 @@ function App() {
       clearTimeout(removeTimer)
     }
   }, [activePack])
-
-  // Keeps the Ranked/Skipped edge tabs (#289) vertically aligned with the
-  // Rank button rather than fixed at the viewport's vertical center — the
-  // button's own position shifts with pack content (a longer category
-  // label, a Head to Head pack with no Rank button at all, etc.), so this
-  // re-measures whenever that content could have changed size, plus on
-  // window resize. Head to Head packs and pack-choice turns (#297) both
-  // unmount the row entirely (rankRowRef.current is null), so the
-  // measurement there just keeps whatever position was last known from a
-  // normal pack instead of updating — reasonable since there's no Rank
-  // button to align to anyway.
-  useLayoutEffect(() => {
-    function measure() {
-      if (rankRowRef.current) {
-        const rect = rankRowRef.current.getBoundingClientRect()
-        setTabsCenterY(rect.top + rect.height / 2)
-      }
-    }
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [turn, busy, switchingSubset])
 
   // Fetches the active subset's movies/turn. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
@@ -667,6 +639,8 @@ function App() {
               pg13Disabled={isFamily}
               pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
               onPg13Change={setPg13}
+              onReset={() => setShowResetModal(true)}
+              showReset={rankedCount > 0}
             />
           </div>
           <button
@@ -727,19 +701,20 @@ function App() {
               stays on desktop too, since that drawer (#269) is a fixed
               overlay on every breakpoint, not just mobile. Each hides
               itself while its own drawer is open, since the drawer already
-              occupies that edge. Vertically aligned with the Rank button
-              (#289, `tabsCenterY` above) rather than the viewport's fixed
-              center — `.edge-tab-left`/`.edge-tab-right` in index.css own
-              the horizontal peek/hover transform, since `top` here already
-              needs the plain (non-percentage) pixel value from that
-              measurement. */}
+              occupies that edge. Vertical position is a plain fixed CSS
+              value (`.edge-tab`'s `bottom` in index.css, #312 follow-up)
+              rather than something JS-measured off the Rank button — the
+              button's own position barely moves pack to pack, and trying to
+              track it exactly (#289's original approach) kept landing the
+              tabs in the wrong place on screens with no Rank button of
+              their own (pack-choice, Head to Head, Top 10 Tough Choice) —
+              simpler, and no worse in practice, to just fix it in place. */}
           {movies && (
             <button
               type="button"
               onClick={() => setShowStandingsDrawer(true)}
               className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
               style={{
-                top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderRight: '1px solid var(--surface-border)',
@@ -760,7 +735,6 @@ function App() {
               onClick={() => setShowSkippedView(true)}
               className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
               style={{
-                top: tabsCenterY ?? '50%',
                 background: 'var(--surface)',
                 borderTop: '1px solid var(--surface-border)',
                 borderLeft: '1px solid var(--surface-border)',
@@ -800,7 +774,7 @@ function App() {
             {movies ? (
               <LeftPanel
                 movies={movies}
-                onReset={() => setShowResetModal(true)}
+                subset={subset}
                 onOpenDetail={setDetailMovie}
                 open={showStandingsDrawer}
               />
@@ -813,7 +787,7 @@ function App() {
             )}
           </aside>
 
-          <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 py-4 md:px-8">
+          <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 pt-4 pb-32 md:px-8">
             <div className="w-full max-w-xl">
               {turn?.type === 'choice' ? (
                 <PackChoiceScreen
@@ -855,7 +829,7 @@ function App() {
                 </p>
               )}
               {activePack && activePack.type !== HEAD_TO_HEAD_TYPE && (
-                <div ref={rankRowRef} className="mt-4 flex justify-center">
+                <div className="rank-button-row-fixed z-20">
                   <RankButton
                     onClick={handleRank}
                     disabled={busy || switchingSubset || activePack.movies.length < 2}
