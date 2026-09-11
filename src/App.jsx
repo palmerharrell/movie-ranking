@@ -829,7 +829,7 @@ function App() {
                 </p>
               )}
               {activePack && activePack.type !== HEAD_TO_HEAD_TYPE && (
-                <div className="rank-button-row-fixed inset-x-0 z-20 flex justify-center">
+                <div className="rank-button-row-fixed z-20">
                   <RankButton
                     onClick={handleRank}
                     disabled={busy || switchingSubset || activePack.movies.length < 2}
