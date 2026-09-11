@@ -150,45 +150,75 @@ body {
   background: transparent;
 }
 
-/* Subset picker */
+/* Subset picker (#316) — the active subset is a big banner headline, with
+   a small "Switch" button underneath to change it. */
+
+.subset-banner {
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
 
 .subset-select-wrap {
   position: relative;
   display: inline-block;
 }
 
-.subset-select {
-  width: 180px;
-  height: 46px;
+/* The real `<select>` stays fully functional (native picker, keyboard/
+   screen-reader support) but is shrunk to a small pill and has its own
+   rendered value hidden (`color: transparent`) — `.subset-banner` above
+   already shows that value, so showing it a second time inside this small
+   trigger would just truncate awkwardly. `.subset-select-label` below
+   renders the visible "Switch" text in its place. */
+.subset-select-trigger {
+  width: 100px;
+  height: 32px;
   box-sizing: border-box;
-  padding: 8px 38px 8px 14px;
+  padding: 0 26px 0 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 6px;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--text-high) 6%, transparent);
-  color: var(--text-mid);
+  color: transparent;
   font-family: var(--font-mono);
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   appearance: none;
   -webkit-appearance: none;
 }
 
-.subset-select:hover,
-.subset-select:focus {
+.subset-select-trigger:hover,
+.subset-select-trigger:focus {
   border-color: var(--accent);
+}
+
+.subset-select-trigger:hover ~ .subset-select-label,
+.subset-select-trigger:focus ~ .subset-select-label {
   color: var(--text-high);
-  outline: none;
+}
+
+.subset-select-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  pointer-events: none;
 }
 
 .subset-select-arrow {
   position: absolute;
   top: 50%;
-  right: 18px;
+  right: 12px;
   transform: translateY(-50%);
   color: var(--text-mid);
-  font-size: 13px;
+  font-size: 12px;
   pointer-events: none;
 }
 
