@@ -639,6 +639,8 @@ function App() {
               pg13Disabled={isFamily}
               pg13Title={isFamily ? 'Family always applies the PG-13 & Under filter' : undefined}
               onPg13Change={setPg13}
+              onReset={() => setShowResetModal(true)}
+              showReset={rankedCount > 0}
             />
           </div>
           <button
@@ -770,12 +772,7 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel
-                movies={movies}
-                onReset={() => setShowResetModal(true)}
-                onOpenDetail={setDetailMovie}
-                open={showStandingsDrawer}
-              />
+              <LeftPanel movies={movies} onOpenDetail={setDetailMovie} open={showStandingsDrawer} />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (
