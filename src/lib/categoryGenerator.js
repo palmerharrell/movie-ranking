@@ -13,7 +13,12 @@ const MAX_CATEGORY_ATTEMPTS = 50
 const RANDOM_FIVE_CHANCE = 0.15
 const RANDOM_FIVE_LABEL = 'Random Five'
 const ENGLISH_LANGUAGE_CODE = 'en'
-const HEAD_TO_HEAD_CHANCE = 0.1
+// Raised from 0.1 to 0.2 (#330) — at 0.1, a full 100-movie genre subset
+// run (~29 packs, only ~15 of them actually eligible once pack-choice
+// turns and the ranked-count threshold below are accounted for) worked out
+// to an expected ~1.5 Head to Head packs per run, which read as "basically
+// never" in practice.
+const HEAD_TO_HEAD_CHANCE = 0.2
 const HEAD_TO_HEAD_LABEL = 'Head to Head'
 const HEAD_TO_HEAD_POOL_SIZE = 50
 export const HEAD_TO_HEAD_TYPE = 'head-to-head'
