@@ -772,7 +772,12 @@ function App() {
               </button>
             </div>
             {movies ? (
-              <LeftPanel movies={movies} onOpenDetail={setDetailMovie} open={showStandingsDrawer} />
+              <LeftPanel
+                movies={movies}
+                subset={subset}
+                onOpenDetail={setDetailMovie}
+                open={showStandingsDrawer}
+              />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
             ) : (

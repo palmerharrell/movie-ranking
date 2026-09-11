@@ -487,8 +487,11 @@ exposed in the UI.
 
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
-  sorted by eloRating. Progress label (`n/nnn ranked`) near the header — see
-  **Progress tracking**.
+  sorted by eloRating. Header reads "\<Subset\> Standings" (#316,
+  `subsetLabel` — the same shared label `SaveRankingModal`/`ResetRankingModal`/
+  `LoadRankingView` already use) so the active subset is visible there too,
+  not just in the banner. Progress label (`n/nnn ranked`) near the header —
+  see **Progress tracking**.
 - **Right panel:** the active pack — 5 draggable movie tiles under the category
   label, reorderable via drag-and-drop (`@dnd-kit`). Occasionally this is
   replaced by the pack-choice screen (`PackChoiceScreen.jsx`) instead — see
@@ -577,7 +580,16 @@ exposed in the UI.
   `data-color-mode` attribute overriding the same CSS custom properties
   (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
   `src/index.css`) rather than being folded into the subset theme system.
-  Bottom row holds just the subset picker, centered. A large, very-faint
+  Bottom row holds the subset picker, centered — a big banner headline
+  (`.subset-banner`, `subsetLabel`) showing the active subset's name, with a
+  small pill-shaped "Switch" button underneath it (#316) that opens a
+  custom-themed dropdown listbox (`SubsetPicker.jsx`, mirroring
+  `BannerMenu.jsx`'s own open/close/click-outside/Escape pattern and visual
+  language) rather than the subset name living inside the control itself —
+  a native `<select>`'s own OS-rendered popup can't be styled to match the
+  app's dark surfaces/accent colors, so this replaces it entirely instead
+  of just shrinking it. The active subset is highlighted in the accent
+  color within the dropdown. A large, very-faint
   film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
   fade the banner's own gradient) sits behind the whole app-shell under the
   Neon theme only — see **Movie subsets**.

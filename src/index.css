@@ -150,56 +150,94 @@ body {
   background: transparent;
 }
 
-/* Subset picker */
+/* Subset picker (#316) — the active subset is a big banner headline, with
+   a small "Switch" button underneath to change it. */
 
-.subset-select-wrap {
-  position: relative;
-  display: inline-block;
+.subset-banner {
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
-.subset-select {
-  width: 180px;
-  height: 46px;
+/* The "Switch" trigger button and its dropdown — a custom, themed listbox
+   (mirroring .banner-menu-button/.banner-menu-dropdown's own look and
+   open/close pattern) rather than a native `<select>`, since a native
+   select's own OS-rendered popup can't be styled to match the app's dark
+   surfaces/accent colors. */
+.subset-switch-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
   box-sizing: border-box;
-  padding: 8px 38px 8px 14px;
+  padding: 0 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 6px;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-mid);
   font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
-.subset-select:hover,
-.subset-select:focus {
+.subset-switch-button:hover,
+.subset-switch-button[aria-expanded='true'] {
   border-color: var(--accent);
   color: var(--text-high);
-  outline: none;
 }
 
-.subset-select-arrow {
-  position: absolute;
-  top: 50%;
-  right: 18px;
-  transform: translateY(-50%);
-  color: var(--text-mid);
-  font-size: 13px;
-  pointer-events: none;
+.subset-switch-arrow {
+  font-size: 12px;
 }
 
-.subset-select-wrap:hover .subset-select-arrow {
-  color: var(--text-high);
-}
-
-.subset-select option,
-.subset-select optgroup {
+.subset-dropdown {
+  display: flex;
+  width: 220px;
+  max-height: 360px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
   background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.subset-dropdown-group-label {
+  padding: 8px 10px 4px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.subset-dropdown-item {
+  padding: 9px 10px;
+  border-radius: 5px;
+  text-align: left;
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.subset-dropdown-item:hover {
+  background: color-mix(in srgb, var(--text-high) 6%, transparent);
   color: var(--text-high);
+}
+
+.subset-dropdown-item--active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* Body / standings column */
