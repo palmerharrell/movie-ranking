@@ -541,9 +541,16 @@ body {
   color: var(--text-low);
 }
 
-.skip-button:hover:not(:disabled) {
-  color: var(--text-high);
-  border-color: var(--accent);
+/* Guarded to real-hover pointers only (same iOS sticky-hover issue as
+   #315's pack-choice cards): tapping a Skip button removes its tile,
+   sliding the tile below up into the same screen position — since touch
+   has no real hover to release, the Skip button that ends up under the
+   fingertip gets stuck showing this highlight as if it were focused. */
+@media (hover: hover) and (pointer: fine) {
+  .skip-button:hover:not(:disabled) {
+    color: var(--text-high);
+    border-color: var(--accent);
+  }
 }
 
 /* Rank button */
