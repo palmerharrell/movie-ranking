@@ -35,7 +35,7 @@ function SubsetOption({ id, label, active, onPick }) {
 // entirely — the OS's own popup styling for a `<select>` can't be themed
 // to match the app's dark surfaces/accent colors the way a hand-built
 // listbox can.
-export function SubsetPicker({ subset, onChange, allMoviesCount }) {
+export function SubsetPicker({ subset, onChange, allMoviesCount, directorSubsets = [] }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
 
@@ -102,6 +102,14 @@ export function SubsetPicker({ subset, onChange, allMoviesCount }) {
             {LANGUAGE_SUBSETS.map((s) => (
               <SubsetOption key={s.id} id={s.id} label={s.label} active={subset === s.id} onPick={pick} />
             ))}
+            {directorSubsets.length > 0 && (
+              <>
+                <div className="subset-dropdown-group-label">Directors</div>
+                {directorSubsets.map((s) => (
+                  <SubsetOption key={s.id} id={s.id} label={s.label} active={subset === s.id} onPick={pick} />
+                ))}
+              </>
+            )}
             <div className="subset-dropdown-group-label">Not Recommended</div>
             <SubsetOption
               id="all"
