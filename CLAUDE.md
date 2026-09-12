@@ -758,6 +758,37 @@ language entries, and 1 country entry, grouped in the picker:
   `selectGenreSubset` (where the exclusion lives) are never applied there.
   Caps to `GENRE_SUBSET_POOL_SIZE` (150) via `selectTopByVoteCountWithQuotas`,
   same as the other genre subsets. Shares Popular's palette.
+- **Director subsets** (`src/lib/genreSubsets.js`, #334) — unlike every
+  entry above, the roster isn't a curated array: `getTopDirectors` groups
+  the whole unfiltered pool by each movie's own `director` field and takes
+  the top `DIRECTOR_SUBSET_LIMIT` (15) names with at least
+  `DIRECTOR_MIN_MOVIE_COUNT` (10) movies in the pool, recomputed at runtime
+  (client-side, to populate the picker's Directors group; nowhere else
+  needs the ranked list itself) rather than stored anywhere — cheap enough
+  over a few hundred movies that no enrichment-time precompute is
+  worthwhile, and it stays correct automatically as the pool grows. A
+  director subset's id embeds the name verbatim (`director-Christopher
+  Nolan`, `directorSubsetId`/`isDirectorSubsetId`/`directorNameFromId`)
+  rather than a slug, so a label or filter never needs to re-query "who is
+  director #4" — self-describing beats a second lookup table, and an exact
+  name avoids two directors' slugs colliding. This lets a director subset
+  ride the exact same `genre` query param and `selectGenreSubset`/
+  `genreSubsetLabel`/`genreSubsetExclusions` plumbing every other subset
+  above uses (each dispatches to a director-shaped branch first) instead of
+  adding a new param threaded through `api.js`/`App.jsx`/
+  `rankingService.js` end to end. `genreSubsetExclusions` returns `{type:
+  'director', value: name}` for one, so `categoryGenerator.js`'s existing
+  `'director'` attribute type (already used for "Directed by X" packs
+  elsewhere) suppresses a redundant "Directed by Christopher Nolan" pack
+  while that director's own subset is active — the same #160 mechanism as
+  every other subset's tautology guard, needing no new case. A director
+  subset does *not* exclude Marvel/DC credits the way every other subset
+  does (except Comic Book) — it's specifically that person's own body of
+  work, so a director's MCU/DCEU movie still belongs in it. Still capped via
+  `selectTopByVoteCountWithQuotas` (`GENRE_SUBSET_POOL_SIZE`, classic-era/
+  canonical floors) for consistency, though a director's pool count rarely
+  approaches that cap. Shares Popular's palette, same as every other
+  subset.
 - `GET /api/movies?family=true&popular=true&genre=comedy&pg13=true` composes
   server-side filters (family applied first, then the pg13 toggle if on,
   then one top-N strategy — `genre` and `popular` are alternate strategies,

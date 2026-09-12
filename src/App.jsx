@@ -17,7 +17,7 @@ import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
 import { selectPg13OrUnder } from './lib/pg13Mode.js'
-import { GENRE_SUBSETS, selectGenreSubset } from './lib/genreSubsets.js'
+import { GENRE_SUBSETS, selectGenreSubset, isDirectorSubsetId, getTopDirectors } from './lib/genreSubsets.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 import { generateRankingName } from './lib/rankingName.js'
 import { buildShareUrl } from './lib/shareLink.js'
@@ -50,7 +50,13 @@ const PACK_INTRO_FADE_MS = 300
 function initialSubset() {
   const stored = localStorage.getItem(SUBSET_STORAGE_KEY)
   const validIds = ['popular', 'family', 'all', ...GENRE_SUBSETS.map((g) => g.id)]
-  return validIds.includes(stored) ? stored : 'popular'
+  // Director subset ids aren't a fixed list (see genreSubsets.js) — a
+  // director's top-N standing can change as the pool grows, so this just
+  // trusts the stored id's shape rather than re-deriving "was this director
+  // still top-15 as of last visit." If they've since fallen out of the
+  // list, selectGenreSubset still resolves fine (a smaller/empty pool);
+  // there's just no matching entry left in the picker.
+  return isDirectorSubsetId(stored) || validIds.includes(stored) ? stored : 'popular'
 }
 
 function initialPg13() {
@@ -113,6 +119,10 @@ function App() {
   // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
   // (#182/#183) — fetched once since it's independent of the active subset.
   const [allMoviesCount, setAllMoviesCount] = useState(null)
+  // The Directors picker group (#334) — top directors by movie count across
+  // the whole unfiltered pool, computed once alongside allMoviesCount since
+  // both need the same unfiltered fetch.
+  const [directorSubsets, setDirectorSubsets] = useState([])
   const wasFullyRanked = useRef(false)
   // Guards against rapid subset switching: only the most recent subset's
   // fetch is allowed to apply its results or clear switchingSubset, so an
@@ -150,7 +160,7 @@ function App() {
   const eligibleCount = eligibleMovies.length
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
-  const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) ? subset : null
+  const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) || isDirectorSubsetId(subset) ? subset : null
   // Family always applies the PG-13-and-under filter (#200), regardless of
   // the toggle's own state — the toggle itself just reflects that visually
   // (forced on and disabled — see the checkbox below) without touching the
@@ -234,7 +244,10 @@ function App() {
   }, [colorMode])
 
   useEffect(() => {
-    api.getMovies().then((allMovies) => setAllMoviesCount(allMovies.length))
+    api.getMovies().then((allMovies) => {
+      setAllMoviesCount(allMovies.length)
+      setDirectorSubsets(getTopDirectors(allMovies))
+    })
   }, [])
 
   // #247: the Standings drawer and Skipped view are both fixed-position
@@ -668,7 +681,12 @@ function App() {
             />
           </div>
           <div className="flex items-center justify-center gap-3">
-            <SubsetPicker subset={subset} onChange={setSubset} allMoviesCount={allMoviesCount} />
+            <SubsetPicker
+              subset={subset}
+              onChange={setSubset}
+              allMoviesCount={allMoviesCount}
+              directorSubsets={directorSubsets}
+            />
           </div>
         </header>
 

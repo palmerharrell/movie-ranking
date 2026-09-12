@@ -84,6 +84,56 @@ export const GENRE_SUBSETS = [
 
 export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 
+// Directors, unlike every entry in GENRE_SUBSETS, aren't a fixed curated
+// list — which directors qualify depends on who's actually prolific in the
+// current pool, so there's no static array to add them to. Instead a
+// director subset's id embeds the director's own name verbatim
+// (`director-Christopher Nolan`) so it's self-describing: label lookup and
+// matching both just need the id, not a re-query of "who is director #4."
+// A raw name (rather than a slug) avoids collisions between two directors
+// whose slugs would otherwise coincide.
+const DIRECTOR_ID_PREFIX = 'director-'
+
+export function directorSubsetId(name) {
+  return `${DIRECTOR_ID_PREFIX}${name}`
+}
+
+export function isDirectorSubsetId(subsetId) {
+  return typeof subsetId === 'string' && subsetId.startsWith(DIRECTOR_ID_PREFIX)
+}
+
+export function directorNameFromId(subsetId) {
+  return subsetId.slice(DIRECTOR_ID_PREFIX.length)
+}
+
+// At least this many pool movies before a director gets their own subset
+// entry — otherwise the Directors group would be cluttered with people who
+// have only directed 2-3 movies in the pool, no more a meaningful "top
+// director" than anyone else.
+export const DIRECTOR_MIN_MOVIE_COUNT = 10
+
+// How many directors get their own subset entry, mirroring GENRE_SUBSETS'
+// own rough count (15 genre entries).
+export const DIRECTOR_SUBSET_LIMIT = 15
+
+// The top directors by movie count in the given (unfiltered) pool, as
+// `{ id, label, count }` for the picker's Directors group — computed at
+// runtime from each movie's own `director` field rather than a precomputed
+// list, since counting a few hundred movies is cheap and this stays correct
+// automatically as the pool grows.
+export function getTopDirectors(movies) {
+  const counts = new Map()
+  for (const movie of movies) {
+    if (!movie.director) continue
+    counts.set(movie.director, (counts.get(movie.director) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count >= DIRECTOR_MIN_MOVIE_COUNT)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, DIRECTOR_SUBSET_LIMIT)
+    .map(([name, count]) => ({ id: directorSubsetId(name), label: name, count }))
+}
+
 // Filters to movies matching the subset's own attributes (genre/keyword/
 // language) — not by which sources[] tag got a movie into the pool, so a
 // Comedy added via personal import still surfaces here if popular enough,
@@ -97,6 +147,19 @@ export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 // Comic Book itself also excludes Marvel/DC movies (#180) — Comic Book is
 // the one place they're still rankable (#181).
 export function selectGenreSubset(movies, subsetId) {
+  if (isDirectorSubsetId(subsetId)) {
+    const name = directorNameFromId(subsetId)
+    // A director subset is specifically about that person's own body of
+    // work, so — same reasoning as Comic Book being the one subset that
+    // doesn't exclude Marvel/DC (#181) — it isn't filtered through
+    // isMarvelOrDc either; a director's MCU/DCEU credit is still their
+    // movie.
+    const matched = movies.filter((m) => m.director === name)
+    return selectTopByVoteCountWithQuotas(matched, GENRE_SUBSET_POOL_SIZE, [
+      { matches: (m) => m.year != null && m.year < CLASSIC_ERA_CUTOFF_YEAR, quota: CLASSIC_ERA_QUOTA },
+      { matches: isCanonicalSourced, quota: CANONICAL_QUOTA },
+    ])
+  }
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return movies
   const matched = movies.filter(config.matches)
@@ -110,6 +173,7 @@ export function selectGenreSubset(movies, subsetId) {
 // Display label for any genre/language subset id — used by SaveRankingModal/
 // ResetRankingModal to build generic copy without a bespoke entry per id.
 export function genreSubsetLabel(subsetId) {
+  if (isDirectorSubsetId(subsetId)) return directorNameFromId(subsetId)
   return GENRE_SUBSETS.find((s) => s.id === subsetId)?.label ?? subsetId
 }
 
@@ -131,6 +195,9 @@ export function subsetLabel(subsetId) {
 // for unknown/non-genre subset ids (Popular/Family/All Movies have no
 // defining attribute to exclude).
 export function genreSubsetExclusions(subsetId) {
+  if (isDirectorSubsetId(subsetId)) {
+    return [{ type: 'director', value: directorNameFromId(subsetId) }]
+  }
   const config = GENRE_SUBSETS.find((s) => s.id === subsetId)
   if (!config) return []
   const exclusions = []

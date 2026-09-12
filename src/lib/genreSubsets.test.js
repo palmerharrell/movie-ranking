@@ -5,6 +5,11 @@ import {
   genreSubsetExclusions,
   GENRE_SUBSETS,
   GENRE_SUBSET_POOL_SIZE,
+  directorSubsetId,
+  isDirectorSubsetId,
+  directorNameFromId,
+  getTopDirectors,
+  DIRECTOR_MIN_MOVIE_COUNT,
 } from './genreSubsets.js'
 import { POPULAR_POOL_SIZE } from './popularMode.js'
 
@@ -200,5 +205,50 @@ describe('genreSubsetExclusions', () => {
 
   it('returns the country attribute for british', () => {
     expect(genreSubsetExclusions('british')).toEqual([{ type: 'country', value: 'GB' }])
+  })
+
+  it('returns the director attribute for a director subset id', () => {
+    expect(genreSubsetExclusions(directorSubsetId('Christopher Nolan'))).toEqual([
+      { type: 'director', value: 'Christopher Nolan' },
+    ])
+  })
+})
+
+describe('director subsets', () => {
+  it('round-trips a name through directorSubsetId/isDirectorSubsetId/directorNameFromId', () => {
+    const id = directorSubsetId('Christopher Nolan')
+    expect(isDirectorSubsetId(id)).toBe(true)
+    expect(directorNameFromId(id)).toBe('Christopher Nolan')
+    expect(isDirectorSubsetId('sci-fi')).toBe(false)
+  })
+
+  it('genreSubsetLabel returns the director name for a director subset id', () => {
+    expect(genreSubsetLabel(directorSubsetId('Christopher Nolan'))).toBe('Christopher Nolan')
+  })
+
+  it('selectGenreSubset filters to a single director, including Marvel/DC credits', () => {
+    const movies = [
+      movie({ id: 'a', director: 'Christopher Nolan' }),
+      movie({ id: 'b', director: 'Christopher Nolan' }),
+      movie({ id: 'c', director: 'Someone Else' }),
+    ]
+    expect(selectGenreSubset(movies, directorSubsetId('Christopher Nolan')).map((m) => m.id)).toEqual([
+      'a',
+      'b',
+    ])
+  })
+
+  it('getTopDirectors only includes directors at or above the minimum movie count', () => {
+    const movies = [
+      ...Array.from({ length: DIRECTOR_MIN_MOVIE_COUNT }, (_, i) => movie({ id: `p${i}`, director: 'Prolific' })),
+      ...Array.from({ length: DIRECTOR_MIN_MOVIE_COUNT - 1 }, (_, i) => movie({ id: `s${i}`, director: 'Sparse' })),
+    ]
+    const result = getTopDirectors(movies)
+    expect(result).toEqual([{ id: directorSubsetId('Prolific'), label: 'Prolific', count: DIRECTOR_MIN_MOVIE_COUNT }])
+  })
+
+  it('getTopDirectors ignores movies with no director', () => {
+    const movies = [movie({ id: 'a', director: null }), movie({ id: 'b' })]
+    expect(getTopDirectors(movies)).toEqual([])
   })
 })
