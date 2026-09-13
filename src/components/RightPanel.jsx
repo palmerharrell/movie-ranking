@@ -17,6 +17,7 @@ import { formatPackLabel } from '../lib/labelWording.js'
 
 export function RightPanel({
   category,
+  heatColors,
   onReorder,
   onSkip,
   skippedMovies,
@@ -87,6 +88,7 @@ export function RightPanel({
                 key={movie.id}
                 movie={movie}
                 rank={index + 1}
+                heatColor={heatColors?.get(movie.id)}
                 onSkip={handleSkip}
                 disabled={disabled}
                 // While the "skip this one too?" prompt is up (#313), the

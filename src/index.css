@@ -383,14 +383,13 @@ body {
   border: 1px solid transparent;
 }
 
+/* Hot (top-ranked) -> cold (bottom-ranked) tint (#352), driven by the
+   per-movie --row-heat color set inline in LeftPanel.jsx. Falls back to the
+   old flat accent tint if a row is ranked but has no computed heat color
+   (e.g. it's the only ranked movie in scope). */
 [data-theme='popular'] .rankings-row.ranked {
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
-}
-
-[data-theme='popular'] .rankings-row.top-1 {
-  background: color-mix(in srgb, var(--accent2) 8%, transparent);
-  border-color: color-mix(in srgb, var(--accent2) 40%, transparent);
+  background: color-mix(in srgb, var(--row-heat, var(--accent)) 7%, transparent);
+  border-color: color-mix(in srgb, var(--row-heat, var(--accent)) 25%, transparent);
 }
 
 .rankings-rank {
@@ -709,9 +708,13 @@ body {
   overflow: hidden;
 }
 
+/* Hot (top-ranked) -> cold (bottom-ranked) tint (#352), driven by the
+   per-movie --row-heat color set inline in MovieTile.jsx. Falls back to the
+   old flat accent2 tint if a tile is already-ranked but has no computed
+   heat color (e.g. it's the only ranked movie in scope). */
 [data-theme='popular'] .movie-tile.movie-tile--already-ranked {
-  background: color-mix(in srgb, var(--accent2) 7%, transparent);
-  border-color: color-mix(in srgb, var(--accent2) 35%, transparent);
+  background: color-mix(in srgb, var(--row-heat, var(--accent2)) 7%, transparent);
+  border-color: color-mix(in srgb, var(--row-heat, var(--accent2)) 35%, transparent);
 }
 
 .movie-tile-rank-col {
