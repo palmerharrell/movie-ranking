@@ -1,6 +1,6 @@
 // A big detail card for a single movie — poster plus everything the small
 // tile/row views have to truncate to fit (full title, full cast list). Opened
-// by tapping/clicking a movie in a pack, the standings, or the skipped list
+// by tapping/clicking a movie in a pack, the rankings, or the skipped list
 // (#222), and via the head-to-head cards' own info button (#223), since
 // those are otherwise the one place a movie's full title never fits. Uses
 // its own `movie-detail-card` width (#302) rather than the shared

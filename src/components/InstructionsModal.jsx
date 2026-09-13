@@ -28,7 +28,7 @@ export function InstructionsModal({ onClose, initialShowOnLoad = true }) {
           style={{ color: 'var(--text-mid)' }}
         >
           <li>
-            <strong>☰ menu</strong> — Standings (this browser&rsquo;s live ranked
+            <strong>☰ menu</strong> — Rankings (this browser&rsquo;s live ranked
             list), Load Ranking (browse saved rankings), Skipped
             (review/un-skip &ldquo;haven&rsquo;t seen&rdquo; movies), and
             Instructions (reopen this guide).

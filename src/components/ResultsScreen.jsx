@@ -122,7 +122,7 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onSh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // As the user scrolls through the standings, the floating "TOP N" heading
+  // As the user scrolls through the rankings, the floating "TOP N" heading
   // tracks which tier is currently at the top of the scroll area, then
   // disappears once they scroll past the Top 100 into the unranked-below list.
   useEffect(() => {

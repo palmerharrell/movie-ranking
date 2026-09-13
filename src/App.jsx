@@ -110,10 +110,10 @@ function App() {
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
-  const [showStandingsDrawer, setShowStandingsDrawer] = useState(false)
+  const [showRankingsDrawer, setShowRankingsDrawer] = useState(false)
   const [showInstructionsModal, setShowInstructionsModal] = useState(initialShowInstructions)
   // The movie shown in the big detail card (#222, #223) — tapping/clicking a
-  // movie in a pack, the standings, the skipped list, or a Head to Head
+  // movie in a pack, the rankings, the skipped list, or a Head to Head
   // card's own info button opens it; null when no detail card is showing.
   const [detailMovie, setDetailMovie] = useState(null)
   // Total unfiltered pool size, shown in the picker's "All (nnnn)" label
@@ -250,18 +250,18 @@ function App() {
     })
   }, [])
 
-  // #247: the Standings drawer and Skipped view are both fixed-position
+  // #247: the Rankings drawer and Skipped view are both fixed-position
   // overlays, which doesn't stop the page underneath from scrolling on
   // touch devices — locking body scroll while either is open keeps the
   // background still.
   useEffect(() => {
-    if (!showStandingsDrawer && !showSkippedView) return undefined
+    if (!showRankingsDrawer && !showSkippedView) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [showStandingsDrawer, showSkippedView])
+  }, [showRankingsDrawer, showSkippedView])
 
   // Announces a Head to Head / Top 10 Tough Choice pack (#298) with a
   // screen-filling "<label>!" overlay for a beat before it's shown — fires
@@ -665,7 +665,7 @@ function App() {
               {colorMode === 'dark' ? '☀️' : '🌙'}
             </button>
             <BannerMenu
-              onStandings={() => setShowStandingsDrawer(true)}
+              onRankings={() => setShowRankingsDrawer(true)}
               onLoadRanking={() => setShowLoadView(true)}
               onSkipped={() => setShowSkippedView(true)}
               onInstructions={() => setShowInstructionsModal(true)}
@@ -699,27 +699,27 @@ function App() {
         )}
 
         <div className="relative grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[340px_1fr]">
-          {/* Standings/Skipped drawers (responsive-redesign): anchored with
+          {/* Rankings/Skipped drawers (responsive-redesign): anchored with
               `absolute inset-y-0` to *this* body element (the flex row
               between header and footer), not the viewport — so on a dvh
               shell they stop above the footer instead of covering it. */}
-          {showStandingsDrawer && (
+          {showRankingsDrawer && (
             <div
               className="absolute inset-0 z-30 bg-black/55 md:hidden"
-              onClick={() => setShowStandingsDrawer(false)}
+              onClick={() => setShowRankingsDrawer(false)}
             />
           )}
 
           <aside
-            className={`standings-col absolute inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`rankings-col absolute inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showRankingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
             <div className="mb-2 flex justify-end md:hidden">
               <button
                 type="button"
-                onClick={() => setShowStandingsDrawer(false)}
+                onClick={() => setShowRankingsDrawer(false)}
                 className="modal-close"
-                aria-label="Close standings"
+                aria-label="Close rankings"
               >
                 ×
               </button>
@@ -729,7 +729,7 @@ function App() {
                 movies={movies}
                 subset={subset}
                 onOpenDetail={setDetailMovie}
-                open={showStandingsDrawer}
+                open={showRankingsDrawer}
               />
             ) : error ? (
               <p className="text-sm text-red-400">{error}</p>
@@ -816,9 +816,9 @@ function App() {
           {movies ? (
             <button
               type="button"
-              onClick={() => setShowStandingsDrawer(true)}
+              onClick={() => setShowRankingsDrawer(true)}
               className="footer-tab md:invisible"
-              aria-label={`Open standings — ${rankedCount} of ${eligibleCount} ranked`}
+              aria-label={`Open rankings — ${rankedCount} of ${eligibleCount} ranked`}
             >
               <span className="footer-tab-count">
                 {rankedCount}/{eligibleCount}
