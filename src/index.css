@@ -174,7 +174,6 @@ body {
 .app-header-logo {
   flex: 0 0 auto;
   border-radius: 7px;
-  border: 1px solid rgba(63, 210, 199, 0.35);
   object-fit: cover;
 }
 
@@ -434,12 +433,14 @@ body {
 
 /* Footer: a sticky bar in normal document flow (#328's fixed-position hit-
    testing bug can't recur — each cell is its own box, nothing to overlap)
-   rather than three independently `position: fixed` elements. `1fr` on the
-   center cell keeps the two tabs from shifting when a pack has no Rank
-   button of its own (Head to Head, pack choice). */
+   rather than three independently `position: fixed` elements. Equal `1fr`
+   outer columns (not `auto`) keep the middle Rank-button column truly
+   centered regardless of how wide the "Current Ranking"/"Skipped" tabs
+   happen to be — two independently auto-sized outer columns let the Rank
+   button visibly drift toward whichever side was narrower. */
 .app-footer {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   justify-items: center;
   gap: 8px;
@@ -467,9 +468,11 @@ body {
   letter-spacing: 0.08em;
 }
 
-.footer-tab:hover {
-  border-color: var(--accent);
-  color: var(--text-high);
+@media (hover: hover) and (pointer: fine) {
+  .footer-tab:hover {
+    border-color: var(--accent);
+    color: var(--text-high);
+  }
 }
 
 .footer-tab-count {
@@ -950,6 +953,31 @@ body {
   color: var(--text-high);
 }
 
+/* Refine Ranking / Save on the Results screen — plain text-only styling
+   reads as "not a button" next to Share/Start Over's filled backgrounds, so
+   give these two their own resting background plus a stronger hover tint.
+   Scoped to .results-actions rather than changing .modal-button-secondary
+   itself, which is also the plain Cancel button in several other modals. */
+.results-actions .modal-button-secondary {
+  background: color-mix(in srgb, var(--text-high) 6%, transparent);
+}
+
+.results-actions .modal-button-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-high) 14%, transparent);
+}
+
+.modal-button-danger {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  background: #dc2626;
+  color: #fff;
+}
+
+.modal-button-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
 .modal-close {
   font-size: 22px;
   line-height: 1;
@@ -1002,21 +1030,26 @@ body {
   border: 1px solid rgba(240, 79, 140, 0.45);
 }
 
+.results-top-ten-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 4px 0 8px;
+}
+
 .results-top-ten-heading {
   /* Flow element, not absolutely positioned above the card with a negative
      top offset — that clipped it whenever Safari shrank the viewport. Scales
      with the density tier instead of a fixed 38px/124px split. */
-  position: static;
-  align-self: center;
-  z-index: 20;
-  margin: 0 0 8px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  align-items: baseline;
+  gap: 0.15em;
   line-height: 0.95;
   white-space: nowrap;
   font-family: 'Bungee', sans-serif;
+  font-size: var(--results-head-font);
   letter-spacing: 0.04em;
   color: transparent;
   -webkit-text-stroke: 2px #f04f8c;
@@ -1026,14 +1059,37 @@ body {
     drop-shadow(0 0 18px rgba(240, 79, 140, 0.5));
 }
 
-.results-top-ten-heading-small {
-  display: flex;
-  justify-content: space-between;
-  font-size: calc(var(--results-head-font) * 0.3);
+.results-scope-label {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
 }
 
-.results-top-ten-heading-big {
-  font-size: var(--results-head-font);
+.results-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-high);
+  background: color-mix(in srgb, var(--text-high) 10%, transparent);
+}
+
+.results-close-button:hover {
+  background: color-mix(in srgb, var(--text-high) 18%, transparent);
 }
 
 .results-top-tile-poster {
@@ -1135,10 +1191,16 @@ body {
   line-height: 1;
 }
 
-.banner-menu-button:hover,
 .banner-menu-button[aria-expanded='true'] {
   border-color: var(--accent);
   color: var(--text-high);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .banner-menu-button:hover {
+    border-color: var(--accent);
+    color: var(--text-high);
+  }
 }
 
 .banner-menu-dropdown {
@@ -1214,7 +1276,9 @@ body {
   z-index: 1;
 }
 
-.theme-toggle-button:hover {
-  border-color: var(--accent-hover);
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle-button:hover {
+    border-color: var(--accent-hover);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
 }

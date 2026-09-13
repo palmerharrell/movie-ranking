@@ -5,6 +5,7 @@ import {
   mergeWithLocalState,
   applyRankToLocalState,
   resetLocalState,
+  resetTimesRankedOnly,
   markSkipped as markSkippedLocal,
   unmarkSkipped as unmarkSkippedLocal,
   unmarkAllSkipped as unmarkAllSkippedLocal,
@@ -156,7 +157,10 @@ export async function saveRanking(name, { family, popular, genre, pg13, subset }
     eloRating: m.eloRating,
     timesRanked: m.timesRanked,
   }))
-  const result = await request('/api/rankings', {
+  // Saving no longer resets local ranking state — Save is a non-destructive
+  // "create a named snapshot" action; only Refine (timesRanked-only) and
+  // Start Over (full reset) below change local progress.
+  return request('/api/rankings', {
     method: 'POST',
     body: JSON.stringify({
       name,
@@ -166,13 +170,20 @@ export async function saveRanking(name, { family, popular, genre, pg13, subset }
       clientId: getOrCreateClientId(),
     }),
   })
-  resetLocalState(eligible.map((m) => m.id))
-  return result
 }
 
 export async function resetRanking({ family, popular, genre, pg13 } = {}) {
   const movies = await getMovies({ family, popular, genre, pg13 })
   resetLocalState(movies.map((m) => m.id))
+}
+
+// "Refine Ranking" — resets timesRanked (not eloRating) for every
+// non-skipped movie in scope, so a fresh full pass refines from current
+// standings instead of starting over from the 1000 default.
+export async function refineRanking({ family, popular, genre, pg13 } = {}) {
+  const movies = await getMovies({ family, popular, genre, pg13 })
+  const eligible = movies.filter((m) => !m.skipped)
+  resetTimesRankedOnly(eligible.map((m) => m.id))
 }
 
 // Restricted to snapshots saved from the given subset id (#186 follow-up)

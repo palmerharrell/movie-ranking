@@ -5,6 +5,7 @@ import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
 import { RankButton } from './components/RankButton.jsx'
 import { SubsetPicker } from './components/SubsetPicker.jsx'
 import { ResetRankingModal } from './components/ResetRankingModal.jsx'
+import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import { SkippedView } from './components/SkippedView.jsx'
@@ -17,7 +18,13 @@ import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
 import { selectPg13OrUnder } from './lib/pg13Mode.js'
-import { GENRE_SUBSETS, selectGenreSubset, isDirectorSubsetId, getTopDirectors } from './lib/genreSubsets.js'
+import {
+  GENRE_SUBSETS,
+  selectGenreSubset,
+  isDirectorSubsetId,
+  getTopDirectors,
+  subsetMoviesLabel,
+} from './lib/genreSubsets.js'
 import { HEAD_TO_HEAD_TYPE } from './lib/categoryGenerator.js'
 import { generateRankingName } from './lib/rankingName.js'
 import { buildShareUrl } from './lib/shareLink.js'
@@ -100,13 +107,12 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [switchingSubset, setSwitchingSubset] = useState(false)
   const [showResultsScreen, setShowResultsScreen] = useState(false)
-  // Name the just-completed ranking was auto-saved under (#227) — shown as
-  // the Results screen's title so the user can see what it got called.
-  const [resultsTitle, setResultsTitle] = useState(null)
-  // The auto-saved ranking's share slug (#220) — saveRanking hands one back
-  // immediately, so the Share button works right away with no extra round
-  // trip.
+  // Set once the currently-displayed completed ranking has been saved (via
+  // the Results screen's own Save button, or lazily by Share saving first)
+  // — null means nothing has been persisted yet for this run (#345 followup:
+  // completion no longer auto-saves).
   const [resultsShareSlug, setResultsShareSlug] = useState(null)
+  const [showSaveModal, setShowSaveModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
@@ -187,54 +193,73 @@ function App() {
     return result
   }
 
-  // Auto-saves once the currently-visible pool transitions into "every movie
-  // ranked at least once" — not on every subsequent Rank click while it
-  // stays there. In a filtered subset "the pool" means that subset (the save
-  // itself is scoped the same way — see autoSaveCompletedRanking), so this
-  // fires on subset completion too, independent of the rest of the pool.
+  // Shows the Results screen once the currently-visible pool transitions
+  // into "every movie ranked at least once" — not on every subsequent Rank
+  // click while it stays there. Completion no longer auto-saves anything
+  // (the user saves explicitly from the Results screen, or Share saves
+  // lazily on first use — see handleShareResults/handleSaveResults below);
+  // this just surfaces the screen.
   function noteMoviesUpdate(updatedMovies) {
     const visibleMovies = computeVisibleMovies(updatedMovies)
     setMovies(visibleMovies)
     const fullyRanked = isFullyRanked(visibleMovies)
     if (fullyRanked && !wasFullyRanked.current) {
-      autoSaveCompletedRanking()
+      setShowResultsScreen(true)
     }
     wasFullyRanked.current = fullyRanked
   }
 
-  // Replaces the old "Ranking Complete" naming modal (#227): completion now
-  // auto-saves immediately under a generated name, and the Results screen
-  // (shown either way) just reports what it was saved as via `resultsTitle`.
-  // A failure here surfaces the same as any other API error — the Results
-  // screen simply doesn't appear, matching how a failed manual save used to
-  // leave the modal up with an inline error, just without a modal to retry
-  // from; the completed state isn't lost, so the next `noteMoviesUpdate`
-  // call (e.g. after switching back to this subset) will retry the save.
-  async function autoSaveCompletedRanking() {
-    const name = generateRankingName(subset, effectivePg13)
-    let saved
-    try {
-      saved = await api.saveRanking(name, {
-        family: isFamily,
-        popular: isPopular,
-        genre: activeGenre,
-        pg13: effectivePg13,
-        subset,
-      })
-    } catch (err) {
-      setError(err.message)
-      return
-    }
-    setResultsTitle(name)
-    setResultsShareSlug(saved.shareSlug)
-    setShowResultsScreen(true)
+  function currentRankingOptions() {
+    return { family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13, subset }
   }
 
-  // The live Results screen's Share button (#220) — the slug is already
-  // known from the auto-save above, so this is just building the link and
-  // copying it; ResultsScreen owns the click-feedback state.
+  // The live Results screen's Share button: if nothing's been saved yet for
+  // this run, save it first (under a generated default name) to get a share
+  // slug, then copy the link. ResultsScreen's own handleShareClick already
+  // wraps this in try/catch and shows an inline error on failure.
   async function handleShareResults() {
-    await navigator.clipboard.writeText(buildShareUrl(resultsShareSlug))
+    let slug = resultsShareSlug
+    if (!slug) {
+      const saved = await api.saveRanking(generateRankingName(subset, effectivePg13), currentRankingOptions())
+      slug = saved.shareSlug
+      setResultsShareSlug(slug)
+    }
+    await navigator.clipboard.writeText(buildShareUrl(slug))
+  }
+
+  // The Results screen's Save button (typed name) — persists a snapshot
+  // without disturbing local ranking state, so the user can keep refining or
+  // viewing afterward. Errors are left to the modal's own inline handling.
+  async function handleSaveResults(name) {
+    const saved = await api.saveRanking(name, currentRankingOptions())
+    setResultsShareSlug(saved.shareSlug)
+    setShowSaveModal(false)
+  }
+
+  // "Refine Ranking" — re-ranks every non-skipped movie in scope one more
+  // time by resetting timesRanked back to 0 while keeping eloRating, so the
+  // new pass refines from current standings instead of starting at 1000
+  // again. Mirrors handleResetRanking's shape below, just with a lighter
+  // reset.
+  async function handleRefineRanking() {
+    setShowResultsScreen(false)
+    setResultsShareSlug(null)
+    setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
+    wasFullyRanked.current = false
+    try {
+      await api.refineRanking(currentRankingOptions())
+      const [updatedMovies, nextTurn] = await Promise.all([
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        api.getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+      ])
+      noteMoviesUpdate(updatedMovies)
+      setTurn(nextTurn)
+    } catch (err) {
+      setMovies(null)
+      setTurn(null)
+      setError(err.message)
+    }
   }
 
   useEffect(() => {
@@ -618,38 +643,25 @@ function App() {
     setShowInstructionsModal(false)
   }
 
-  // The ranking is already auto-saved by the time this runs (see
-  // autoSaveCompletedRanking) — dismissing the Results screen just starts a
-  // fresh run for this scope, the same reset-and-refetch that used to
-  // follow a manual save.
-  async function handleResultsDismiss() {
+  // Closing the Results screen with no explicit action (the × button) just
+  // hides it — nothing needs to reset or refetch. The pool is already fully
+  // ranked and Elo state is untouched, and handleRank's own turn generation
+  // already left a valid next pack sitting in `turn` state, so it simply
+  // becomes visible again underneath.
+  function handleResultsClose() {
     setShowResultsScreen(false)
-    setResultsTitle(null)
     setResultsShareSlug(null)
-    setSkippedMovies([])
-    setAwaitingLastSkipConfirm(false)
-    wasFullyRanked.current = false
-
-    try {
-      const [updatedMovies, nextTurn] = await Promise.all([
-        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-        api.getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
-      ])
-      noteMoviesUpdate(updatedMovies)
-      setTurn(nextTurn)
-    } catch (err) {
-      // The save already committed (snapshot posted, local state reset), so
-      // drop the now-stale board rather than silently leaving it displayed.
-      setMovies(null)
-      setTurn(null)
-      setError(err.message)
-    }
   }
 
   async function handleResetRanking() {
     // Let a failure here propagate to the modal, which shows it inline.
     await api.resetRanking({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 })
     setShowResetModal(false)
+    // Reachable from the Results screen's own "Start Over" button as well as
+    // the ☰ menu — clear results-screen state too (harmless no-ops when
+    // triggered from the menu, where these are already false/null).
+    setShowResultsScreen(false)
+    setResultsShareSlug(null)
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     wasFullyRanked.current = false
@@ -684,7 +696,7 @@ function App() {
               src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
               alt=""
               aria-hidden="true"
-              className="app-header-logo h-[34px] w-[34px] shrink-0 md:h-[42px] md:w-[42px]"
+              className="app-header-logo h-[40px] w-[40px] shrink-0 md:h-[48px] md:w-[48px]"
             />
             <SubsetPicker
               subset={subset}
@@ -694,7 +706,10 @@ function App() {
             />
             <button
               type="button"
-              onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
+              onClick={(event) => {
+                event.currentTarget.blur()
+                setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))
+              }}
               className="theme-toggle-button"
               aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -854,7 +869,10 @@ function App() {
           {movies ? (
             <button
               type="button"
-              onClick={handleToggleRankingsDrawer}
+              onClick={(event) => {
+                event.currentTarget.blur()
+                handleToggleRankingsDrawer()
+              }}
               className="footer-tab md:invisible"
               aria-label={`${showRankingsDrawer ? 'Close' : 'Open'} rankings — ${rankedCount} of ${eligibleCount} ranked`}
             >
@@ -876,7 +894,10 @@ function App() {
           {movies ? (
             <button
               type="button"
-              onClick={handleToggleSkippedView}
+              onClick={(event) => {
+                event.currentTarget.blur()
+                handleToggleSkippedView()
+              }}
               className="footer-tab"
               aria-label={`${showSkippedView ? 'Close' : 'Open'} skipped movies — ${skippedCount} skipped`}
             >
@@ -900,10 +921,19 @@ function App() {
           // `movies` state, which still carries skipped entries for the
           // Rankings/Skipped drawers (#339).
           movies={eligibleMovies}
-          title={resultsTitle}
-          subtitle="Saved automatically"
-          onDismiss={handleResultsDismiss}
-          onShare={resultsShareSlug ? handleShareResults : undefined}
+          scopeLabel={subsetMoviesLabel(subset, effectivePg13)}
+          onDismiss={handleResultsClose}
+          onShare={handleShareResults}
+          onRefine={handleRefineRanking}
+          onSave={() => setShowSaveModal(true)}
+          onStartOver={() => setShowResetModal(true)}
+        />
+      )}
+      {showSaveModal && (
+        <SaveRankingModal
+          defaultName={generateRankingName(subset, effectivePg13)}
+          onConfirm={handleSaveResults}
+          onDismiss={() => setShowSaveModal(false)}
         />
       )}
       {showResetModal && (

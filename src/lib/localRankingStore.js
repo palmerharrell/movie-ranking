@@ -122,3 +122,17 @@ export function resetLocalState(movieIds) {
   for (const id of movieIds) delete state[id]
   writeAll(state)
 }
+
+// "Refine Ranking" support: resets timesRanked back to 0 for `movieIds`
+// while keeping their existing eloRating, so a fresh pass refines from
+// current standings instead of starting over at the 1000 default. A movie
+// with no existing entry (shouldn't normally happen — these are only called
+// for already-fully-ranked movies) is left untouched rather than seeded
+// with a fabricated rating.
+export function resetTimesRankedOnly(movieIds) {
+  const state = readAll()
+  for (const id of movieIds) {
+    if (state[id]) state[id] = { ...state[id], timesRanked: 0 }
+  }
+  writeAll(state)
+}

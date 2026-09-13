@@ -63,7 +63,7 @@ export function ResetRankingModal({ onConfirm, onDismiss, subset, pg13 }) {
             type="button"
             onClick={handleConfirm}
             disabled={resetting}
-            className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="modal-button-danger text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
             {resetting ? 'Resetting…' : 'Reset'}
           </button>
