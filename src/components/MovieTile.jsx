@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-export function MovieTile({ movie, rank, onSkip, disabled, frozen, onOpenDetail }) {
+export function MovieTile({ movie, rank, heatColor, onSkip, disabled, frozen, onOpenDetail }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: movie.id, disabled: frozen })
 
@@ -21,7 +21,7 @@ export function MovieTile({ movie, rank, onSkip, disabled, frozen, onOpenDetail 
       {...(frozen ? {} : listeners)}
       onClick={frozen ? undefined : () => onOpenDetail(movie)}
       className={`movie-tile flex touch-none select-none items-center gap-2.5 overflow-hidden rounded-lg border ${frozen ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${isAlreadyRanked ? 'movie-tile--already-ranked' : ''}`}
-      style={{ ...style, padding: 'var(--tile-pad)' }}
+      style={{ ...style, padding: 'var(--tile-pad)', ...(heatColor ? { '--row-heat': heatColor } : {}) }}
       aria-label={
         frozen
           ? `${movie.title}, awaiting skip confirmation`

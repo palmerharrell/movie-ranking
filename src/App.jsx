@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LeftPanel } from './components/LeftPanel.jsx'
 import { RightPanel } from './components/RightPanel.jsx'
 import { HeadToHeadPanel } from './components/HeadToHeadPanel.jsx'
@@ -18,6 +18,7 @@ import { StartScreen } from './components/StartScreen.jsx'
 import { NewRankingScreen } from './components/NewRankingScreen.jsx'
 import { ContinueRankingScreen } from './components/ContinueRankingScreen.jsx'
 import * as api from './lib/api.js'
+import { computeHeatColors } from './lib/rankGradient.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
 import { selectPg13OrUnder } from './lib/pg13Mode.js'
@@ -719,6 +720,17 @@ function App() {
     setScreen('app')
   }
 
+  // Hot (top-ranked) -> cold (bottom-ranked) gradient colors (#352), keyed
+  // by movie id so the Rankings panel and pack tiles color the same movie
+  // identically. Scoped to the same non-skipped pool the Rankings panel
+  // itself ranks by, so the gradient's "top" and "bottom" match what's
+  // actually visible. Computed unconditionally, above every early-return
+  // screen branch below, to satisfy the rules of hooks.
+  const heatColors = useMemo(
+    () => computeHeatColors(movies ? movies.filter((m) => !m.skipped) : []),
+    [movies],
+  )
+
   if (screen === 'start') {
     return (
       <div
@@ -861,6 +873,7 @@ function App() {
               <LeftPanel
                 movies={movies}
                 subset={subset}
+                heatColors={heatColors}
                 onOpenDetail={setDetailMovie}
                 onSkip={handleSkipMovie}
                 open={showRankingsDrawer}
@@ -913,6 +926,7 @@ function App() {
                 ) : (
                   <RightPanel
                     category={activePack}
+                    heatColors={heatColors}
                     onReorder={handleReorder}
                     onSkip={handleSkipMovie}
                     skippedMovies={skippedMovies}
