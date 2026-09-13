@@ -132,18 +132,18 @@ exposed in the UI.
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
   lists every persistently-skipped movie (poster/title/year, matching the
-  Standings row styling) with a per-movie "Un-skip" button and a "Clear All"
+  Rankings row styling) with a per-movie "Un-skip" button and a "Clear All"
   action that un-skips everything at once — both call
   `api.unmarkSkipped`/`localRankingStore.js`'s `unmarkSkipped` directly,
   independent of whether the pack that skip happened in is still active, so
   a skip can be reversed at any time, not just immediately after it happens.
   It renders as a slide-out drawer from the right edge (#269), mirroring the
-  Standings drawer's own always-mounted `aside` + backdrop overlay pattern
+  Rankings drawer's own always-mounted `aside` + backdrop overlay pattern
   in `App.jsx` (kept mounted off-screen via `translate-x-full` rather than
   conditionally rendered, so the slide transition has something to animate
   on both open and close) rather than the centered `modal-overlay`/
   `modal-card` it used before — that also means clicking the backdrop
-  outside the panel closes it (#268), the same as the Standings drawer,
+  outside the panel closes it (#268), the same as the Rankings drawer,
   which the old modal never supported. Skipped state survives Reset/Save
   (it's a fact about the viewer, not about a ranking run — see **Saved
   rankings**).
@@ -203,7 +203,7 @@ exposed in the UI.
   removed and the winner grows to fill the freed-up row, held there alone
   for about 1.6s before the pick is actually submitted and the pack
   advances. It doesn't apply the overlap requirement below — reinforcing
-  standings among movies the pool has already ranked isn't about linking in
+  rankings among movies the pool has already ranked isn't about linking in
   new movies.
 - **Top 10 Tough Choice packs (#131):** a rarer variant of Head to Head —
   same 2-movie pick-a-winner UI and submission flow (`HeadToHeadPanel.jsx`,
@@ -291,7 +291,7 @@ exposed in the UI.
   existing forced-turn cadence and backstop.
 
 ## Progress tracking
-- `LeftPanel.jsx` shows a label near the standings header: `n/nnn ranked` —
+- `LeftPanel.jsx` shows a label near the rankings header: `n/nnn ranked` —
   `n` is the count of movies with `timesRanked ≥ 1`, `nnn` is the total pool
   size minus the number of skipped ("haven't seen") movies (#136) — see
   **Skip ("Haven't Seen")** above.
@@ -311,7 +311,7 @@ exposed in the UI.
   the PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
   **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136). The
   Results screen (`ResultsScreen.jsx`) still appears right after, showing
-  the just-completed standings with the generated name as its title and a
+  the just-completed rankings with the generated name as its title and a
   "Saved automatically" subtitle, so the user can see what happened; its
   footer button reads "Continue Ranking" (dismissing it) rather than "Save
   Ranking" — dismissing is what starts the next run (see **Save** below),
@@ -499,7 +499,7 @@ custom-property tiers, switched purely by `@media (max-height: …)` queries
 every component just reads the resulting vars (`--tile-gap`, `--tile-pad`,
 `--main-pad`, `--label-font`, `--rank-font`, `--credits-display`,
 `--results-head-font`, `--subset-pill-font`, `--pack-tile-max-h`,
-`--pack-poster-max-w`, `--standings-poster-w`/`-h`,
+`--pack-poster-max-w`, `--rankings-poster-w`/`-h`,
 `--pack-choice-title-font`): **roomy** (≥820px, installed PWA), **compact**
 (640–819px, Safari with both toolbars — iPhone 11 ≈ 651px), **tight**
 (<640px, landscape or Safari with an extra banner, where credit lines drop
@@ -518,7 +518,7 @@ the layout around.
 
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
-  sorted by eloRating. Header reads "\<Subset\> Standings" (#316,
+  sorted by eloRating. Header reads "\<Subset\> Rankings" (#316,
   `subsetLabel` — the same shared label `SaveRankingModal`/`ResetRankingModal`/
   `LoadRankingView` already use) so the active subset is visible there too,
   not just in the banner. Progress label (`n/nnn ranked`) near the header —
@@ -540,23 +540,23 @@ the layout around.
   never shift depending on pack type. The outer cells hold the Ranked
   (`n/nnn`, subset-scoped — see **Progress tracking**) and Skipped (`n`,
   global — see the following paragraph) tabs (`App.jsx`) — each is a toggle, not just an
-  opener: clicking a tab opens its own drawer (Standings on the left,
+  opener: clicking a tab opens its own drawer (Rankings on the left,
   Skipped on the right — see **Skip ("Haven't Seen")** and **Left
   panel**/**Skipped Movies drawer** above), clicking it again while that
   drawer is already open closes it, and the two drawers are mutually
   exclusive — opening one closes the other, rather than letting both slide
-  out at once (#342, `handleToggleStandingsDrawer`/
+  out at once (#342, `handleToggleRankingsDrawer`/
   `handleToggleSkippedView` in `App.jsx`). The Skipped tab's count is the
   true global count of persistently-skipped movies (`api.getSkippedCount`,
   a direct read of the same skipped-ids set the Skipped drawer's own list
   is filtered from — see **Skip ("Haven't Seen")**), not scoped to the
-  active subset (#337) — unlike the Ranked tab and the Standings header's
+  active subset (#337) — unlike the Ranked tab and the Rankings header's
   own `n/nnn ranked`/`n skipped` lines (see **Progress tracking**), which
   stay subset-scoped since they describe progress on the currently-visible
   pool rather than "how many movies has this browser ever skipped." The
   Ranked tab is mobile-only (`md:hidden`, via
   `visibility: hidden` rather than removing the grid cell, so the center
-  column doesn't shift) since desktop already shows the Standings panel
+  column doesn't shift) since desktop already shows the Rankings panel
   inline at the left edge; the Skipped tab shows on every breakpoint, since
   that drawer (#269) is a fixed overlay regardless of screen size, and only
   appears once `skippedCount > 0`. Because the footer is a normal-flow
@@ -564,7 +564,7 @@ the layout around.
   hit-testing bug (a full-width fixed row swallowing taps on the tabs)
   cannot recur — each cell is its own box with nothing to overlap.
 - **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
-  pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
+  pack, a rankings row, or a Skipped-list row opens `MovieDetailModal.jsx`
   — a bigger card with the poster, full (untruncated) title, director, full
   cast list, and genres, since all three of those small-row views truncate
   the title/cast to fit. Pack tiles use the plain `onClick` this opens with
@@ -600,7 +600,7 @@ the layout around.
   (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
   `src/index.css`) rather than being folded into the subset theme system.
   The ☰ menu (`BannerMenu.jsx`) is unchanged in content: opening it reveals
-  Standings (mobile-only; desktop already shows the standings panel
+  Rankings (mobile-only; desktop already shows the rankings panel
   in-line), "Load Ranking" (see **Saved rankings**), "Skipped" (#137, see
   **Skip ("Haven't Seen")**), "Instructions" (#237, reopens the startup
   popup on demand), and (below a divider) the PG-13-and-under checkbox

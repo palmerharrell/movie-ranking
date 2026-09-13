@@ -42,7 +42,7 @@ function writeSkippedIds(ids) {
 // pack generation and from the ranked-progress denominator, until un-skipped.
 // Also clears any existing eloRating/timesRanked for it (#169): a movie
 // ranked and later skipped shouldn't keep stale rating data lingering in the
-// Standings — skipping it removes it from the ranking, not just from future
+// Rankings — skipping it removes it from the ranking, not just from future
 // packs. Un-skipping afterward correctly starts it back at defaults rather
 // than restoring the old rating, since that data is now gone.
 export function markSkipped(movieId) {

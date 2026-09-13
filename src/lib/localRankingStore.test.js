@@ -114,6 +114,40 @@ describe('applyRankToLocalState', () => {
     applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
     expect(mergeWithLocalState(STATIC_MOVIES).find((m) => m.id === '1').timesRanked).toBe(2)
   })
+
+  // #338 investigation: "is it possible for a movie in a submitted 5-pack to
+  // end up unranked?" This is the actual commit path App.jsx's handleRank
+  // drives (via api.rankPack -> applyRankToLocalState), so it's the right
+  // place to pin the invariant down. `orderedMovies` here is *every* tile in
+  // the pack, in whatever drag order the user left them in (including a
+  // shrunk 2-4 movie pack after skips, and a full 5) — every single one must
+  // come out with timesRanked bumped by exactly one, with no id silently
+  // dropped. `elo.js`'s `rankPack` builds its ratings map by id (not array
+  // index), and this loop iterates `orderedMovies` itself rather than some
+  // derived/filtered list, so there's no code path here that could leave a
+  // submitted tile un-ranked.
+  it('ranks every tile in the pack, regardless of pack size or drag order (#338)', () => {
+    const fiveMovies = [
+      { id: '1', title: 'A' },
+      { id: '2', title: 'B' },
+      { id: '3', title: 'C' },
+      { id: '4', title: 'D' },
+      { id: '5', title: 'E' },
+    ]
+    for (const size of [2, 3, 4, 5]) {
+      globalThis.localStorage.clear()
+      const pack = mergeWithLocalState(fiveMovies.slice(0, size))
+      // Reverse the drag order from the default array order to make sure
+      // the update isn't accidentally keyed off array position.
+      const reversed = [...pack].reverse()
+      applyRankToLocalState(reversed)
+
+      const merged = mergeWithLocalState(fiveMovies.slice(0, size))
+      for (const movie of merged) {
+        expect(movie.timesRanked).toBe(1)
+      }
+    }
+  })
 })
 
 describe('resetLocalState', () => {
