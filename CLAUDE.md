@@ -488,6 +488,34 @@ exposed in the UI.
   - Process management: `systemd` or `pm2` so it survives reboots/crashes;
     reverse-proxied through Caddy or nginx for TLS.
 
+## The density system (responsive-redesign)
+`.app-shell` sizes itself off `100dvh` (with a `100vh` fallback), never
+`100vh`/`h-screen` alone — Safari's collapsing toolbars mean the two can
+differ substantially, which used to push the fixed-position footer bar and
+`.results-card`'s hardcoded `88vh` behind/off the visible area on iPhone
+Safari. Everything else keys off usable viewport **height** via three CSS
+custom-property tiers, switched purely by `@media (max-height: …)` queries
+(`src/index.css`, `:root` defaults = roomy) — one place decides the tier,
+every component just reads the resulting vars (`--tile-gap`, `--tile-pad`,
+`--main-pad`, `--label-font`, `--rank-font`, `--credits-display`,
+`--results-head-font`, `--subset-pill-font`, `--pack-tile-max-h`,
+`--pack-poster-max-w`, `--standings-poster-w`/`-h`,
+`--pack-choice-title-font`): **roomy** (≥820px, installed PWA), **compact**
+(640–819px, Safari with both toolbars — iPhone 11 ≈ 651px), **tight**
+(<640px, landscape or Safari with an extra banner, where credit lines drop
+entirely). Tap targets (44px minimum — the pack tile skip button, footer
+tabs, Head to Head info button) never shrink across tiers; only spacing,
+gaps, and non-essential type do. The footer (see **Footer** below) is a
+normal-flow sibling of the pack area rather than a `position: fixed` bar,
+so it can never cover content and needs no compensating bottom padding on
+`main`. The subset pill label and every screen's category label use a
+shared fit-to-one-line hook (`src/lib/useFitText.js`): start at the tier
+font size and step down 1px at a time while the text overflows its box
+(floor 9px for the subset pill, 11px for screen titles), re-measured on
+mount, `ResizeObserver`, and `document.fonts.ready` — so a long subset name
+or category label always fits on one line instead of wrapping and pushing
+the layout around.
+
 ## UI layout
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
   sorted by eloRating. Header reads "\<Subset\> Standings" (#316,
@@ -499,35 +527,30 @@ exposed in the UI.
   label, reorderable via drag-and-drop (`@dnd-kit`). Occasionally this is
   replaced by the pack-choice screen (`PackChoiceScreen.jsx`) instead — see
   **Category generation & turns**.
-- **Center-bottom button:** "Rank →" — triggers the Elo update, left-panel
-  resort, and generates the next turn. Not shown during a Head to Head/Top
-  10 Tough Choice pack (single-click submit instead) or a pack-choice turn
-  (picking a candidate is the action).
-- **Ranked/Skipped edge tabs (#271):** the ranked (`n/nnn`) and skipped (`n`)
-  counts that used to sit inline flanking the "Rank →" button are now two
-  tab handles pinned to the window edge (`App.jsx`, computed once from
-  `movies` rather than recomputed separately per pack type as before) —
-  clicking either doubles as the way to open that count's own drawer
-  (Standings on the left, Skipped on the right — see **Skip ("Haven't
-  Seen")** and **Left panel**/**Skipped Movies drawer** above). The Ranked
-  tab is mobile-only (`md:hidden`) since desktop already shows the Standings
-  panel inline at the left edge — a tab to open something already open would
-  be redundant; the Skipped tab shows on every breakpoint, since that
-  drawer (#269) is a fixed overlay regardless of screen size. Each tab hides
-  itself while its own drawer is open (the drawer already occupies that
-  edge), and the Skipped tab only appears once `skippedCount > 0`, same as
-  the inline button it replaced. Vertically, the tabs align with the Rank
-  button (#289) rather than sitting at the viewport's fixed center —
-  `App.jsx`'s `tabsCenterY` measures the Rank button's own wrapping row
-  (`rankRowRef`) via `getBoundingClientRect()` in a `useLayoutEffect` keyed
-  on whatever could change its position (`category`, `packs`, `busy`,
-  `switchingSubset`), plus a window resize listener; a Head to Head pack
-  unmounts that row entirely (no Rank button there), so the tabs just keep
-  whatever position was last measured from a normal pack instead of
-  updating. The measured value is applied via inline `style={{ top:
-  tabsCenterY }}` rather than a CSS percentage, so `.edge-tab-left`/
-  `.edge-tab-right` in `index.css` only own the fixed positioning and the
-  horizontal peek/hover transform, not the vertical offset.
+- **Footer (responsive-redesign):** a `<footer>` in normal document flow —
+  `display: grid; grid-template-columns: auto 1fr auto` — rather than three
+  independently `position: fixed` elements measured off a hardcoded
+  `--fixed-bar-bottom` offset (the old approach broke on Safari, whose
+  collapsing toolbars mean `100vh` doesn't match the actual visible area;
+  see **The density system** below). The center cell holds "Rank →" —
+  triggers the Elo update, left-panel resort, and generates the next turn —
+  or an empty placeholder span when there's no Rank button for this turn
+  (Head to Head/Top 10 Tough Choice single-click submit instead, and a
+  pack-choice turn's action is picking a candidate), so the flanking tabs
+  never shift depending on pack type. The outer cells hold the Ranked
+  (`n/nnn`) and Skipped (`n`) tabs (`App.jsx`, computed once from `movies`
+  rather than recomputed separately per pack type) — clicking either opens
+  that count's own drawer (Standings on the left, Skipped on the right —
+  see **Skip ("Haven't Seen")** and **Left panel**/**Skipped Movies
+  drawer** above). The Ranked tab is mobile-only (`md:hidden`, via
+  `visibility: hidden` rather than removing the grid cell, so the center
+  column doesn't shift) since desktop already shows the Standings panel
+  inline at the left edge; the Skipped tab shows on every breakpoint, since
+  that drawer (#269) is a fixed overlay regardless of screen size, and only
+  appears once `skippedCount > 0`. Because the footer is a normal-flow
+  sibling of the pack area rather than an overlay, #328's fixed-position
+  hit-testing bug (a full-width fixed row swallowing taps on the tabs)
+  cannot recur — each cell is its own box with nothing to overlap.
 - **Movie detail card (#222, #223):** tapping/clicking a movie tile in a
   pack, a standings row, or a Skipped-list row opens `MovieDetailModal.jsx`
   — a bigger card with the poster, full (untruncated) title, director, full
@@ -544,58 +567,43 @@ exposed in the UI.
   propagation so it opens the detail card without also submitting a pick)
   — the only place this is needed, since it's the one view where a movie's
   full title has no other way to be seen.
-- **Banner:** two rows. Top row: an icon-only "☰" menu button
-  (`BannerMenu.jsx`, no text label) sits in the top row's own top-left
-  corner (#273, moved up from its own bottom-row spot so the bottom row
-  could hold just the subset picker — see below) — opening it reveals
-  Standings (mobile-only; desktop already shows the standings panel
-  in-line), a "Load Ranking" entry point for browsing saved snapshots (see
-  **Saved rankings**), a "Skipped" entry point for browsing/un-skipping
-  persistently-skipped movies (#137, see **Skip ("Haven't Seen")**), an
-  "Instructions" entry point (#237) that reopens the startup instructions
-  popup on demand, and (below a divider) the PG-13-and-under checkbox
-  (#193, #272, see **PG-13 and under toggle**). Unlike the other menu
-  items, picking the checkbox doesn't close the menu, since it's a toggle
-  the user may want to flip more than once in a row and closing on every
-  click would hide the checked-state feedback. An app-icon (recolored to
-  the active Neon-theme palette — see **Movie subsets**) sits on either
-  side of the "Movie Ranking" title, all three sitting on a shared badge
-  (`.app-title-badge`) so the icons and title read as one continuous piece
-  rather than separate elements, without adding height beyond the icons'
-  own. In Dark Mode the badge's own background matches the icons' baked-in
-  navy exactly, reading as one continuous dark bar (unchanged since before
-  Light Mode existed); in Light Mode (#310) the badge's own background goes
-  transparent instead — using that same dark navy there just dropped a
-  dark bar onto the now-light banner surface (see **Light Mode banner**
-  below) — so each icon instead shows its own separately-recolored pale
-  mint background (`public/favicon-light.svg`, swapped in for
-  `public/favicon.svg` based on `colorMode`, see below), reading as two
-  self-contained light logo chips against the light banner instead. A
-  small icon-only sun/moon toggle (#265) sits in the top
-  row's own top-right corner, mirroring the ☰ button's position on the
-  left — clicking it flips `colorMode` (`'dark'`/`'light'`, persisted in
-  its own `localStorage` key, `movie-ranking-color-mode`, independent of
-  the subset picker's own persistence) between Dark Mode (today's Neon
-  palette, unchanged, and still the default) and a new Light Mode palette.
-  This is a second, orthogonal palette dimension from the per-subset
-  `data-theme` in **Movie subsets** below — every subset already shares one
-  `data-theme='popular'` look, so light/dark is applied via a separate
+- **Banner (responsive-redesign, `App.jsx`'s `.app-header-row`):** one row,
+  fixed height at every density tier — replacing the earlier two-row
+  layout (a centered "Movie Ranking" title badge on top, the subset picker
+  below), which cost too much vertical space on short Safari viewports (see
+  **The density system**). Left to right: a single 34×34 app-icon logo tile
+  (recolored to the active Neon-theme palette — see **Movie subsets**; no
+  longer flanks a text title, since the title itself was dropped to make
+  room), the subset pill (`flex: 1 1 auto`, a fit-to-width label — see
+  **The density system**'s "fit-to-one-line rule" — plus a `▾` caret; this
+  **is** the subset switcher, replacing the old headline + separate
+  "Switch" button), the sun/moon theme toggle, and the icon-only "☰" menu
+  button, in that order. `colorMode` (`'dark'`/`'light'`, persisted in
+  `movie-ranking-color-mode`, independent of the subset picker's own
+  persistence) still flips between Dark Mode (the Neon palette, default)
+  and Light Mode the same as before — this is a second, orthogonal palette
+  dimension from the per-subset `data-theme`; every subset already shares
+  one `data-theme='popular'` look, so light/dark is applied via a separate
   `data-color-mode` attribute overriding the same CSS custom properties
   (`--bg-page`, `--surface`, `--accent`, `--text-high`, etc., see
   `src/index.css`) rather than being folded into the subset theme system.
-  Bottom row holds the subset picker, centered — a big banner headline
-  (`.subset-banner`, `subsetLabel`) showing the active subset's name, with a
-  small pill-shaped "Switch" button underneath it (#316) that opens a
-  custom-themed dropdown listbox (`SubsetPicker.jsx`, mirroring
-  `BannerMenu.jsx`'s own open/close/click-outside/Escape pattern and visual
-  language) rather than the subset name living inside the control itself —
-  a native `<select>`'s own OS-rendered popup can't be styled to match the
-  app's dark surfaces/accent colors, so this replaces it entirely instead
-  of just shrinking it. The active subset is highlighted in the accent
-  color within the dropdown. A large, very-faint
-  film-reel watermark (baked-in low alpha, not CSS `opacity`, so it doesn't
-  fade the banner's own gradient) sits behind the whole app-shell under the
-  Neon theme only — see **Movie subsets**.
+  The ☰ menu (`BannerMenu.jsx`) is unchanged in content: opening it reveals
+  Standings (mobile-only; desktop already shows the standings panel
+  in-line), "Load Ranking" (see **Saved rankings**), "Skipped" (#137, see
+  **Skip ("Haven't Seen")**), "Instructions" (#237, reopens the startup
+  popup on demand), and (below a divider) the PG-13-and-under checkbox
+  (#193, #272, see **PG-13 and under toggle**) — picking the checkbox
+  doesn't close the menu, since it's a toggle the user may want to flip
+  more than once in a row. The subset pill opens the same custom-themed
+  dropdown listbox (`SubsetPicker.jsx`, mirroring `BannerMenu.jsx`'s own
+  open/close/click-outside/Escape pattern) as before — a native `<select>`'s
+  own OS-rendered popup can't be styled to match the app's dark
+  surfaces/accent colors — with the active subset highlighted in the accent
+  color. A large, very-faint film-reel watermark (baked-in low alpha, not
+  CSS `opacity`, so it doesn't fade the banner's own gradient) still sits
+  behind the whole app-shell under the Neon theme only — see **Movie
+  subsets**. `public/favicon-light.svg` still swaps in for
+  `public/favicon.svg` in Light Mode for the header logo tile.
 - **Startup instructions:** a one-time popup (`InstructionsModal.jsx`) shown
   on startup unless its "Show on load" checkbox (#236, checked by default)
   was left unchecked on a previous visit (`movie-ranking-hide-instructions`
