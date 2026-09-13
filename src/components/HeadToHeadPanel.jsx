@@ -7,7 +7,7 @@ import { formatPackLabel } from '../lib/labelWording.js'
 // before the pick is actually submitted and the pack advances.
 const WIN_HOLD_MS = 2000
 
-function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, onOpenDetail, disabled }) {
+function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, disabled }) {
   const classes = [
     'head-to-head-poster',
     `side-${side}`,
@@ -34,21 +34,6 @@ function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, onOp
       className={`poster-placeholder ${classes}`}
     >
       {movie.posterUrl && <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />}
-      {/* Info button (#223) — full titles are truncated in the caption
-          below; this is the only way to see one in full without picking a
-          winner. Stops propagation so tapping it doesn't also select/confirm. */}
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation()
-          onOpenDetail(movie)
-        }}
-        disabled={disabled}
-        className="movie-detail-info-button absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-xs font-bold disabled:cursor-not-allowed"
-        aria-label={`See full details for ${movie.title}`}
-      >
-        i
-      </button>
     </div>
   )
 }
@@ -62,7 +47,7 @@ function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, onOp
 // first, then scale-to-fill — see the `is-winner` transition-delay in
 // index.css), holds briefly, then submits the pairwise pick and the pack
 // advances.
-export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
+export function HeadToHeadPanel({ category, onPick, disabled }) {
   const [first, second] = category.movies
   const packKey = `${first.id}:${second.id}`
   const [front, setFront] = useState('left') // 'left' | 'right' — which poster is in front
@@ -104,7 +89,6 @@ export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
           isWinner={winnerSide === 'left'}
           isLoser={winnerSide === 'right'}
           onTap={() => handleTap('left')}
-          onOpenDetail={onOpenDetail}
           disabled={disabled || !!winnerSide}
         />
         <HeadToHeadPoster
@@ -115,18 +99,32 @@ export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
           isWinner={winnerSide === 'right'}
           isLoser={winnerSide === 'left'}
           onTap={() => handleTap('right')}
-          onOpenDetail={onOpenDetail}
           disabled={disabled || !!winnerSide}
         />
       </div>
 
+      {/* #356: the caption now carries every detail a Head to Head card
+          can't otherwise show (full title, year, director, full cast,
+          genres), replacing the old info-button/detail-modal path — this is
+          still the one view where a movie's full title has no other way to
+          be seen. Title/credits no longer truncate to one line, so the
+          caption grows with the content instead of clipping it
+          (`.head-to-head-caption` is flex: 0 0 auto within the pack-card's
+          flex column, so the poster stage above just shrinks to make room). */}
       {!winnerSide && (
         <div className="head-to-head-caption">
-          <p className="truncate text-[17px] font-bold" style={{ color: 'var(--text-high)' }}>
+          <p className="text-[17px] font-bold" style={{ color: 'var(--text-high)' }}>
             {frontMovie.title}
           </p>
+          {frontMovie.year && <p className="movie-tile-credits font-mono text-xs">{frontMovie.year}</p>}
           {frontMovie.director && (
-            <p className="movie-tile-credits truncate text-xs">Directed by: {frontMovie.director}</p>
+            <p className="movie-tile-credits text-xs">Directed by: {frontMovie.director}</p>
+          )}
+          {frontMovie.cast?.length > 0 && (
+            <p className="movie-tile-credits text-xs">Starring: {frontMovie.cast.join(', ')}</p>
+          )}
+          {frontMovie.genres?.length > 0 && (
+            <p className="movie-tile-credits text-xs">{frontMovie.genres.join(', ')}</p>
           )}
           <p className="head-to-head-hint mt-1">Tap again to pick</p>
         </div>

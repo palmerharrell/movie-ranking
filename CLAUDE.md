@@ -558,7 +558,7 @@ every component just reads the resulting vars (`--tile-gap`, `--tile-pad`,
 (640–819px, Safari with both toolbars — iPhone 11 ≈ 651px), **tight**
 (<640px, landscape or Safari with an extra banner, where credit lines drop
 entirely). Tap targets (44px minimum — the pack tile skip button, footer
-tabs, Head to Head info button) never shrink across tiers; only spacing,
+tabs) never shrink across tiers; only spacing,
 gaps, and non-essential type do. The footer (see **Footer** below) is a
 normal-flow sibling of the pack area rather than a `position: fixed` bar,
 so it can never cover content and needs no compensating bottom padding on
@@ -664,11 +664,13 @@ the layout around.
   next click) on pointerdown with zero required movement by default, so
   without a small movement threshold a tap could never fire `onClick` on a
   draggable tile. Head to Head cards (see **Category generation & turns**)
-  are themselves one big click target for submitting a pick, so they get a
-  small "ⓘ" button in the card's own corner instead (`onClick` there stops
-  propagation so it opens the detail card without also submitting a pick)
-  — the only place this is needed, since it's the one view where a movie's
-  full title has no other way to be seen.
+  are themselves one big click target for submitting a pick, so this modal
+  never opens for them — a "ⓘ" button in the card's corner used to open it
+  there (#223), but #356 removed it in favor of showing every one of those
+  same details (full title, year, director, full cast, genres) directly in
+  `HeadToHeadPanel.jsx`'s own caption beneath the posters instead, since
+  that's still the one view where a movie's full title has no other way to
+  be seen.
 - **Banner (responsive-redesign, `App.jsx`'s `.app-header-row`):** one row,
   fixed height at every density tier — replacing the earlier two-row
   layout (a centered "Movie Ranking" title badge on top, the subset picker
