@@ -208,13 +208,17 @@ exposed in the UI.
 - **Top 10 Tough Choice packs (#131):** a rarer variant of Head to Head —
   same 2-movie pick-a-winner UI and submission flow (`HeadToHeadPanel.jsx`,
   `type: 'head-to-head'`) — but drawn from just the current top 10 ranked
-  movies by `eloRating` instead of the top 50, with a 4% chance
-  (`TOP_10_TOUGH_CHOICE_CHANCE`), checked before the regular Head to Head
-  chance. Only becomes possible once at least 50 movies have been ranked
-  (`MIN_RANKED_FOR_TOUGH_CHOICE`) — below that, the "top 10" would just be
-  whichever handful of movies got ranked first, not movies the user actually
-  cares about. Falls through to the normal pack flow if the threshold isn't
-  met or fewer than 2 ranked movies are available.
+  movies by `eloRating` instead of the top 50, with a 10% chance
+  (`TOP_10_TOUGH_CHOICE_CHANCE`, raised from 4% in #345 — at 4% stacked on
+  top of the 50-ranked-movie gate below, Tough Choice rarely got a chance
+  to fire at all, especially in the smaller 150-movie-capped genre
+  subsets), checked before the regular Head to Head chance. Only becomes
+  possible once at least 25 movies have been ranked
+  (`MIN_RANKED_FOR_TOUGH_CHOICE`, dropped from 50 in #345, just above Head
+  to Head's own 20) — below that, the "top 10" would just be whichever
+  handful of movies got ranked first, not movies the user actually cares
+  about. Falls through to the normal pack flow if the threshold isn't met
+  or fewer than 2 ranked movies are available.
 - **Intro announcement (#298):** whenever a Head to Head or Top 10 Tough
   Choice pack becomes the active pack — via "Rank →", picking a queued pack,
   or a subset switch — `App.jsx` shows a screen-filling `PackIntroOverlay`
