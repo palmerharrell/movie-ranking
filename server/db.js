@@ -54,6 +54,28 @@ export function createDb(dbPath) {
     db.exec('ALTER TABLE saved_rankings ADD COLUMN share_slug TEXT')
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_saved_rankings_share_slug ON saved_rankings (share_slug)')
+
+  // Movies added via Search & Suggest (#243) — a live TMDb lookup, not the
+  // build-time enrich.js/enrich-sources.js pipeline that produces
+  // data/movies.json. Kept here rather than appended straight into
+  // movies.json because deploy.sh rsyncs data/ one-way from the local repo
+  // to the droplet on every deploy, which would silently wipe out anything
+  // written only on the droplet's copy. rankingService.js's loadAllMovies
+  // merges these rows in with movies.json at read time; a maintainer can
+  // later fold an accumulated suggestion into a real data/sources/* source
+  // (see CLAUDE.md's Building the list / #351) and let it graduate out of
+  // this table. `tmdb_id` is the dedupe key — the same movie suggested by
+  // two different visitors (or already present in movies.json) is never
+  // inserted twice.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS suggested_movies (
+      id TEXT PRIMARY KEY,
+      tmdb_id INTEGER NOT NULL UNIQUE,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      suggested_by_client_id TEXT
+    )
+  `)
   return db
 }
 
@@ -165,4 +187,31 @@ export function getSavedRankingByShareSlug(db, slug) {
     pg13: row.pg13 == null ? null : !!row.pg13,
     shareSlug: row.share_slug,
   }
+}
+
+// Every movie added via Search & Suggest (#243), as full static-metadata
+// objects (already shaped like a movies.json entry — see
+// suggestionService.js's addSuggestion) — merged in by
+// rankingService.js's loadAllMovies alongside data/movies.json.
+export function getSuggestedMovies(db) {
+  return db
+    .prepare('SELECT data FROM suggested_movies ORDER BY created_at ASC')
+    .all()
+    .map((row) => JSON.parse(row.data))
+}
+
+// Persists one TMDb-enriched, Search-&-Suggest-added movie (#243). `movie`
+// is already fully shaped (id, tmdbId, sources: ['user-suggested'], plus
+// every other movies.json field) by suggestionService.js — this just
+// stores it. Relies on the `tmdb_id` UNIQUE constraint to reject a
+// duplicate suggestion at the database level as a last line of defense;
+// suggestionService.js already checks the merged pool first so this should
+// normally never fire, but a race between two concurrent suggestions of
+// the same movie is possible with no other locking in place. Returns the
+// stored movie, or throws if tmdb_id already exists.
+export function addSuggestedMovie(db, movie, clientId) {
+  db.prepare(
+    'INSERT INTO suggested_movies (id, tmdb_id, data, suggested_by_client_id) VALUES (?, ?, ?, ?)',
+  ).run(movie.id, movie.tmdbId, JSON.stringify(movie), clientId ?? null)
+  return movie
 }

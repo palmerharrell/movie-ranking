@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createDb } from './db.js'
+import { createDb, addSuggestedMovie } from './db.js'
 import {
   getMovies,
   saveRanking,
@@ -29,37 +29,37 @@ function fullPoolEntries() {
 }
 
 test('getMovies returns the pool\'s static metadata', () => {
-  const movies = getMovies(FIXTURES_DIR)
+  const movies = getMovies(FIXTURES_DIR, freshDb())
   assert.equal(movies.length, 5)
 })
 
 test('getMovies returns null when movies.json does not exist', () => {
-  assert.equal(getMovies(EMPTY_FIXTURES_DIR), null)
+  assert.equal(getMovies(EMPTY_FIXTURES_DIR, freshDb()), null)
 })
 
 test('getMovies({ family: true }) restricts to movies with the TMDb Family genre (#152)', () => {
-  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true })
+  const movies = getMovies(FAMILY_FIXTURES_DIR, freshDb(), { family: true })
   assert.equal(movies.length, 4)
   assert.ok(movies.every((m) => m.genres.includes('Family')))
 })
 
 test('getMovies({ family: true }) has no MPAA safety floor — an R-rated Family-genre movie still qualifies (#152)', () => {
-  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true })
+  const movies = getMovies(FAMILY_FIXTURES_DIR, freshDb(), { family: true })
   assert.ok(movies.some((m) => m.id === '2' && m.mpaaRating === 'R'))
 })
 
 test('getMovies() without family returns the full pool', () => {
-  const movies = getMovies(FAMILY_FIXTURES_DIR)
+  const movies = getMovies(FAMILY_FIXTURES_DIR, freshDb())
   assert.equal(movies.length, 7)
 })
 
 test('getMovies({ popular: true }) sorts by voteCount descending, treating null as 0', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { popular: true })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { popular: true })
   assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5', '3', '4'])
 })
 
 test('getMovies({ family: true, popular: true }) applies family first, then top-N within that scope', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { family: true, popular: true })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { family: true, popular: true })
   // Movie 5 has no Family genre, excluded by family before the popular sort
   // ever sees it — despite its G rating, which would have qualified it
   // under the old MPAA-based filter.
@@ -67,27 +67,27 @@ test('getMovies({ family: true, popular: true }) applies family first, then top-
 })
 
 test('getMovies({ family: true }) alone also caps to the top-N by voteCount, same as the other genre subsets (#150)', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { family: true })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { family: true })
   assert.deepEqual(movies.map((m) => m.id), ['2', '1', '4'])
 })
 
 test('getMovies({ genre: "comedy" }) filters to that genre, sorted by voteCount descending (#150)', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { genre: 'comedy' })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { genre: 'comedy' })
   assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5'])
 })
 
 test('getMovies({ genre }) takes precedence over popular when both are set', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { genre: 'comedy', popular: true })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { genre: 'comedy', popular: true })
   assert.deepEqual(movies.map((m) => m.id), ['2', '1', '5'])
 })
 
 test('getMovies({ pg13: true }) restricts to G/PG/PG-13, excluding R and null ratings (#193)', () => {
-  const movies = getMovies(FAMILY_FIXTURES_DIR, { pg13: true })
+  const movies = getMovies(FAMILY_FIXTURES_DIR, freshDb(), { pg13: true })
   assert.deepEqual(movies.map((m) => m.id), ['1', '3', '4', '5'])
 })
 
 test('getMovies({ family: true, pg13: true }) applies family first, then pg13, within that scope (#193)', () => {
-  const movies = getMovies(FAMILY_FIXTURES_DIR, { family: true, pg13: true })
+  const movies = getMovies(FAMILY_FIXTURES_DIR, freshDb(), { family: true, pg13: true })
   // Movie 2 is Family-genre but R-rated — excluded by pg13 despite passing
   // the family filter.
   assert.ok(!movies.some((m) => m.id === '2'))
@@ -96,11 +96,27 @@ test('getMovies({ family: true, pg13: true }) applies family first, then pg13, w
 })
 
 test('getMovies({ pg13: true, popular: true }) composes with a top-N strategy (#193)', () => {
-  const movies = getMovies(POPULAR_FIXTURES_DIR, { pg13: true, popular: true })
+  const movies = getMovies(POPULAR_FIXTURES_DIR, freshDb(), { pg13: true, popular: true })
   // Movie 2 has the highest voteCount but is R-rated, so pg13 excludes it
   // before the popular top-N sort ever sees it.
   assert.ok(!movies.some((m) => m.id === '2'))
   assert.ok(movies.every((m) => ['G', 'PG', 'PG-13'].includes(m.mpaaRating)))
+})
+
+test('getMovies includes movies added via Search & Suggest (#243), alongside movies.json', () => {
+  const db = freshDb()
+  addSuggestedMovie(db, { id: '999', tmdbId: 999, title: 'Suggested Movie', sources: ['user-suggested'] })
+
+  const movies = getMovies(FIXTURES_DIR, db)
+  assert.equal(movies.length, 6)
+  assert.ok(movies.some((m) => m.id === '999' && m.title === 'Suggested Movie'))
+})
+
+test('getMovies still returns null when movies.json does not exist, even with suggestions present', () => {
+  const db = freshDb()
+  addSuggestedMovie(db, { id: '999', tmdbId: 999, title: 'Suggested Movie', sources: ['user-suggested'] })
+
+  assert.equal(getMovies(EMPTY_FIXTURES_DIR, db), null)
 })
 
 test('saveRanking persists a client-computed snapshot', () => {
