@@ -55,46 +55,38 @@ function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, onOp
 
 // A "Head to Head" pack is 2 already-ranked movies. Tapping one brings it to
 // the front (no ranking data submitted yet); tapping the front poster again
-// opens a confirm dialog, so a mis-tap can never cast a vote. Confirming
-// plays the win animation (scale-to-fill + border flash), holds briefly,
-// then submits the pairwise pick and the pack advances.
+// is the pick itself — no confirmation dialog (#366; an earlier confirm-dialog
+// step here was actually a drift from this file's own **Category generation
+// & turns** spec, which always said "no separate ... confirmation"). That
+// second tap immediately plays the win animation (border flash starting
+// first, then scale-to-fill — see the `is-winner` transition-delay in
+// index.css), holds briefly, then submits the pairwise pick and the pack
+// advances.
 export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
   const [first, second] = category.movies
   const packKey = `${first.id}:${second.id}`
   const [front, setFront] = useState('left') // 'left' | 'right' — which poster is in front
-  const [confirming, setConfirming] = useState(false)
   const [winnerSide, setWinnerSide] = useState(null) // 'left' | 'right' | null
 
-  // A fresh pack (new category) always starts clean — no stale selection,
-  // confirmation, or winner state leaking from the previous matchup.
+  // A fresh pack (new category) always starts clean — no stale selection or
+  // winner state leaking from the previous matchup.
   useEffect(() => {
     setFront('left')
-    setConfirming(false)
     setWinnerSide(null)
   }, [category])
 
   const frontMovie = front === 'left' ? first : second
-  const backMovie = front === 'left' ? second : first
 
   function handleTap(side) {
-    if (disabled || winnerSide || confirming) return
+    if (disabled || winnerSide) return
     if (side === front) {
-      setConfirming(true)
+      setWinnerSide(side)
+      setTimeout(() => {
+        onPick(frontMovie.id)
+      }, WIN_HOLD_MS)
     } else {
       setFront(side)
     }
-  }
-
-  function handleCancel() {
-    setConfirming(false)
-  }
-
-  function handleConfirm() {
-    setConfirming(false)
-    setWinnerSide(front)
-    setTimeout(() => {
-      onPick(frontMovie.id)
-    }, WIN_HOLD_MS)
   }
 
   return (
@@ -126,36 +118,9 @@ export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
           onOpenDetail={onOpenDetail}
           disabled={disabled || !!winnerSide}
         />
-
-        {confirming && (
-          <div className="head-to-head-confirm-overlay">
-            <div className="head-to-head-confirm-card">
-              <p>
-                Rank <strong>{frontMovie.title}</strong> above <strong>{backMovie.title}</strong>?
-              </p>
-              <div className="mt-3 flex justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="modal-button-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="modal-button-primary text-sm"
-                  style={{ background: '#f04f8c', color: '#0b1224' }}
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {!confirming && !winnerSide && (
+      {!winnerSide && (
         <div className="head-to-head-caption">
           <p className="truncate text-[17px] font-bold" style={{ color: 'var(--text-high)' }}>
             {frontMovie.title}
@@ -163,7 +128,7 @@ export function HeadToHeadPanel({ category, onPick, disabled, onOpenDetail }) {
           {frontMovie.director && (
             <p className="movie-tile-credits truncate text-xs">Directed by: {frontMovie.director}</p>
           )}
-          <p className="head-to-head-hint mt-1">Tap again to confirm</p>
+          <p className="head-to-head-hint mt-1">Tap again to pick</p>
         </div>
       )}
 
