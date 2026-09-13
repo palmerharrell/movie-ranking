@@ -42,7 +42,7 @@ function writeSkippedIds(ids) {
 // pack generation and from the ranked-progress denominator, until un-skipped.
 // Also clears any existing eloRating/timesRanked for it (#169): a movie
 // ranked and later skipped shouldn't keep stale rating data lingering in the
-// Standings — skipping it removes it from the ranking, not just from future
+// Rankings — skipping it removes it from the ranking, not just from future
 // packs. Un-skipping afterward correctly starts it back at defaults rather
 // than restoring the old rating, since that data is now gone.
 export function markSkipped(movieId) {
@@ -78,6 +78,17 @@ export function unmarkAllSkipped(movieIds) {
   const ids = readSkippedIds()
   for (const movieId of movieIds) ids.delete(movieId)
   writeSkippedIds(ids)
+}
+
+// The true count of persistently-skipped movies across the whole pool,
+// regardless of which subset is active (#337) — a direct, synchronous read
+// of the same skipped-ids set the Skipped view's own list
+// (api.getSkippedMovies) is filtered from, so the footer's Skipped-tab count
+// always matches what that drawer actually lists. Deliberately not derived
+// from App.jsx's subset-filtered `movies` state, which only reflects skips
+// within the currently-active subset.
+export function getSkippedCount() {
+  return readSkippedIds().size
 }
 
 // Merges the pool's static metadata with this browser's local Elo state and

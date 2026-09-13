@@ -5,7 +5,7 @@ import * as api from '../lib/api.js'
 // browser (#136's persistent skip), with a per-movie "un-skip" and a
 // "Clear all" action, since the in-pack "undo" (onUndoSkip in App.jsx) only
 // works while the pack that skip happened in is still active — once it
-// resolves, this is the only way to reverse it. Reuses the Standings list's
+// resolves, this is the only way to reverse it. Reuses the Rankings list's
 // row markup/classes and the Load Ranking modal's overlay/card classes
 // rather than inventing new patterns.
 //
@@ -15,7 +15,7 @@ import * as api from '../lib/api.js'
 // show up here (and be reachable via "Clear all") after switching subsets.
 //
 // Rendered by App.jsx as the content of an always-mounted slide-out drawer
-// (#269, mirroring the Standings drawer's own always-mounted `aside` so the
+// (#269, mirroring the Rankings drawer's own always-mounted `aside` so the
 // slide transition has something to animate rather than popping in/out) —
 // `open` only toggles when the drawer opens/closes, so the fetch below is
 // keyed on it re-running each time the drawer opens rather than once on
@@ -61,7 +61,7 @@ export function SkippedView({ open, onClose, onChange, onOpenDetail }) {
         <button
           type="button"
           onClick={handleClearAll}
-          className="standings-reset-button mt-3 shrink-0 self-start text-xs font-medium uppercase"
+          className="rankings-reset-button mt-3 shrink-0 self-start text-xs font-medium uppercase"
         >
           Clear All
         </button>
@@ -73,14 +73,14 @@ export function SkippedView({ open, onClose, onChange, onOpenDetail }) {
         </p>
       ) : (
         skipped && (
-          <ul className="standings-list mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
+          <ul className="rankings-list mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
             {skipped.map((movie) => (
               <li
                 key={movie.id}
                 onClick={() => onOpenDetail(movie)}
-                className="standings-row flex cursor-pointer items-center gap-3 px-2"
+                className="rankings-row flex cursor-pointer items-center gap-3 px-2"
               >
-                <div className="poster-placeholder standings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
+                <div className="poster-placeholder rankings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
                   {movie.posterUrl && (
                     <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
                   )}

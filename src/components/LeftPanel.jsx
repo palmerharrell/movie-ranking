@@ -10,7 +10,7 @@ function sortMovies(movies) {
   })
 }
 
-function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
+function RankingsRow({ movie, rank, isLast, onOpenDetail }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
   const rankedClass = movie.timesRanked >= 1 ? 'ranked' : ''
   const tensClass = rank % 10 === 0 && !isLast ? 'tens-line' : ''
@@ -18,10 +18,10 @@ function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
   return (
     <li
       onClick={() => onOpenDetail(movie)}
-      className={`standings-row flex cursor-pointer items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
+      className={`rankings-row flex cursor-pointer items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
     >
-      <span className="standings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
-      <div className="poster-placeholder standings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
+      <span className="rankings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
+      <div className="poster-placeholder rankings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}
@@ -39,7 +39,7 @@ function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
 }
 
 export function LeftPanel({ movies, subset, onOpenDetail, open }) {
-  // #248: reset scroll position each time the (mobile) Standings drawer is
+  // #248: reset scroll position each time the (mobile) Rankings drawer is
   // opened, rather than leaving it wherever it was scrolled to last time —
   // `open` only toggles for the drawer (desktop shows this panel inline and
   // never flips it), so this is specifically an "on open" reset, not a
@@ -50,7 +50,7 @@ export function LeftPanel({ movies, subset, onOpenDetail, open }) {
   }, [open])
 
   // Skipped ("haven't seen") movies are excluded from pack generation and
-  // the progress denominator (#136) — the Standings list itself should
+  // the progress denominator (#136) — the Rankings list itself should
   // match, rather than still showing them at their default rank (#174).
   const eligibleMovies = movies.filter((m) => !m.skipped)
   const sorted = sortMovies(eligibleMovies)
@@ -62,8 +62,8 @@ export function LeftPanel({ movies, subset, onOpenDetail, open }) {
     <div className="flex h-full flex-col">
       <div className="mb-3 flex shrink-0 flex-col gap-0.5">
         <div className="flex items-baseline justify-between">
-          <span className="standings-label text-xs font-medium uppercase">
-            {subsetLabel(subset)} Standings
+          <span className="rankings-label text-xs font-medium uppercase">
+            {subsetLabel(subset)} Rankings
           </span>
           <span className="font-mono text-xs" style={{ color: 'var(--text-low)' }}>
             {rankedCount}/{eligibleCount} ranked
@@ -75,9 +75,9 @@ export function LeftPanel({ movies, subset, onOpenDetail, open }) {
           </span>
         )}
       </div>
-      <ol ref={listRef} className="standings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
+      <ol ref={listRef} className="rankings-list flex min-h-0 flex-1 flex-col overflow-y-auto pr-[15px]">
         {sorted.map((movie, index) => (
-          <StandingsRow
+          <RankingsRow
             key={movie.id}
             movie={movie}
             rank={index + 1}
