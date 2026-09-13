@@ -80,6 +80,17 @@ export function unmarkAllSkipped(movieIds) {
   writeSkippedIds(ids)
 }
 
+// The true count of persistently-skipped movies across the whole pool,
+// regardless of which subset is active (#337) — a direct, synchronous read
+// of the same skipped-ids set the Skipped view's own list
+// (api.getSkippedMovies) is filtered from, so the footer's Skipped-tab count
+// always matches what that drawer actually lists. Deliberately not derived
+// from App.jsx's subset-filtered `movies` state, which only reflects skips
+// within the currently-active subset.
+export function getSkippedCount() {
+  return readSkippedIds().size
+}
+
 // Merges the pool's static metadata with this browser's local Elo state and
 // skipped-ids set, defaulting movies never ranked in this browser to 1000/0
 // and never skipped to false.
