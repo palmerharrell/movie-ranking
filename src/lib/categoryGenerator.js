@@ -33,10 +33,19 @@ const MIN_RANKED_FOR_HEAD_TO_HEAD = 20
 // ranked-count threshold than the overlap requirement — with only a
 // handful of movies ranked, the "top 10" is arbitrary noise rather than
 // movies the user actually cares about.
-const TOP_10_TOUGH_CHOICE_CHANCE = 0.04
+// Raised from 0.04 to 0.1, and MIN_RANKED_FOR_TOUGH_CHOICE dropped from 50
+// to 25 (#345) — the original pair of a 4% roll chance stacked on a 50
+// ranked-movie gate meant Tough Choice rarely got a chance to fire at all,
+// especially in the smaller (150-movie-capped) genre subsets, where a
+// large share of a run could pass before the gate even opened. 0.1 keeps
+// it meaningfully rarer than Head to Head's own 0.2 (#330) while no longer
+// reading as "basically never"; 25 (just above Head to Head's own 20)
+// still keeps "top 10" meaningful without shutting the mechanic out of
+// most of a run.
+const TOP_10_TOUGH_CHOICE_CHANCE = 0.1
 const TOP_10_TOUGH_CHOICE_LABEL = 'Top 10 Tough Choice'
 const TOP_10_TOUGH_CHOICE_POOL_SIZE = 10
-const MIN_RANKED_FOR_TOUGH_CHOICE = 50
+const MIN_RANKED_FOR_TOUGH_CHOICE = 25
 // How often a turn offers 3 candidate packs to choose from instead of just
 // generating the next one (#297) — checked independently of, and before,
 // generateCategory's own Tough Choice/Head to Head/Random Five rolls (see
