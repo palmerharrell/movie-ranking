@@ -514,7 +514,7 @@ describe('generateCategory', () => {
 
     const result = generateCategory(movies, {
       isRanked,
-      totalRankedCount: 49,
+      totalRankedCount: 24,
       random: forceToughChoiceThenSeeded(1),
     })
     expect(result).not.toBeNull()

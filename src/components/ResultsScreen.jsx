@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Sorts by eloRating descending; ties broken alphabetically. Mirrors
 // LeftPanel's sortMovies — by the time this screen shows, every movie in
@@ -86,18 +86,29 @@ function OutsideRow({ movie, rank }) {
   )
 }
 
-// `title`/`onBack`/`readOnly` support the read-only saved-snapshot view
-// (#107, via LoadRankingView). The live post-completion screen also passes
-// `title` now (#227) — the ranking is auto-saved on completion rather than
-// through a naming modal, so this doubles as letting the user see what it
-// got auto-named; `subtitle` (live-only) clarifies that it already saved.
-// `onShare` (#220), when given, shows a "Share" button in both the live and
-// read-only footer — it's an async () => Promise<void> that resolves and
-// copies the share link itself (App.jsx already has the slug from
-// auto-save; LoadRankingView backfills one via api.shareRanking for a
-// legacy snapshot that predates sharing) — ResultsScreen only owns the
-// click-feedback state, not how the link is produced.
-export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onShare, readOnly }) {
+// `onBack`/`readOnly` support the read-only saved-snapshot view (#107, via
+// LoadRankingView). `scopeLabel` (e.g. "CHRISTOPHER NOLAN MOVIES") describes
+// what pool this ranking covers — shown alongside the "TOP N" heading in
+// both the live and read-only screen; a saved ranking's own custom name is
+// only shown in the Load Ranking picker list, not repeated here. `onShare`,
+// when given, shows a "Share" button in both the live and read-only footer
+// — it's an async () => Promise<void> that resolves and copies the share
+// link itself (App.jsx saves lazily on first Share if nothing's been saved
+// yet; LoadRankingView backfills a slug via api.shareRanking for a legacy
+// snapshot that predates sharing) — ResultsScreen only owns the
+// click-feedback state, not how the link is produced. `onRefine`/`onSave`/
+// `onStartOver` are live-only (hidden when `readOnly`).
+export function ResultsScreen({
+  movies,
+  onDismiss,
+  scopeLabel,
+  onBack,
+  onShare,
+  onRefine,
+  onSave,
+  onStartOver,
+  readOnly,
+}) {
   const [shareState, setShareState] = useState('idle') // idle | pending | copied | error
   const sorted = sortMovies(movies)
   const topTen = sorted.slice(0, 10)
@@ -105,22 +116,11 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onSh
   const restOfTopHundred = sorted.slice(25, 100)
   const outsideTopHundred = sorted.slice(100)
 
-  const bigRef = useRef(null)
   const scrollRef = useRef(null)
   const midRef = useRef(null)
   const restRef = useRef(null)
   const outsideRef = useRef(null)
-  const [topWidth, setTopWidth] = useState(null)
   const [heading, setHeading] = useState('10')
-
-  // Stretches "TOP" to span the rendered width of "10" below it, so the
-  // smaller word visually justifies across it instead of sitting centered
-  // and narrower. Measured once, from "10" (the initial heading) — "25" and
-  // "100" reuse that same width rather than each getting their own.
-  useLayoutEffect(() => {
-    if (bigRef.current && topWidth === null) setTopWidth(bigRef.current.offsetWidth)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // As the user scrolls through the rankings, the floating "TOP N" heading
   // tracks which tier is currently at the top of the scroll area, then
@@ -165,48 +165,25 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onSh
   return (
     <div className="modal-overlay results-overlay">
       <div className="modal-card modal-card-wide results-card flex flex-col">
-        {heading && (
-          <p className="results-top-ten-heading">
-            <span
-              className="results-top-ten-heading-small"
-              style={topWidth ? { width: topWidth } : undefined}
-            >
-              {'TOP'.split('').map((letter, i) => (
-                <span key={i}>{letter}</span>
-              ))}
-            </span>
-            <span className="results-top-ten-heading-big" ref={bigRef}>
-              {heading}
-            </span>
-          </p>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="results-close-button"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        {onBack && (
+          <button type="button" onClick={onBack} className="modal-back mt-1 text-xs shrink-0">
+            ← Back to list
+          </button>
         )}
-        {title ? (
-          <div className="shrink-0">
-            <div className="flex items-center justify-between gap-3">
-              <p className="modal-eyebrow truncate text-[11px] font-medium uppercase">{title}</p>
-              <button type="button" onClick={onDismiss} className="modal-close" aria-label="Close">
-                ×
-              </button>
-            </div>
-            {onBack && (
-              <button type="button" onClick={onBack} className="modal-back mt-1 text-xs">
-                ← Back to list
-              </button>
-            )}
-            {subtitle && !onBack && (
-              <p className="mt-1 text-xs" style={{ color: 'var(--text-low)' }}>{subtitle}</p>
-            )}
-          </div>
-        ) : (
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="modal-close absolute top-0 right-0"
-              aria-label="Close"
-            >
-              ×
-            </button>
+        {heading && (
+          <div className="results-top-ten-row shrink-0">
+            <p className="results-top-ten-heading">
+              <span>TOP</span> <span>{heading}</span>
+            </p>
+            {scopeLabel && <p className="results-scope-label">{scopeLabel}</p>}
           </div>
         )}
 
@@ -252,20 +229,30 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onSh
         </div>
 
         {(onShare || !readOnly) && (
-          <div className="mt-4 flex shrink-0 items-center justify-end gap-2">
+          <div className="results-actions mt-4 flex flex-wrap shrink-0 items-center justify-end gap-2">
             {onShare && (
               <button
                 type="button"
                 onClick={handleShareClick}
                 disabled={shareState === 'pending'}
-                className="modal-button-secondary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {shareLabel}
               </button>
             )}
             {!readOnly && (
-              <button type="button" onClick={onDismiss} className="modal-button-primary text-sm">
-                Continue Ranking
+              <button type="button" onClick={onRefine} className="modal-button-secondary text-sm">
+                Refine Ranking
+              </button>
+            )}
+            {!readOnly && (
+              <button type="button" onClick={onSave} className="modal-button-secondary text-sm">
+                Save
+              </button>
+            )}
+            {!readOnly && (
+              <button type="button" onClick={onStartOver} className="modal-button-danger text-sm">
+                Start Over
               </button>
             )}
           </div>

@@ -128,7 +128,14 @@ exposed in the UI.
   back to defaults (1000/0) — a skip removes the movie from the ranking
   entirely, not just from future packs (#169); un-skipping it afterward
   starts it back at those same defaults rather than restoring the old
-  rating, since that data is gone. Besides the in-pack "undo" while that pack
+  rating, since that data is gone. A skip button on each Rankings-panel row
+  (#355, `LeftPanel.jsx`'s `RankingsRow`, reusing the same `handleSkipMovie`
+  path pack tiles use — `stopPropagation` keeps it from also triggering the
+  row's own click-to-open-detail handler) lets a movie be skipped directly
+  from the Rankings panel, not just from a pack tile; `handleSkipMovie`
+  first checks whether the movie is part of the active pack before running
+  the pack-reconciliation logic below, since a Rankings-row skip has no
+  pack state to reconcile. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
   lists every persistently-skipped movie (poster/title/year, matching the
@@ -208,13 +215,17 @@ exposed in the UI.
 - **Top 10 Tough Choice packs (#131):** a rarer variant of Head to Head —
   same 2-movie pick-a-winner UI and submission flow (`HeadToHeadPanel.jsx`,
   `type: 'head-to-head'`) — but drawn from just the current top 10 ranked
-  movies by `eloRating` instead of the top 50, with a 4% chance
-  (`TOP_10_TOUGH_CHOICE_CHANCE`), checked before the regular Head to Head
-  chance. Only becomes possible once at least 50 movies have been ranked
-  (`MIN_RANKED_FOR_TOUGH_CHOICE`) — below that, the "top 10" would just be
-  whichever handful of movies got ranked first, not movies the user actually
-  cares about. Falls through to the normal pack flow if the threshold isn't
-  met or fewer than 2 ranked movies are available.
+  movies by `eloRating` instead of the top 50, with a 10% chance
+  (`TOP_10_TOUGH_CHOICE_CHANCE`, raised from 4% in #345 — at 4% stacked on
+  top of the 50-ranked-movie gate below, Tough Choice rarely got a chance
+  to fire at all, especially in the smaller 150-movie-capped genre
+  subsets), checked before the regular Head to Head chance. Only becomes
+  possible once at least 25 movies have been ranked
+  (`MIN_RANKED_FOR_TOUGH_CHOICE`, dropped from 50 in #345, just above Head
+  to Head's own 20) — below that, the "top 10" would just be whichever
+  handful of movies got ranked first, not movies the user actually cares
+  about. Falls through to the normal pack flow if the threshold isn't met
+  or fewer than 2 ranked movies are available.
 - **Intro announcement (#298):** whenever a Head to Head or Top 10 Tough
   Choice pack becomes the active pack — via "Rank →", picking a queued pack,
   or a subset switch — `App.jsx` shows a screen-filling `PackIntroOverlay`
@@ -299,54 +310,81 @@ exposed in the UI.
   `n skipped` (#136).
 
 ## Saved rankings
-- **Completion → auto-save (#227):** once every non-skipped movie in the
-  *currently visible* pool has `timesRanked ≥ 1`, the app immediately and
-  silently saves it under a generated name (`src/lib/rankingName.js`'s
-  `generateRankingName` — the subset's label, plus the PG-13-and-under
-  qualifier when it's on, plus today's date, e.g. `"Sci-Fi (PG-13 & Under) —
-  Sep 6, 2026"`) — no naming prompt, no separate confirmation step; this
-  replaced an earlier flow where completion opened a modal asking the user
-  to type a name before saving. "Visible pool" is whichever subset is active
-  (Popular, Family, or All Movies) minus skipped movies, further narrowed by
-  the PG-13-and-under toggle when it's on (#193) — see **Movie subsets**,
-  **PG-13 and under toggle**, and **Skip ("Haven't Seen")** (#136). The
-  Results screen (`ResultsScreen.jsx`) still appears right after, showing
-  the just-completed rankings with the generated name as its title and a
-  "Saved automatically" subtitle, so the user can see what happened; its
-  footer button reads "Continue Ranking" (dismissing it) rather than "Save
-  Ranking" — dismissing is what starts the next run (see **Save** below),
-  since the save itself already happened. If the save request itself fails,
-  the Results screen simply doesn't appear (the same inline-error path any
-  other API failure takes) — the completed state isn't lost, since the pool
-  is still fully ranked, so the save is retried the next time
-  `noteMoviesUpdate` runs (e.g. switching back to this subset).
-- **Save:** the browser posts the current per-movie `eloRating`/`timesRanked`
-  for the visible, non-skipped pool (gathered from its own local ranking
-  state — see
-  **Online deployment**) to the server as a named, timestamped snapshot, then
-  resets that scope's local ranking state back to defaults (`eloRating =
-  1000`, `timesRanked = 0`) so a fresh ranking run can start from scratch. A
-  full-pool save resets the whole pool; a Family-mode save resets only the
-  Family subset, leaving progress on the rest of the pool untouched; a save
-  made with the PG-13-and-under toggle on resets only the toggle-filtered
-  slice of whichever subset was active (#193).
-  This lets the pool be ranked repeatedly over time (e.g. auto-named runs on
-  different dates) without the runs interfering with each other. Every saved
-  snapshot is stamped with the creating browser's client id (see **Online
-  deployment**), reserved for a future feature restricting edits/re-ranks to
-  the ranking's creator (#115) — not yet enforced anywhere. It's also
-  stamped with the subset id it was saved from (`saved_rankings.subset` in
-  the backend's SQLite table — see **Online deployment**), so a save made
-  while, say, Sci-Fi was active is tagged `'sci-fi'` — and, independently,
-  with whether the PG-13-and-under toggle was active
-  (`saved_rankings.pg13`, `0`/`1`, `NULL` for snapshots saved before the
-  toggle existed, #193). `pg13` gets its own column rather than folding into
-  `subset` because the toggle is a second, orthogonal dimension that
-  composes with every subset (Popular+PG-13, Family+PG-13, Sci-Fi+PG-13,
-  etc.) rather than being a subset of its own — encoding it into the
-  `subset` string (e.g. `'family-pg13'`) would have broken every place that
-  already treats `subset` as one of the fixed picker ids (`subsetLabel`,
-  the genre/language lookups, etc.).
+- **Completion → Results screen (no auto-save):** once every non-skipped
+  movie in the *currently visible* pool has `timesRanked ≥ 1`,
+  `noteMoviesUpdate` in `App.jsx` shows the Results screen
+  (`ResultsScreen.jsx`) directly — completion no longer saves anything on
+  its own (an earlier design auto-saved under a generated name at this exact
+  point; that was removed in favor of the explicit Save button below, since
+  it left no way to keep ranking/refining without an unwanted snapshot
+  already sitting on the server). "Visible pool" is whichever subset is
+  active (Popular, Family, or All Movies) minus skipped movies, further
+  narrowed by the PG-13-and-under toggle when it's on (#193) — see **Movie
+  subsets**, **PG-13 and under toggle**, and **Skip ("Haven't Seen")**
+  (#136). The screen's header shows a "TOP N" heading (tracking which tier —
+  10/25/100 — is scrolled into view) on the left and a scope label (e.g.
+  "CHRISTOPHER NOLAN MOVIES", "SCI-FI MOVIES", built by
+  `src/lib/genreSubsets.js`'s `subsetMoviesLabel`) on the right of the same
+  row — a saved ranking's own custom name is only shown in the Load Ranking
+  picker list (see **Load** below), not repeated here. A close (×) button in
+  the card's top-right corner dismisses the screen with no side effects — the
+  pool is already fully ranked and untouched, so the next pack (already
+  generated by the "Rank →" click that triggered completion) simply becomes
+  visible again.
+- **Save:** a footer button on the Results screen opens a small prompt
+  (`SaveRankingModal.jsx`) pre-filled with a generated default name
+  (`src/lib/rankingName.js`'s `generateRankingName` — the subset's label,
+  plus the PG-13-and-under qualifier when it's on, plus today's date, e.g.
+  `"Sci-Fi (PG-13 & Under) — Sep 6, 2026"`), editable before confirming. The
+  browser posts the current per-movie `eloRating`/`timesRanked` for the
+  visible, non-skipped pool (gathered from its own local ranking state — see
+  **Online deployment**) to the server as a named, timestamped snapshot.
+  Unlike the old auto-save behavior, **Save does not reset local ranking
+  state** — the Results screen stays open afterward and the run can keep
+  being refined, saved again under another name, shared, etc. Saving can be
+  done any number of times per completed run, e.g. to snapshot the same
+  ranking under a couple of different names. Every saved snapshot is stamped
+  with the creating browser's client id (see **Online deployment**),
+  reserved for a future feature restricting edits/re-ranks to the ranking's
+  creator (#115) — not yet enforced anywhere. It's also stamped with the
+  subset id it was saved from (`saved_rankings.subset` in the backend's
+  SQLite table — see **Online deployment**), so a save made while, say,
+  Sci-Fi was active is tagged `'sci-fi'` — and, independently, with whether
+  the PG-13-and-under toggle was active (`saved_rankings.pg13`, `0`/`1`,
+  `NULL` for snapshots saved before the toggle existed, #193). `pg13` gets
+  its own column rather than folding into `subset` because the toggle is a
+  second, orthogonal dimension that composes with every subset
+  (Popular+PG-13, Family+PG-13, Sci-Fi+PG-13, etc.) rather than being a
+  subset of its own — encoding it into the `subset` string (e.g.
+  `'family-pg13'`) would have broken every place that already treats
+  `subset` as one of the fixed picker ids (`subsetLabel`, the genre/language
+  lookups, etc.).
+- **Refine Ranking:** a footer button on the Results screen that re-ranks
+  every non-skipped movie in the visible pool one more time — resets
+  `timesRanked` back to 0 for each (`src/lib/localRankingStore.js`'s
+  `resetTimesRankedOnly`, called via `api.refineRanking`), but **keeps each
+  movie's existing `eloRating`** rather than resetting to the 1000 default,
+  so the new full pass refines from current standings instead of starting
+  over. Dismisses the Results screen and immediately fetches a fresh turn,
+  same as the reset flow below. No confirmation needed, since `eloRating` —
+  the thing actually reflecting "how good is this movie" — is preserved.
+- **Start Over:** a red, confirmation-gated footer button on the Results
+  screen that triggers the exact same reset flow as the ☰ menu's "Reset
+  Ranking" item (`ResetRankingModal.jsx` + `handleResetRanking` in
+  `App.jsx`) — see the full reset behavior described next. Both entry points
+  share one modal, whose confirm button is styled with the same red
+  `.modal-button-danger` class the Start Over trigger uses, since resetting
+  is destructive from either entry point.
+- **Reset (full):** clears local ranking state back to defaults
+  (`eloRating = 1000`, `timesRanked = 0`) for the visible, non-skipped pool
+  — unlike Save/Refine above, this discards progress entirely rather than
+  persisting or preserving it. A full-pool reset resets the whole pool; a
+  Family-mode reset resets only the Family subset, leaving progress on the
+  rest of the pool untouched; a reset made with the PG-13-and-under toggle
+  on resets only the toggle-filtered slice of whichever subset was active
+  (#193). This lets the pool be ranked repeatedly over time (e.g.
+  differently-named saves on different dates) without runs interfering with
+  each other.
 - **Load:** a "Load Ranking" entry point lists saved snapshots scoped to the
   *currently active* subset **and** PG-13 toggle state only —
   `GET /api/rankings?subset=<id>&pg13=<true|false>` filters server-side, and
@@ -361,12 +399,17 @@ exposed in the UI.
   reused by `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and
   26-100 tiers, and anything outside the snapshot's top 100) — only the
   movies that were actually part of that saved run, not the current full
-  pool — read-only (no Save Ranking button; a "Back to list" link replaces
-  it), and it does not affect or restore live ranking state.
-- **Sharing (#220):** every saved snapshot gets a "Share" button in
-  `ResultsScreen.jsx`'s footer — both the live post-completion screen and
-  the read-only Load Ranking view — that copies a public link to that
-  ranking's Top 10 to the clipboard. The link is `?share=<slug>` on the
+  pool — read-only (no Refine Ranking/Save/Start Over buttons; a "Back to
+  list" link replaces them), and it does not affect or restore live ranking
+  state.
+- **Sharing (#220):** a "Share" button in `ResultsScreen.jsx`'s footer —
+  both the live post-completion screen and the read-only Load Ranking view —
+  copies a public link to that ranking's Top 10 to the clipboard. On the
+  live screen, if nothing has been saved for this run yet, clicking Share
+  saves it first under a generated default name (same
+  `generateRankingName` the Save button's prompt pre-fills) to get a share
+  slug, then copies the link — so Share always works without requiring an
+  explicit Save first. The link is `?share=<slug>` on the
   app's own URL (e.g. `https://.../movie-ranking/?share=ngfjyDxrZtbE`), not
   a new path, so it needs no GitHub Pages routing/rewrite support; `main.jsx`
   checks for that query param before rendering `App` at all, and if it's
@@ -528,7 +571,10 @@ the layout around.
   replaced by the pack-choice screen (`PackChoiceScreen.jsx`) instead — see
   **Category generation & turns**.
 - **Footer (responsive-redesign):** a `<footer>` in normal document flow —
-  `display: grid; grid-template-columns: auto 1fr auto` — rather than three
+  `display: grid; grid-template-columns: 1fr auto 1fr` (equal outer columns,
+  not independently `auto`-sized to each tab's own content — that let the
+  Rank button visibly drift off-center whenever the "Current Ranking"/
+  "Skipped" tabs differed in width) — rather than three
   independently `position: fixed` elements measured off a hardcoded
   `--fixed-bar-bottom` offset (the old approach broke on Safari, whose
   collapsing toolbars mean `100vh` doesn't match the actual visible area;
@@ -538,7 +584,9 @@ the layout around.
   (Head to Head/Top 10 Tough Choice single-click submit instead, and a
   pack-choice turn's action is picking a candidate), so the flanking tabs
   never shift depending on pack type. The outer cells hold the Ranked
-  (`n/nnn`, subset-scoped — see **Progress tracking**) and Skipped (`n`,
+  ("Current Ranking" label, #353 — its `n/nnn` count still drives the
+  `aria-label` for screen readers and the Rankings header's own progress
+  line, subset-scoped, see **Progress tracking**) and Skipped (`n`,
   global — see the following paragraph) tabs (`App.jsx`) — each is a toggle, not just an
   opener: clicking a tab opens its own drawer (Rankings on the left,
   Skipped on the right — see **Skip ("Haven't Seen")** and **Left
@@ -557,9 +605,11 @@ the layout around.
   Ranked tab is mobile-only (`md:hidden`, via
   `visibility: hidden` rather than removing the grid cell, so the center
   column doesn't shift) since desktop already shows the Rankings panel
-  inline at the left edge; the Skipped tab shows on every breakpoint, since
-  that drawer (#269) is a fixed overlay regardless of screen size, and only
-  appears once `skippedCount > 0`. Because the footer is a normal-flow
+  inline at the left edge; the Skipped tab shows on every breakpoint,
+  whenever the pool has loaded, since that drawer (#269) is a fixed overlay
+  regardless of screen size — its own count simply reads `0` rather than
+  the tab disappearing when nothing's been skipped yet (#350). Because the
+  footer is a normal-flow
   sibling of the pack area rather than an overlay, #328's fixed-position
   hit-testing bug (a full-width fixed row swallowing taps on the tabs)
   cannot recur — each cell is its own box with nothing to overlap.
@@ -583,10 +633,10 @@ the layout around.
   fixed height at every density tier — replacing the earlier two-row
   layout (a centered "Movie Ranking" title badge on top, the subset picker
   below), which cost too much vertical space on short Safari viewports (see
-  **The density system**). Left to right: a single 34×34 app-icon logo tile
-  (recolored to the active Neon-theme palette — see **Movie subsets**; no
-  longer flanks a text title, since the title itself was dropped to make
-  room), the subset pill (`flex: 1 1 auto`, a fit-to-width label — see
+  **The density system**). Left to right: a single 40×40 (48×48 on desktop)
+  app-icon logo tile, borderless (recolored to the active Neon-theme
+  palette — see **Movie subsets**; no longer flanks a text title, since the
+  title itself was dropped to make room), the subset pill (`flex: 1 1 auto`, a fit-to-width label — see
   **The density system**'s "fit-to-one-line rule" — plus a `▾` caret; this
   **is** the subset switcher, replacing the old headline + separate
   "Switch" button), the sun/moon theme toggle, and the icon-only "☰" menu

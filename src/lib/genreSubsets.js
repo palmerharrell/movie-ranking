@@ -187,6 +187,18 @@ export function subsetLabel(subsetId) {
   return GENERAL_SUBSET_LABELS[subsetId] ?? genreSubsetLabel(subsetId)
 }
 
+// "<subset> Movies" scope description shown on the Results screen (both live
+// and read-only), e.g. "Christopher Nolan Movies" or "All Movies" — skips
+// the " Movies" suffix when the label is already a plural noun that reads
+// fine on its own (Comedies, Mysteries, Dramas, Thrillers, Musicals), rather
+// than a hardcoded exception list. Appends the same "(PG-13 & Under)"
+// qualifier generateRankingName/ResetRankingModal already use.
+export function subsetMoviesLabel(subsetId, pg13) {
+  const label = subsetLabel(subsetId)
+  const withMovies = label.endsWith('s') ? label : `${label} Movies`
+  return pg13 ? `${withMovies} (PG-13 & Under)` : withMovies
+}
+
 // The category-generator attribute type/value pair(s) that would be
 // tautological to build a category on while this subset is active (#160) —
 // every movie in the subset's pool already matches it by construction, so
