@@ -21,7 +21,7 @@ function StandingsRow({ movie, rank, isLast, onOpenDetail }) {
       className={`standings-row flex cursor-pointer items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
     >
       <span className="standings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
-      <div className="poster-placeholder h-[56px] w-[38px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
+      <div className="poster-placeholder standings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
         {movie.posterUrl && (
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}

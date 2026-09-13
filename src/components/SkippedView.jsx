@@ -78,9 +78,9 @@ export function SkippedView({ open, onClose, onChange, onOpenDetail }) {
               <li
                 key={movie.id}
                 onClick={() => onOpenDetail(movie)}
-                className="standings-row flex cursor-pointer items-center gap-3 px-2 py-1.5"
+                className="standings-row flex cursor-pointer items-center gap-3 px-2"
               >
-                <div className="poster-placeholder h-[56px] w-[38px] shrink-0 overflow-hidden rounded-[4px] bg-cover">
+                <div className="poster-placeholder standings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
                   {movie.posterUrl && (
                     <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
                   )}
@@ -102,7 +102,7 @@ export function SkippedView({ open, onClose, onChange, onOpenDetail }) {
                     event.stopPropagation()
                     handleUnskip(movie.id)
                   }}
-                  className="saved-ranking-row shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                  className="saved-ranking-row flex min-h-11 shrink-0 items-center justify-center rounded-lg border px-3 text-xs font-medium"
                 >
                   Un-skip
                 </button>
