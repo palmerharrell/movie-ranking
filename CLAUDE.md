@@ -560,6 +560,35 @@ or category label always fits on one line instead of wrapping and pushing
 the layout around.
 
 ## UI layout
+- **Start screen (#361, `App.jsx`'s `screen` state):** the app's landing
+  gate, shown before any subset/pack loads — every launch starts here rather
+  than dropping straight back into whatever subset was last active. Two
+  buttons: **Start a New Ranking** opens `NewRankingScreen.jsx`, a
+  full-screen version of the banner's own subset-picker list
+  (`NewRankingScreen.jsx` mirrors `SubsetPicker.jsx`'s own Curated
+  Lists/Genres/Language/Directors/Not Recommended grouping) — picking any
+  option there just activates that subset and enters the app
+  (`handlePickNewSubset`), same as picking it from the banner pill later
+  would; whatever local progress already exists for that subset (if any)
+  picks up where it left off. **Continue** opens `ContinueRankingScreen.jsx`,
+  a scrollable list of every saved ranking across every subset+PG-13
+  combination (unlike `LoadRankingView.jsx`'s own list, which is scoped to
+  only the currently-active subset+toggle, since there's no active subset
+  yet at this point in the flow) — legacy snapshots saved before the
+  `subset` column existed (#186) are excluded, since there's no pool to
+  resume into without one. `StartScreen.jsx` itself checks
+  `api.getSavedRankings()` on mount and keeps the Continue button disabled
+  until at least one such resumable snapshot exists anywhere. Picking a saved
+  ranking here isn't the read-only view `LoadRankingView.jsx` shows —
+  `handleContinueRanking`/`api.continueSavedRanking` imports that snapshot's
+  own eloRating for each of its movies into this browser's local state
+  (`localRankingStore.js`'s `loadSnapshotForContinue`, overwriting whatever
+  was already stored locally for those movies) and resets `timesRanked` to
+  0, then switches to that snapshot's own subset/pg13 and enters the app —
+  the same "keep the rating, re-rank fresh" shape as **Refine Ranking**
+  below, just seeded from the snapshot instead of whatever's currently
+  active. Both sub-screens have a ← Back control returning to the Start
+  screen.
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
   sorted by eloRating. Header reads "\<Subset\> Rankings" (#316,
   `subsetLabel` — the same shared label `SaveRankingModal`/`ResetRankingModal`/
