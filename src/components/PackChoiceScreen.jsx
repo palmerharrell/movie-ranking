@@ -40,11 +40,15 @@ function PackChoiceCard({ pack, disabled, onChoose }) {
 
 // Occasionally (#297), instead of the next pack simply appearing, three
 // candidate packs are offered and the user picks which one becomes active —
-// replacing the old pre-generated "Up Next" queue. `options` never includes
-// Head to Head/Top 10 Tough Choice (see generateTurn in
-// categoryGenerator.js) — always 3 normal 5-tile packs (attribute-based or
-// Random Five), so picking one always leads into the usual RightPanel
-// drag-and-rank flow. No per-movie interaction here in v1 — just picking a
+// replacing the old pre-generated "Up Next" queue. `options` is usually 3
+// normal 5-tile packs (attribute-based or Random Five), but can include a
+// Head to Head/Top 10 Tough Choice 2-movie pack too (#365, see generateTurn
+// in categoryGenerator.js) — `PackChoiceCard`'s poster-stack math already
+// scales to any `pack.movies.length`, so a 2-movie candidate renders with
+// less overlap rather than needing special-casing. Picking a Head to
+// Head/Tough Choice candidate hands off to `HeadToHeadPanel` the same way a
+// forced turn of that type would (App.jsx dispatches purely off the chosen
+// pack's own `type`). No per-movie interaction here in v1 — just picking a
 // whole pack, so no drag context and no movie-detail affordance.
 export function PackChoiceScreen({ options, onChoose, disabled }) {
   return (

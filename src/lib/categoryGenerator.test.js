@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateCategory, generateTurn, tryBuildCategory } from './categoryGenerator.js'
+import { generateCategory, generateTurn, tryBuildCategory, HEAD_TO_HEAD_TYPE } from './categoryGenerator.js'
 
 // Forces the first random() draw (Tough Choice check) and second draw (Head
 // to Head check) above their chance so both are skipped, the third draw
@@ -702,17 +702,42 @@ describe('generateTurn (#297)', () => {
     expect(result.pack.movies).toHaveLength(5)
   })
 
-  it('returns exactly 3 choice options, none of them Head to Head/Tough Choice, when the choice roll hits', () => {
+  it('returns exactly 3 choice options when the choice roll hits', () => {
     const movies = makeDiversePool()
     for (let seed = 0; seed < 20; seed++) {
       const result = generateTurn(movies, { random: forceChoiceThenSeeded(seed) })
       expect(result.type).toBe('choice')
       expect(result.options).toHaveLength(3)
       for (const option of result.options) {
-        expect(option.type).not.toBe('head-to-head')
         expect(option.movies.length).toBeGreaterThan(0)
       }
     }
+  })
+
+  // #365: Head to Head/Top 10 Tough Choice can now be offered as one of the
+  // 3 choice candidates, not just on a forced (un-chosen) turn — same as any
+  // other pack type, dispatched purely off each option's own `type`/`label`.
+  it('can include a Head to Head candidate among the 3 choice options', () => {
+    const movies = Array.from({ length: 30 }, (_, i) => ({
+      id: String(i + 1),
+      title: `M${i + 1}`,
+      eloRating: 1000 + i,
+    }))
+    const isRanked = () => true
+    const totalRankedCount = 30
+
+    let sawHeadToHead = false
+    for (let seed = 0; seed < 50 && !sawHeadToHead; seed++) {
+      const result = generateTurn(movies, {
+        isRanked,
+        totalRankedCount,
+        random: forceChoiceThenSeeded(seed),
+      })
+      if (result.options.some((o) => o.type === HEAD_TO_HEAD_TYPE)) {
+        sawHeadToHead = true
+      }
+    }
+    expect(sawHeadToHead).toBe(true)
   })
 })
 
