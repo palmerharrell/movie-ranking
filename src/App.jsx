@@ -909,7 +909,6 @@ function App() {
                     category={activePack}
                     onPick={handleHeadToHeadPick}
                     disabled={busy || switchingSubset || !!packIntro}
-                    onOpenDetail={setDetailMovie}
                   />
                 ) : (
                   <RightPanel

@@ -878,12 +878,6 @@ body {
   color: var(--text-faint);
 }
 
-.movie-detail-info-button {
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--text-mid);
-  border: 1px solid var(--surface-border);
-}
-
 /* Pack choice screen (#297) — 3 candidate packs to pick from, replacing the
    old "Up Next" queue dropdown. Cards share .head-to-head-card's bordered/
    surfaced/hoverable treatment since both are "tap this whole card to
@@ -933,11 +927,6 @@ body {
   font-family: var(--font-ui);
   font-size: var(--pack-choice-title-font);
   line-height: 1.2;
-}
-
-.movie-detail-info-button:hover:not(:disabled) {
-  color: var(--text-high);
-  border-color: var(--accent);
 }
 
 .head-to-head-vs {
