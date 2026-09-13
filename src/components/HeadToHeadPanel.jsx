@@ -5,7 +5,7 @@ import { formatPackLabel } from '../lib/labelWording.js'
 // Total time the winner is held, filling the frame (scale + the 900ms
 // h2hWinFlash border animation in index.css both run within this window),
 // before the pick is actually submitted and the pack advances.
-const WIN_HOLD_MS = 1500
+const WIN_HOLD_MS = 2000
 
 function HeadToHeadPoster({ movie, side, isFront, isWinner, isLoser, onTap, onOpenDetail, disabled }) {
   const classes = [
