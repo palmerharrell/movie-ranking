@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
 // Icon-only dropdown (hamburger button, no label) holding the banner actions
-// that used to be individual text buttons (Standings, Load Ranking,
+// that used to be individual text buttons (Rankings, Load Ranking,
 // Skipped) — consolidated to make room in the banner row for the PG-13
-// toggle. Standings only makes sense as a menu action on mobile: on desktop
-// the standings panel is always visible in the left column already, so that
+// toggle. Rankings only makes sense as a menu action on mobile: on desktop
+// the rankings panel is always visible in the left column already, so that
 // item is hidden at the md breakpoint, same as the old standalone button was.
 // Instructions (#237) reopens the startup InstructionsModal on demand.
 //
@@ -15,14 +15,14 @@ import { useEffect, useRef, useState } from 'react'
 // closing on every click would hide the checked-state feedback.
 //
 // Reset Ranking (#325) moved in here, below the PG-13 checkbox, from its
-// old spot as an inline button atop the Standings panel — that put a
-// destructive, rarely-used action right next to routine Standings
+// old spot as an inline button atop the Rankings panel — that put a
+// destructive, rarely-used action right next to routine Rankings
 // scrolling/tapping, more exposed to an accidental hit than sitting
 // alongside the app's other global controls in the menu. `showReset`
 // mirrors the old inline button's own visibility condition (only once
 // something's actually been ranked).
 export function BannerMenu({
-  onStandings,
+  onRankings,
   onLoadRanking,
   onSkipped,
   onInstructions,
@@ -75,10 +75,10 @@ export function BannerMenu({
         <div className="banner-menu-dropdown absolute top-full right-0 z-50 mt-2">
           <button
             type="button"
-            onClick={() => pick(onStandings)}
+            onClick={() => pick(onRankings)}
             className="banner-menu-item md:hidden"
           >
-            Standings
+            Rankings
           </button>
           <button type="button" onClick={() => pick(onLoadRanking)} className="banner-menu-item">
             Load Ranking

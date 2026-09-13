@@ -23,8 +23,8 @@
   --subset-pill-font: 19px;
   --pack-tile-max-h: 160px;
   --pack-poster-max-w: 92px;
-  --standings-poster-w: 48px;
-  --standings-poster-h: 72px;
+  --rankings-poster-w: 48px;
+  --rankings-poster-h: 72px;
   --pack-choice-title-font: 19px;
 }
 
@@ -40,8 +40,8 @@
     --subset-pill-font: 17px;
     --pack-tile-max-h: 130px;
     --pack-poster-max-w: 74px;
-    --standings-poster-w: 42px;
-    --standings-poster-h: 63px;
+    --rankings-poster-w: 42px;
+    --rankings-poster-h: 63px;
     --pack-choice-title-font: 17px;
   }
 }
@@ -59,8 +59,8 @@
     --subset-pill-font: 15px;
     --pack-tile-max-h: 96px;
     --pack-poster-max-w: 52px;
-    --standings-poster-w: 34px;
-    --standings-poster-h: 51px;
+    --rankings-poster-w: 34px;
+    --rankings-poster-h: 51px;
     --pack-choice-title-font: 15px;
   }
 }
@@ -69,7 +69,7 @@
    app-shell (`h-screen overflow-hidden`) already constrains layout to the
    viewport, but html/body themselves were still scrollable/bounceable as a
    fallback (e.g. a mobile browser's URL bar collapsing can momentarily
-   change viewport height). Internal areas (main pack column, standings
+   change viewport height). Internal areas (main pack column, rankings
    list, drawers, etc.) keep scrolling normally via their own
    `overflow-y-auto`. */
 html,
@@ -321,91 +321,91 @@ body {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
-/* Body / standings column */
+/* Body / rankings column */
 
-.standings-divider {
+.rankings-divider {
   background-image: linear-gradient(180deg, transparent, rgba(224, 178, 90, 0.3), transparent);
 }
 
-.standings-col {
+.rankings-col {
   box-sizing: border-box;
 }
 
-[data-theme='popular'] .standings-col {
+[data-theme='popular'] .rankings-col {
   border-right: 1px solid var(--surface-border);
 }
 
-.standings-label {
+.rankings-label {
   font-family: var(--font-mono);
   color: var(--accent);
   letter-spacing: 0.14em;
 }
 
-.standings-reset-button {
+.rankings-reset-button {
   font-family: var(--font-mono);
   color: var(--text-low);
   letter-spacing: 0.1em;
   cursor: pointer;
 }
 
-.standings-reset-button:hover:not(:disabled) {
+.rankings-reset-button:hover:not(:disabled) {
   color: var(--text-high);
 }
 
-.standings-list {
+.rankings-list {
   gap: 2px;
 }
 
-[data-theme='popular'] .standings-list {
+[data-theme='popular'] .rankings-list {
   gap: 6px;
 }
 
-.standings-row {
+.rankings-row {
   border-radius: 8px;
   /* Explicit rather than implicit-via-poster-height: a fixed row height that
      doesn't grow with the poster (regression this guards against) lets tall
      posters overflow their row and merge into one unbroken column. */
-  min-height: calc(var(--standings-poster-h) + 12px);
+  min-height: calc(var(--rankings-poster-h) + 12px);
 }
 
-.standings-poster {
-  width: var(--standings-poster-w);
-  height: var(--standings-poster-h);
+.rankings-poster {
+  width: var(--rankings-poster-w);
+  height: var(--rankings-poster-h);
 }
 
-.standings-row.tens-line {
+.rankings-row.tens-line {
   box-shadow: inset 0 -1px 0 var(--accent-line);
   padding-bottom: 9px;
   margin-bottom: 3px;
 }
 
-[data-theme='popular'] .standings-row {
+[data-theme='popular'] .rankings-row {
   background: color-mix(in srgb, var(--text-high) 4%, transparent);
   border: 1px solid transparent;
 }
 
-[data-theme='popular'] .standings-row.ranked {
+[data-theme='popular'] .rankings-row.ranked {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
   border-color: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-[data-theme='popular'] .standings-row.top-1 {
+[data-theme='popular'] .rankings-row.top-1 {
   background: color-mix(in srgb, var(--accent2) 8%, transparent);
   border-color: color-mix(in srgb, var(--accent2) 40%, transparent);
 }
 
-.standings-rank {
+.rankings-rank {
   color: var(--text-low);
   font-family: var(--font-ui);
 }
 
-[data-theme='popular'] .standings-row.top-1 .standings-rank {
+[data-theme='popular'] .rankings-row.top-1 .rankings-rank {
   color: var(--accent2);
   font-weight: 700;
 }
 
-[data-theme='popular'] .standings-row.top-2 .standings-rank,
-[data-theme='popular'] .standings-row.top-3 .standings-rank {
+[data-theme='popular'] .rankings-row.top-2 .rankings-rank,
+[data-theme='popular'] .rankings-row.top-3 .rankings-rank {
   color: var(--accent);
   font-weight: 700;
 }
@@ -980,7 +980,7 @@ body {
   border-color: var(--accent);
 }
 
-/* Results screen (post-completion standings, before Save Ranking) */
+/* Results screen (post-completion rankings, before Save Ranking) */
 
 .results-card {
   position: relative;
@@ -1118,7 +1118,7 @@ body {
   color: var(--text-high);
 }
 
-/* Banner menu (Standings/Load Ranking/Skipped, consolidated into one
+/* Banner menu (Rankings/Load Ranking/Skipped, consolidated into one
    icon-only dropdown — see BannerMenu.jsx) */
 
 .banner-menu-button {
