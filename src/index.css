@@ -822,6 +822,15 @@ body {
   transform: translate(-50%, -50%) rotate(0deg) scale(1.7);
   z-index: 3;
   opacity: 1;
+  /* Border flash (the animation below) starts immediately, but the scale-up
+     transform is held back a beat (#366) so the flash reads as "this one's
+     selected" before the poster visibly grows, rather than both firing in
+     the same instant. */
+  transition:
+    transform 520ms cubic-bezier(0.2, 0.8, 0.25, 1) 120ms,
+    box-shadow 320ms ease,
+    opacity 320ms ease,
+    border-color 320ms ease;
   animation: h2hWinFlash 900ms ease-in-out 1;
 }
 
@@ -867,29 +876,6 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-}
-
-.head-to-head-confirm-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(5, 7, 15, 0.72);
-}
-
-.head-to-head-confirm-card {
-  width: 100%;
-  max-width: 300px;
-  padding: 18px;
-  border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  text-align: center;
-  color: var(--text-high);
 }
 
 .movie-detail-info-button {
