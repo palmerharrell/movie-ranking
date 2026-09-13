@@ -858,7 +858,13 @@ function App() {
 
       {showResultsScreen && movies && (
         <ResultsScreen
-          movies={movies}
+          // Skipped ("haven't seen") movies are excluded from the ranked
+          // pool entirely (#136) and from what actually got saved
+          // (api.saveRanking filters them out before persisting) — the
+          // live Results screen must show the same set, not the raw
+          // `movies` state, which still carries skipped entries for the
+          // Standings/Skipped drawers (#339).
+          movies={eligibleMovies}
           title={resultsTitle}
           subtitle="Saved automatically"
           onDismiss={handleResultsDismiss}
