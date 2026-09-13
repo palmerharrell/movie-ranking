@@ -76,7 +76,12 @@ export function RightPanel({
           items={category.movies.map((m) => m.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div ref={tilesListRef} tabIndex={-1} className="flex flex-col gap-2 outline-none">
+          <div
+            ref={tilesListRef}
+            tabIndex={-1}
+            className="flex min-h-0 flex-1 flex-col outline-none"
+            style={{ gap: 'var(--tile-gap)' }}
+          >
             {category.movies.map((movie, index) => (
               <MovieTile
                 key={movie.id}
