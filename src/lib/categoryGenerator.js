@@ -345,10 +345,12 @@ function toughChoicePack(movies, selectOptions) {
 // than one happens to roll Random Five; each candidate passes its own
 // offset instead.
 //
-// `allowHeadToHead` (#297, default true) lets generateTurn build a choice
-// candidate that skips the Tough Choice/Head to Head rolls entirely — those
-// two are never one of the 3 offered choices (a completely different
-// 2-movie, single-click UI), only ever appearing on their own forced turns.
+// `allowHeadToHead` (#297, default true) lets a caller skip the Tough
+// Choice/Head to Head rolls entirely and guarantee a normal 5-tile pack.
+// generateTurn no longer needs this for its choice candidates (#365 — Head
+// to Head/Tough Choice can now be offered as one of the 3 choices, same as
+// any other pack type), but the knob stays available on generateCategory
+// itself.
 export function generateCategory(
   movies,
   {
@@ -398,12 +400,17 @@ export function generateCategory(
 // generateCategory behavior, Tough Choice/Head to Head/Random Five chances
 // included) or a 3-way choice of candidate packs (#297) — checked first,
 // independently of generateCategory's own internal rolls, via
-// PACK_CHOICE_CHANCE. Each choice candidate is built with
-// `allowHeadToHead: false` (Tough Choice/Head to Head only ever appear on
-// their own, un-chosen, forced turns) and its own `forcedIndexOffset` so the
+// PACK_CHOICE_CHANCE. Each choice candidate is built via the same
+// generateCategory rolls a forced turn would use — including Tough
+// Choice/Head to Head (#365) — with its own `forcedIndexOffset` so the
 // three candidates — all drawn from the same movies/totalRankedCount
 // snapshot, since none of them have been submitted yet — don't all force in
-// the identical backstop movie if more than one rolls Random Five.
+// the identical backstop movie if more than one rolls Random Five (the
+// offset is simply unused whenever a candidate turns out to be Tough
+// Choice/Head to Head, since those don't use the forced-inclusion
+// backstop). A Head to Head/Tough Choice candidate can still get deduped
+// away by the same distinct-label check every candidate goes through, same
+// as two Random Five rolls would.
 export function generateTurn(
   movies,
   { isRanked = () => false, totalRankedCount = 0, random = Math.random, excludedAttributes = [] } = {},
@@ -415,7 +422,6 @@ export function generateTurn(
         totalRankedCount,
         random,
         excludedAttributes,
-        allowHeadToHead: false,
         forcedIndexOffset: index,
       })
 

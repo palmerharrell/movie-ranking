@@ -227,8 +227,9 @@ exposed in the UI.
   about. Falls through to the normal pack flow if the threshold isn't met
   or fewer than 2 ranked movies are available.
 - **Intro announcement (#298):** whenever a Head to Head or Top 10 Tough
-  Choice pack becomes the active pack — via "Rank →", picking a queued pack,
-  or a subset switch — `App.jsx` shows a screen-filling `PackIntroOverlay`
+  Choice pack becomes the active pack — via "Rank →", picking that pack as a
+  pack-choice candidate (#365), or a subset switch — `App.jsx` shows a
+  screen-filling `PackIntroOverlay`
   (`"Head to Head!"` or `"Top 10 Tough Choice!"`, taken straight from the
   pack's own `category.label`) for `PACK_INTRO_DISPLAY_MS` (1.4s) before
   fading out over `PACK_INTRO_FADE_MS` (300ms). The pack itself is already
@@ -281,16 +282,26 @@ exposed in the UI.
   Five, Head to Head, or Top 10 Tough Choice, exactly as generated before —
   or, with `PACK_CHOICE_CHANCE` (35%) probability checked first, a 3-way
   **choice** of candidate packs (`PackChoiceScreen.jsx`) that the user picks
-  between instead of one just appearing. Choice candidates are always 3
-  normal 5-tile packs (attribute-based or Random Five); Head to Head and Top
-  10 Tough Choice never appear as one of the 3 options (`allowHeadToHead:
-  false` when building each candidate) — those two only ever show up on
-  their own, un-chosen, forced turns, same frequency/logic as before. Each
+  between instead of one just appearing. Choice candidates are usually 3
+  normal 5-tile packs (attribute-based or Random Five), but a candidate can
+  also turn out to be Head to Head or Top 10 Tough Choice (#365) — each
+  candidate is built via the same `generateCategory` rolls (Tough
+  Choice/Head to Head/Random Five chances, in that order) a forced turn
+  would use, so a 2-movie candidate is just as possible as any other pack
+  type. `PackChoiceCard`'s poster-stack rendering already scales to any pack
+  size, and picking a Head to Head/Tough Choice candidate hands off to
+  `HeadToHeadPanel` the same way a forced turn of that type would — App.jsx
+  dispatches purely off the chosen pack's own `type`, with no
+  choice-specific branch. Each
   candidate also gets its own `forcedIndexOffset` into the #224
   forced-inclusion backstop, since all 3 are drawn from the same
   `movies`/`totalRankedCount` snapshot (none have been submitted yet) and
   would otherwise all force in the identical backstop movie if more than one
-  rolled Random Five. Picking a candidate (`onChoose`/`handleChoosePack` in
+  rolled Random Five (the offset has no effect on a Head to Head/Tough
+  Choice candidate, since that pack type never uses the backstop). A Head to
+  Head/Tough Choice candidate can still get deduped away by the same
+  distinct-label check every candidate goes through, same as two Random Five
+  rolls would. Picking a candidate (`onChoose`/`handleChoosePack` in
   `App.jsx`) needs no network round trip — the other two are simply
   discarded; the *next* turn is only generated once the chosen pack actually
   gets ranked/submitted. This is an explicit, acknowledged trade-off left
