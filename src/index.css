@@ -5,6 +5,66 @@
   color-scheme: dark;
 }
 
+/* ===================== Density tiers =====================
+   Everything keys off usable viewport height (measured via 100dvh on
+   .app-shell below, never 100vh — see the responsive-redesign design
+   handoff). Three tiers, switched purely by height media queries so one
+   place decides the tier and every component just reads the resulting
+   custom properties. Tap targets (44px) never shrink with the tier; only
+   spacing, gaps and non-essential type do. */
+:root {
+  --tile-gap: 8px;
+  --tile-pad: 10px 12px;
+  --main-pad: 14px 14px 12px;
+  --label-font: 24px;
+  --rank-font: 18px;
+  --credits-display: block;
+  --results-head-font: 52px;
+  --subset-pill-font: 19px;
+  --pack-tile-max-h: 160px;
+  --pack-poster-max-w: 92px;
+  --standings-poster-w: 48px;
+  --standings-poster-h: 72px;
+  --pack-choice-title-font: 19px;
+}
+
+/* compact — Safari with both toolbars (iPhone 11 ≈ 651px usable) */
+@media (max-height: 819px) {
+  :root {
+    --tile-gap: 6px;
+    --tile-pad: 8px 10px;
+    --main-pad: 10px 12px 10px;
+    --label-font: 19px;
+    --rank-font: 16px;
+    --results-head-font: 40px;
+    --subset-pill-font: 17px;
+    --pack-tile-max-h: 130px;
+    --pack-poster-max-w: 74px;
+    --standings-poster-w: 42px;
+    --standings-poster-h: 63px;
+    --pack-choice-title-font: 17px;
+  }
+}
+
+/* tight — landscape, or Safari with an extra banner */
+@media (max-height: 639px) {
+  :root {
+    --tile-gap: 4px;
+    --tile-pad: 6px 10px;
+    --main-pad: 8px 10px;
+    --label-font: 16px;
+    --rank-font: 14px;
+    --credits-display: none;
+    --results-head-font: 30px;
+    --subset-pill-font: 15px;
+    --pack-tile-max-h: 96px;
+    --pack-poster-max-w: 52px;
+    --standings-poster-w: 34px;
+    --standings-poster-h: 51px;
+    --pack-choice-title-font: 15px;
+  }
+}
+
 /* Locks the page itself so it can't scroll or rubber-band (#270) — the
    app-shell (`h-screen overflow-hidden`) already constrains layout to the
    viewport, but html/body themselves were still scrollable/bounceable as a
@@ -83,6 +143,8 @@ body {
    channel, not applied via CSS opacity, since opacity would also fade the
    gradient layer stacked behind it. */
 .app-shell {
+  height: 100vh; /* fallback for browsers without dvh support */
+  height: 100dvh; /* tracks Safari's actual visible viewport, toolbars and all */
   background-color: var(--bg-page);
   background-image: var(--film-reel-bg-url), var(--bg-overlay);
   background-repeat: no-repeat, no-repeat;
@@ -92,11 +154,25 @@ body {
   color: var(--text-mid);
 }
 
-/* Banner */
+/* Banner: one row — logo, subset pill (flex:1, doubles as the switch
+   trigger), menu button. The theme toggle sits opposite the menu button. */
 
 .banner {
   box-sizing: border-box;
   border-bottom: 1px solid var(--surface-border);
+}
+
+.app-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header-logo {
+  flex: 0 0 auto;
+  border-radius: 7px;
+  border: 1px solid rgba(63, 210, 199, 0.35);
+  object-fit: cover;
 }
 
 /* Light Mode banner (#278) — the title badge stays its fixed dark navy
@@ -150,50 +226,52 @@ body {
   background: transparent;
 }
 
-/* Subset picker (#316) — the active subset is a big banner headline, with
-   a small "Switch" button underneath to change it. */
-
-.subset-banner {
-  font-family: var(--font-display);
-  color: var(--accent);
-  font-size: clamp(1.5rem, 5vw, 2.25rem);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1.1;
-}
-
-/* The "Switch" trigger button and its dropdown — a custom, themed listbox
-   (mirroring .banner-menu-button/.banner-menu-dropdown's own look and
-   open/close pattern) rather than a native `<select>`, since a native
+/* Subset pill (#316, responsive-redesign) — the subset picker's trigger now
+   lives directly in the header row as a fit-to-width pill (see
+   src/lib/useFitText.js), replacing the old big banner headline + separate
+   "Switch" button. Its dropdown below is unchanged — a custom, themed
+   listbox (mirroring .banner-menu-button/.banner-menu-dropdown's own look
+   and open/close pattern) rather than a native `<select>`, since a native
    select's own OS-rendered popup can't be styled to match the app's dark
    surfaces/accent colors. */
-.subset-switch-button {
+.subset-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
   box-sizing: border-box;
-  padding: 0 14px;
-  border: 1px solid var(--surface-border);
+  padding: 0 20px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text-high) 6%, transparent);
-  color: var(--text-mid);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   cursor: pointer;
 }
 
-.subset-switch-button:hover,
-.subset-switch-button[aria-expanded='true'] {
+.subset-pill:hover,
+.subset-pill[aria-expanded='true'] {
   border-color: var(--accent);
-  color: var(--text-high);
 }
 
-.subset-switch-arrow {
-  font-size: 12px;
+.subset-pill-label {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  color: var(--accent);
+  font-size: var(--subset-pill-font);
+}
+
+.subset-pill-caret {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-low);
 }
 
 .subset-dropdown {
@@ -281,6 +359,15 @@ body {
 
 .standings-row {
   border-radius: 8px;
+  /* Explicit rather than implicit-via-poster-height: a fixed row height that
+     doesn't grow with the poster (regression this guards against) lets tall
+     posters overflow their row and merge into one unbroken column. */
+  min-height: calc(var(--standings-poster-h) + 12px);
+}
+
+.standings-poster {
+  width: var(--standings-poster-w);
+  height: var(--standings-poster-h);
 }
 
 .standings-row.tens-line {
@@ -342,55 +429,50 @@ body {
   color: var(--text-high);
 }
 
-/* Ranked/Skipped edge tabs and the Rank button (#271, #289, #312 follow-up)
-   all anchor to this same `bottom` distance so the three stay aligned with
-   each other, always, regardless of pack content — none of them float in
-   normal document flow anymore (a longer category label, a pack with no
-   Rank button at all, etc. used to shift the Rank button and throw the
-   trio out of alignment). `env(safe-area-inset-bottom)` keeps them clear
-   of the home indicator on notched phones. The scrollable pack content
-   gets matching bottom padding (see `main` in App.jsx) so this fixed row
-   never covers it. */
-:root {
-  --fixed-bar-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+/* Footer: a sticky bar in normal document flow (#328's fixed-position hit-
+   testing bug can't recur — each cell is its own box, nothing to overlap)
+   rather than three independently `position: fixed` elements. `1fr` on the
+   center cell keeps the two tabs from shifting when a pack has no Rank
+   button of its own (Head to Head, pack choice). */
+.app-footer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--bg-page) 92%, transparent);
 }
 
-.edge-tab {
-  position: fixed;
-  bottom: var(--fixed-bar-bottom);
-  transition: transform 150ms ease;
+.footer-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  box-shadow: var(--surface-shadow);
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.edge-tab-left {
-  left: 0;
-  transform: translateX(-4px);
+.footer-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-high);
 }
 
-.edge-tab-left:hover {
-  transform: translateX(0);
-}
-
-.edge-tab-right {
-  right: 0;
-  transform: translateX(4px);
-}
-
-.edge-tab-right:hover {
-  transform: translateX(0);
-}
-
-/* Shrink-wrapped and horizontally centered via `left: 50%` + translateX,
-   not a full-width `inset-x-0` row — a full-width fixed box, even with
-   only the button itself visible in the middle, still captures clicks
-   across its *entire* box (including the empty flanking space over the
-   edge tabs), and being both same z-index and later in the DOM than the
-   tabs, was winning that hit-test and silently swallowing taps on them
-   whenever a normal pack (with a Rank button) was active (#328). */
-.rank-button-row-fixed {
-  position: fixed;
-  bottom: var(--fixed-bar-bottom);
-  left: 50%;
-  transform: translateX(-50%);
+.footer-tab-count {
+  font-weight: 600;
+  text-transform: none;
+  color: var(--text-high);
 }
 
 .last-skip-prompt {
@@ -406,12 +488,18 @@ body {
 
 [data-theme='popular'] .pack-category-label {
   font-weight: 400;
-  font-size: 24px;
+  font-size: var(--label-font);
+  line-height: 1.15;
 }
 
 .pack-card {
   box-sizing: border-box;
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .pack-loading-overlay {
@@ -478,6 +566,10 @@ body {
   background: var(--surface);
   border: 1px solid var(--surface-border);
   box-shadow: var(--surface-shadow);
+  flex: 1 1 0;
+  min-height: 56px;
+  max-height: var(--pack-tile-max-h);
+  overflow: hidden;
 }
 
 [data-theme='popular'] .movie-tile.movie-tile--already-ranked {
@@ -485,9 +577,22 @@ body {
   border-color: color-mix(in srgb, var(--accent2) 35%, transparent);
 }
 
+.movie-tile-rank-col {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
 .movie-tile-rank {
   font-family: var(--font-ui);
   color: var(--accent);
+  font-size: var(--rank-font);
+  line-height: 1;
 }
 
 [data-theme='popular'] .movie-tile-rank.top-1 {
@@ -498,6 +603,17 @@ body {
   color: var(--text-credit);
   font-family: var(--font-ui);
   line-height: 1.35;
+  display: var(--credits-display);
+}
+
+.pack-tile-poster {
+  flex: 0 0 auto;
+  align-self: stretch;
+  height: 100%;
+  aspect-ratio: 2 / 3;
+  max-width: var(--pack-poster-max-w);
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 .skip-button {
@@ -506,24 +622,137 @@ body {
   cursor: pointer;
   border-radius: 999px;
   border: 1px solid var(--surface-border);
+  flex: 0 0 auto;
 }
 
-/* Head to Head pack */
+/* Head to Head pack — no cards/frames, posters sit directly on the
+   background, overlapping and staggered (left rides high, right rides low)
+   so neither has to run off-screen to stay readable. Selection changes
+   depth (scale/opacity/z-index/border), never position. */
 
-.head-to-head-card {
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  box-shadow: var(--surface-shadow);
+.head-to-head-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.head-to-head-poster {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(58vw, 220px);
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.35s ease, opacity 0.35s ease;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  opacity: 0.75;
+  z-index: 1;
+  transition:
+    transform 520ms cubic-bezier(0.2, 0.8, 0.25, 1),
+    box-shadow 320ms ease,
+    opacity 320ms ease,
+    border-color 320ms ease;
 }
 
-.head-to-head-card:hover:not([aria-disabled='true']) {
-  border-color: var(--accent);
+.head-to-head-poster.side-left {
+  transform: translate(-50%, -50%) translateX(-24%) translateY(-10%) rotate(-2deg) scale(0.94);
 }
 
-[data-theme='popular'] .head-to-head-card:hover:not([aria-disabled='true']) {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+.head-to-head-poster.side-right {
+  transform: translate(-50%, -50%) translateX(24%) translateY(10%) rotate(2deg) scale(0.94);
+}
+
+.head-to-head-poster.is-front {
+  opacity: 1;
+  z-index: 2;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+
+.head-to-head-poster.is-front.side-left {
+  transform: translate(-50%, -50%) translateX(-24%) translateY(-10%) rotate(-2deg) scale(1);
+  border-color: #3fd2c7;
+}
+
+.head-to-head-poster.is-front.side-right {
+  transform: translate(-50%, -50%) translateX(24%) translateY(10%) rotate(2deg) scale(1);
+  border-color: #f04f8c;
+}
+
+.head-to-head-poster.is-winner {
+  transform: translate(-50%, -50%) rotate(0deg) scale(1.7);
+  z-index: 3;
+  opacity: 1;
+  animation: h2hWinFlash 900ms ease-in-out 1;
+}
+
+.head-to-head-poster.is-loser {
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(40px) rotate(0deg) scale(0.7);
+}
+
+@keyframes h2hWinFlash {
+  0%,
+  100% {
+    border-color: #3fd2c7;
+    box-shadow: 0 0 0 0 rgba(63, 210, 199, 0);
+  }
+  18% {
+    border-color: #fff;
+    box-shadow: 0 0 32px 8px rgba(63, 210, 199, 0.85);
+  }
+  36% {
+    border-color: #3fd2c7;
+    box-shadow: 0 0 10px 0 rgba(63, 210, 199, 0.3);
+  }
+  54% {
+    border-color: #fff;
+    box-shadow: 0 0 32px 8px rgba(240, 79, 140, 0.8);
+  }
+  72% {
+    border-color: #f04f8c;
+    box-shadow: 0 0 12px 0 rgba(240, 79, 140, 0.35);
+  }
+}
+
+.head-to-head-caption {
+  flex: 0 0 auto;
+  width: 100%;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.head-to-head-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.head-to-head-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 7, 15, 0.72);
+}
+
+.head-to-head-confirm-card {
+  width: 100%;
+  max-width: 300px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  color: var(--text-high);
 }
 
 .movie-detail-info-button {
@@ -552,6 +781,8 @@ body {
   border: 1px solid var(--surface-border);
   box-shadow: var(--surface-shadow);
   cursor: pointer;
+  flex: 1 1 0;
+  min-height: 72px;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -572,10 +803,13 @@ body {
 
 .pack-choice-poster-stack .poster-placeholder {
   border: 2px solid var(--surface);
+  border-radius: 4px;
 }
 
 .pack-choice-label {
   font-family: var(--font-ui);
+  font-size: var(--pack-choice-title-font);
+  line-height: 1.2;
 }
 
 .movie-detail-info-button:hover:not(:disabled) {
@@ -604,6 +838,7 @@ body {
 
 .rank-button {
   font-family: var(--font-ui);
+  min-height: 44px;
 }
 
 [data-theme='popular'] .rank-button {
@@ -736,9 +971,11 @@ body {
   position: relative;
   max-width: 1080px;
   width: 92vw;
-  height: 88vh;
-  max-height: 88vh;
-  overflow: visible;
+  /* dvh, not vh — the old 88vh sized the card taller than Safari's actual
+     visible area, clipping the (formerly absolutely-positioned) heading. */
+  height: 88dvh;
+  max-height: 88dvh;
+  overflow: hidden;
 }
 
 .results-top-ten-panel {
@@ -751,12 +988,13 @@ body {
 }
 
 .results-top-ten-heading {
-  position: absolute;
-  top: -44px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Flow element, not absolutely positioned above the card with a negative
+     top offset — that clipped it whenever Safari shrank the viewport. Scales
+     with the density tier instead of a fixed 38px/124px split. */
+  position: static;
+  align-self: center;
   z-index: 20;
-  margin: 0;
+  margin: 0 0 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -776,11 +1014,11 @@ body {
 .results-top-ten-heading-small {
   display: flex;
   justify-content: space-between;
-  font-size: 38px;
+  font-size: calc(var(--results-head-font) * 0.3);
 }
 
 .results-top-ten-heading-big {
-  font-size: 124px;
+  font-size: var(--results-head-font);
 }
 
 .results-top-tile-poster {
@@ -870,11 +1108,12 @@ body {
 
 .banner-menu-button {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   border: 1px solid var(--surface-border);
   color: var(--text-mid);
   font-size: 16px;
@@ -947,11 +1186,12 @@ body {
    both. */
 .theme-toggle-button {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   border: 1px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   font-size: 16px;

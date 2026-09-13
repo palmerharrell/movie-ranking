@@ -637,12 +637,33 @@ function App() {
     <div
       data-theme="popular"
       data-color-mode={colorMode}
-      className="app-shell flex h-screen flex-col overflow-hidden"
+      className="app-shell flex flex-col overflow-hidden"
       style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
     >
       <div className="mx-auto flex h-full w-full max-w-[1120px] min-h-0 flex-col xl:max-w-[1480px]">
-        <header className="banner relative flex shrink-0 flex-col gap-2 px-4 py-3 md:px-8 md:py-4">
-          <div className="absolute left-3 top-3 md:left-8 md:top-4">
+        <header className="banner shrink-0 px-2.5 py-1.5 md:px-6 md:py-3">
+          <div className="app-header-row">
+            <img
+              src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
+              alt=""
+              aria-hidden="true"
+              className="app-header-logo h-[34px] w-[34px] shrink-0 md:h-[42px] md:w-[42px]"
+            />
+            <SubsetPicker
+              subset={subset}
+              onChange={setSubset}
+              allMoviesCount={allMoviesCount}
+              directorSubsets={directorSubsets}
+            />
+            <button
+              type="button"
+              onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
+              className="theme-toggle-button"
+              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {colorMode === 'dark' ? '☀️' : '🌙'}
+            </button>
             <BannerMenu
               onStandings={() => setShowStandingsDrawer(true)}
               onLoadRanking={() => setShowLoadView(true)}
@@ -654,38 +675,6 @@ function App() {
               onPg13Change={setPg13}
               onReset={() => setShowResetModal(true)}
               showReset={rankedCount > 0}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setColorMode((mode) => (mode === 'dark' ? 'light' : 'dark'))}
-            className="theme-toggle-button absolute right-3 top-3 md:right-8 md:top-4"
-            aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {colorMode === 'dark' ? '☀️' : '🌙'}
-          </button>
-          <div className="app-title-badge flex w-fit items-center justify-center self-center gap-2 rounded-full px-1 md:gap-3 md:px-1.5">
-            <img
-              src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
-              alt=""
-              aria-hidden="true"
-              className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
-            />
-            <h1 className="app-title text-center text-[22px] md:text-[30px]">Movie Ranking</h1>
-            <img
-              src={`${import.meta.env.BASE_URL}${colorMode === 'light' ? 'favicon-light.svg' : 'favicon.svg'}`}
-              alt=""
-              aria-hidden="true"
-              className="app-title-icon h-[34px] w-[34px] shrink-0 md:h-[46px] md:w-[46px]"
-            />
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <SubsetPicker
-              subset={subset}
-              onChange={setSubset}
-              allMoviesCount={allMoviesCount}
-              directorSubsets={directorSubsets}
             />
           </div>
         </header>
@@ -709,74 +698,20 @@ function App() {
           </div>
         )}
 
-        <div className="relative grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[340px_1fr]">
-          {/* Edge tabs (#271): replace the old inline ranked/skipped counts
-              with tab handles pinned to the window edge, doubling as the
-              way to slide out their respective drawer. The Ranked tab is
-              mobile-only (md:hidden) since desktop already shows the
-              Standings panel inline at the left edge — a tab to open
-              something already open would be redundant. The Skipped tab
-              stays on desktop too, since that drawer (#269) is a fixed
-              overlay on every breakpoint, not just mobile. Each hides
-              itself while its own drawer is open, since the drawer already
-              occupies that edge. Vertical position is a plain fixed CSS
-              value (`.edge-tab`'s `bottom` in index.css, #312 follow-up)
-              rather than something JS-measured off the Rank button — the
-              button's own position barely moves pack to pack, and trying to
-              track it exactly (#289's original approach) kept landing the
-              tabs in the wrong place on screens with no Rank button of
-              their own (pack-choice, Head to Head, Top 10 Tough Choice) —
-              simpler, and no worse in practice, to just fix it in place. */}
-          {movies && (
-            <button
-              type="button"
-              onClick={() => setShowStandingsDrawer(true)}
-              className={`edge-tab edge-tab-left z-20 flex-col items-center gap-0.5 rounded-r-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide md:hidden ${showStandingsDrawer ? 'hidden' : 'flex'}`}
-              style={{
-                background: 'var(--surface)',
-                borderTop: '1px solid var(--surface-border)',
-                borderRight: '1px solid var(--surface-border)',
-                borderBottom: '1px solid var(--surface-border)',
-                boxShadow: 'var(--surface-shadow)',
-                color: 'var(--text-low)',
-              }}
-            >
-              <span className="text-[13px] font-semibold normal-case" style={{ color: 'var(--text-high)' }}>
-                {rankedCount}/{eligibleCount}
-              </span>
-              <span>Ranked</span>
-            </button>
-          )}
-          {skippedCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowSkippedView(true)}
-              className={`edge-tab edge-tab-right z-20 flex-col items-center gap-0.5 rounded-l-lg pl-3 pr-2 py-3 font-mono text-[11px] leading-tight uppercase tracking-wide ${showSkippedView ? 'hidden' : 'flex'}`}
-              style={{
-                background: 'var(--surface)',
-                borderTop: '1px solid var(--surface-border)',
-                borderLeft: '1px solid var(--surface-border)',
-                borderBottom: '1px solid var(--surface-border)',
-                boxShadow: 'var(--surface-shadow)',
-                color: 'var(--text-low)',
-              }}
-            >
-              <span className="text-[13px] font-semibold normal-case" style={{ color: 'var(--text-high)' }}>
-                {skippedCount}
-              </span>
-              <span>Skipped</span>
-            </button>
-          )}
-
+        <div className="relative grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[340px_1fr]">
+          {/* Standings/Skipped drawers (responsive-redesign): anchored with
+              `absolute inset-y-0` to *this* body element (the flex row
+              between header and footer), not the viewport — so on a dvh
+              shell they stop above the footer instead of covering it. */}
           {showStandingsDrawer && (
             <div
-              className="fixed inset-0 z-30 bg-black/55 md:hidden"
+              className="absolute inset-0 z-30 bg-black/55 md:hidden"
               onClick={() => setShowStandingsDrawer(false)}
             />
           )}
 
           <aside
-            className={`standings-col fixed inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`standings-col absolute inset-y-0 left-0 z-40 min-h-0 w-[85vw] max-w-[340px] bg-[var(--bg-page)] shadow-[8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 md:static md:z-auto md:w-auto md:max-w-none md:translate-x-0 md:bg-transparent md:shadow-none ${showStandingsDrawer ? 'translate-x-0' : '-translate-x-full'}`}
             style={{ padding: '22px 8px 22px 22px' }}
           >
             <div className="mb-2 flex justify-end md:hidden">
@@ -805,8 +740,29 @@ function App() {
             )}
           </aside>
 
-          <main className="flex min-h-0 flex-col items-center overflow-y-auto px-4 pt-4 pb-32 md:px-8">
-            <div className="w-full max-w-xl">
+          {showSkippedView && (
+            <div
+              className="absolute inset-0 z-30 bg-black/55"
+              onClick={() => setShowSkippedView(false)}
+            />
+          )}
+
+          <aside
+            className={`absolute inset-y-0 right-0 z-40 min-h-0 w-[85vw] max-w-[380px] bg-[var(--bg-page)] shadow-[-8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 ${showSkippedView ? 'translate-x-0' : 'translate-x-full'}`}
+          >
+            <SkippedView
+              open={showSkippedView}
+              onChange={handleSkippedViewChange}
+              onClose={() => setShowSkippedView(false)}
+              onOpenDetail={setDetailMovie}
+            />
+          </aside>
+
+          <main
+            className="flex min-h-0 flex-1 flex-col items-center overflow-hidden"
+            style={{ padding: 'var(--main-pad)' }}
+          >
+            <div className="mx-auto flex w-full min-h-0 max-w-xl flex-1 flex-col">
               {turn?.type === 'choice' ? (
                 <PackChoiceScreen
                   options={turn.options}
@@ -846,17 +802,56 @@ function App() {
                   Loading…
                 </p>
               )}
-              {activePack && activePack.type !== HEAD_TO_HEAD_TYPE && (
-                <div className="rank-button-row-fixed z-20">
-                  <RankButton
-                    onClick={handleRank}
-                    disabled={busy || switchingSubset || activePack.movies.length < 2}
-                  />
-                </div>
-              )}
             </div>
           </main>
         </div>
+
+        {/* Footer: a sticky bar in normal flow (responsive-redesign) —
+            replaces the old three independently `position: fixed` elements
+            (Rank button, both edge tabs), which measured a viewport taller
+            than what Safari actually shows. The center cell keeps its `1fr`
+            column even with no Rank button (Head to Head/pack choice), so
+            the two tabs never shift between packs. */}
+        <footer className="app-footer shrink-0">
+          {movies ? (
+            <button
+              type="button"
+              onClick={() => setShowStandingsDrawer(true)}
+              className="footer-tab md:invisible"
+              aria-label={`Open standings — ${rankedCount} of ${eligibleCount} ranked`}
+            >
+              <span className="footer-tab-count">
+                {rankedCount}/{eligibleCount}
+              </span>
+              Ranked
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+
+          {activePack && activePack.type !== HEAD_TO_HEAD_TYPE ? (
+            <RankButton
+              onClick={handleRank}
+              disabled={busy || switchingSubset || activePack.movies.length < 2}
+            />
+          ) : (
+            <span aria-hidden="true" />
+          )}
+
+          {skippedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowSkippedView(true)}
+              className="footer-tab"
+              aria-label={`Open skipped movies — ${skippedCount} skipped`}
+            >
+              <span className="footer-tab-count">{skippedCount}</span>
+              Skipped
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+        </footer>
       </div>
 
       {packIntro && <PackIntroOverlay label={packIntro.label} fading={packIntro.fading} />}
@@ -881,22 +876,6 @@ function App() {
       {showLoadView && (
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
       )}
-      {showSkippedView && (
-        <div
-          className="fixed inset-0 z-30 bg-black/55"
-          onClick={() => setShowSkippedView(false)}
-        />
-      )}
-      <aside
-        className={`fixed inset-y-0 right-0 z-40 min-h-0 w-[85vw] max-w-[380px] bg-[var(--bg-page)] shadow-[-8px_0_24px_rgba(0,0,0,0.4)] transition-transform duration-200 ${showSkippedView ? 'translate-x-0' : 'translate-x-full'}`}
-      >
-        <SkippedView
-          open={showSkippedView}
-          onChange={handleSkippedViewChange}
-          onClose={() => setShowSkippedView(false)}
-          onOpenDetail={setDetailMovie}
-        />
-      </aside>
       {showInstructionsModal && (
         <InstructionsModal
           onClose={handleCloseInstructions}

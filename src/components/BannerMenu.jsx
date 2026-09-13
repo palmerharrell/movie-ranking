@@ -72,7 +72,7 @@ export function BannerMenu({
         <span aria-hidden="true">☰</span>
       </button>
       {open && (
-        <div className="banner-menu-dropdown absolute top-full left-0 z-50 mt-2">
+        <div className="banner-menu-dropdown absolute top-full right-0 z-50 mt-2">
           <button
             type="button"
             onClick={() => pick(onStandings)}

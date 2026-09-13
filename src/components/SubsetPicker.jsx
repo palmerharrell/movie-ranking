@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS, subsetLabel } from '../lib/genreSubsets.js'
+import { useFitText } from '../lib/useFitText.js'
 
 const CURATED_SUBSETS = [{ id: 'popular', label: 'Popular' }]
 
@@ -27,17 +28,19 @@ function SubsetOption({ id, label, active, onPick }) {
   )
 }
 
-// #316: the active subset is a big, prominent banner (`subsetLabel`, the
-// same shared label used by Save/Reset/Load's own copy) rather than living
-// inside the picker control itself, with a small "Switch" button beneath
-// it to change it. A custom dropdown (mirroring BannerMenu.jsx's own
-// open/close/click-outside/Escape pattern) replaces the native `<select>`
-// entirely — the OS's own popup styling for a `<select>` can't be themed
-// to match the app's dark surfaces/accent colors the way a hand-built
-// listbox can.
+// #316 (responsive-redesign): the active subset's name lives directly in the
+// header row as a fit-to-width pill (see src/lib/useFitText.js) that doubles
+// as the picker's own trigger — replacing the old big banner headline with a
+// separate "Switch" button beneath it. A custom dropdown (mirroring
+// BannerMenu.jsx's own open/close/click-outside/Escape pattern) replaces the
+// native `<select>` entirely — the OS's own popup styling for a `<select>`
+// can't be themed to match the app's dark surfaces/accent colors the way a
+// hand-built listbox can.
 export function SubsetPicker({ subset, onChange, allMoviesCount, directorSubsets = [] }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
+  const labelRef = useRef(null)
+  useFitText(labelRef, subset, { max: 19, min: 9 })
 
   useEffect(() => {
     if (!open) return
@@ -63,27 +66,27 @@ export function SubsetPicker({ subset, onChange, allMoviesCount, directorSubsets
   }
 
   return (
-    <div className="subset-picker flex flex-col items-center gap-2">
-      <span className="subset-banner text-center uppercase">{subsetLabel(subset)}</span>
-      <div ref={containerRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="subset-switch-button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
+    <div ref={containerRef} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="subset-pill w-full"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span ref={labelRef} className="subset-pill-label">
+          {subsetLabel(subset)}
+        </span>
+        <span className="subset-pill-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          aria-label="Switch subset"
+          className="subset-dropdown absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
         >
-          Switch
-          <span className="subset-switch-arrow" aria-hidden="true">
-            ▾
-          </span>
-        </button>
-        {open && (
-          <div
-            role="listbox"
-            aria-label="Switch subset"
-            className="subset-dropdown absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
-          >
             <div className="subset-dropdown-group-label">Curated Lists</div>
             {CURATED_SUBSETS.map((s) => (
               <SubsetOption key={s.id} id={s.id} label={s.label} active={subset === s.id} onPick={pick} />
@@ -119,7 +122,6 @@ export function SubsetPicker({ subset, onChange, allMoviesCount, directorSubsets
             />
           </div>
         )}
-      </div>
     </div>
   )
 }
