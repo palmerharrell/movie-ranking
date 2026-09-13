@@ -538,11 +538,23 @@ the layout around.
   (Head to Head/Top 10 Tough Choice single-click submit instead, and a
   pack-choice turn's action is picking a candidate), so the flanking tabs
   never shift depending on pack type. The outer cells hold the Ranked
-  (`n/nnn`) and Skipped (`n`) tabs (`App.jsx`, computed once from `movies`
-  rather than recomputed separately per pack type) — clicking either opens
-  that count's own drawer (Rankings on the left, Skipped on the right —
-  see **Skip ("Haven't Seen")** and **Left panel**/**Skipped Movies
-  drawer** above). The Ranked tab is mobile-only (`md:hidden`, via
+  (`n/nnn`, subset-scoped — see **Progress tracking**) and Skipped (`n`,
+  global — see the following paragraph) tabs (`App.jsx`) — each is a toggle, not just an
+  opener: clicking a tab opens its own drawer (Rankings on the left,
+  Skipped on the right — see **Skip ("Haven't Seen")** and **Left
+  panel**/**Skipped Movies drawer** above), clicking it again while that
+  drawer is already open closes it, and the two drawers are mutually
+  exclusive — opening one closes the other, rather than letting both slide
+  out at once (#342, `handleToggleRankingsDrawer`/
+  `handleToggleSkippedView` in `App.jsx`). The Skipped tab's count is the
+  true global count of persistently-skipped movies (`api.getSkippedCount`,
+  a direct read of the same skipped-ids set the Skipped drawer's own list
+  is filtered from — see **Skip ("Haven't Seen")**), not scoped to the
+  active subset (#337) — unlike the Ranked tab and the Rankings header's
+  own `n/nnn ranked`/`n skipped` lines (see **Progress tracking**), which
+  stay subset-scoped since they describe progress on the currently-visible
+  pool rather than "how many movies has this browser ever skipped." The
+  Ranked tab is mobile-only (`md:hidden`, via
   `visibility: hidden` rather than removing the grid cell, so the center
   column doesn't shift) since desktop already shows the Rankings panel
   inline at the left edge; the Skipped tab shows on every breakpoint, since

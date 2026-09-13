@@ -156,8 +156,14 @@ function App() {
   // pack branches below.
   const eligibleMovies = movies ? movies.filter((m) => !m.skipped) : []
   const rankedCount = eligibleMovies.filter((m) => m.timesRanked >= 1).length
-  const skippedCount = movies ? movies.filter((m) => m.skipped).length : 0
   const eligibleCount = eligibleMovies.length
+  // The footer Skipped tab shows the true, global count of persistently
+  // skipped movies (#337) — the same count the Skipped drawer's own list
+  // (api.getSkippedMovies) reflects, since skip state is a fact about the
+  // browser, not about whichever subset happens to be active (see **Skip
+  // ("Haven't Seen")**). A direct synchronous read, so it stays correct on
+  // every render without a separate fetch/effect.
+  const skippedCount = api.getSkippedCount()
   const isFamily = subset === 'family'
   const isPopular = subset === 'popular'
   const activeGenre = GENRE_SUBSETS.some((g) => g.id === subset) || isDirectorSubsetId(subset) ? subset : null
@@ -262,6 +268,24 @@ function App() {
       document.body.style.overflow = previousOverflow
     }
   }, [showRankingsDrawer, showSkippedView])
+
+  // #342: the Rankings and Skipped drawers are mutually exclusive — opening
+  // one closes the other, rather than letting both slide out at once — and
+  // each footer tab/menu item toggles its own drawer instead of only ever
+  // opening it, so clicking a tab while its drawer is already open closes it.
+  function handleToggleRankingsDrawer() {
+    setShowRankingsDrawer((open) => {
+      if (!open) setShowSkippedView(false)
+      return !open
+    })
+  }
+
+  function handleToggleSkippedView() {
+    setShowSkippedView((open) => {
+      if (!open) setShowRankingsDrawer(false)
+      return !open
+    })
+  }
 
   // Announces a Head to Head / Top 10 Tough Choice pack (#298) with a
   // screen-filling "<label>!" overlay for a beat before it's shown — fires
@@ -665,9 +689,9 @@ function App() {
               {colorMode === 'dark' ? '☀️' : '🌙'}
             </button>
             <BannerMenu
-              onRankings={() => setShowRankingsDrawer(true)}
+              onRankings={handleToggleRankingsDrawer}
               onLoadRanking={() => setShowLoadView(true)}
-              onSkipped={() => setShowSkippedView(true)}
+              onSkipped={handleToggleSkippedView}
               onInstructions={() => setShowInstructionsModal(true)}
               pg13Checked={effectivePg13}
               pg13Disabled={isFamily}
@@ -816,9 +840,9 @@ function App() {
           {movies ? (
             <button
               type="button"
-              onClick={() => setShowRankingsDrawer(true)}
+              onClick={handleToggleRankingsDrawer}
               className="footer-tab md:invisible"
-              aria-label={`Open rankings — ${rankedCount} of ${eligibleCount} ranked`}
+              aria-label={`${showRankingsDrawer ? 'Close' : 'Open'} rankings — ${rankedCount} of ${eligibleCount} ranked`}
             >
               <span className="footer-tab-count">
                 {rankedCount}/{eligibleCount}
@@ -841,9 +865,9 @@ function App() {
           {skippedCount > 0 ? (
             <button
               type="button"
-              onClick={() => setShowSkippedView(true)}
+              onClick={handleToggleSkippedView}
               className="footer-tab"
-              aria-label={`Open skipped movies — ${skippedCount} skipped`}
+              aria-label={`${showSkippedView ? 'Close' : 'Open'} skipped movies — ${skippedCount} skipped`}
             >
               <span className="footer-tab-count">{skippedCount}</span>
               Skipped
@@ -863,7 +887,7 @@ function App() {
           // (api.saveRanking filters them out before persisting) — the
           // live Results screen must show the same set, not the raw
           // `movies` state, which still carries skipped entries for the
-          // Standings/Skipped drawers (#339).
+          // Rankings/Skipped drawers (#339).
           movies={eligibleMovies}
           title={resultsTitle}
           subtitle="Saved automatically"

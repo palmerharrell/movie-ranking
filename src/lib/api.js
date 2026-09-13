@@ -9,6 +9,7 @@ import {
   unmarkSkipped as unmarkSkippedLocal,
   unmarkAllSkipped as unmarkAllSkippedLocal,
   restoreSkipped as restoreSkippedLocal,
+  getSkippedCount as getSkippedCountLocal,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
@@ -111,6 +112,14 @@ export function restoreSkipped(movieId, eloRating, timesRanked) {
 export async function getSkippedMovies() {
   const movies = await getMovies()
   return movies.filter((m) => m.skipped)
+}
+
+// The true count of skipped movies across the whole pool (#337) — same
+// underlying skipped-ids set getSkippedMovies above filters from, but a
+// synchronous local read with no fetch, so the footer's Skipped-tab count
+// can match the drawer's own list without an extra network round trip.
+export function getSkippedCount() {
+  return getSkippedCountLocal()
 }
 
 // Un-skips every given movie in one batched write (#137's "Clear all").
