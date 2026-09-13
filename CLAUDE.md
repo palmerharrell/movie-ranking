@@ -128,7 +128,14 @@ exposed in the UI.
   back to defaults (1000/0) — a skip removes the movie from the ranking
   entirely, not just from future packs (#169); un-skipping it afterward
   starts it back at those same defaults rather than restoring the old
-  rating, since that data is gone. Besides the in-pack "undo" while that pack
+  rating, since that data is gone. A skip button on each Rankings-panel row
+  (#355, `LeftPanel.jsx`'s `RankingsRow`, reusing the same `handleSkipMovie`
+  path pack tiles use — `stopPropagation` keeps it from also triggering the
+  row's own click-to-open-detail handler) lets a movie be skipped directly
+  from the Rankings panel, not just from a pack tile; `handleSkipMovie`
+  first checks whether the movie is part of the active pack before running
+  the pack-reconciliation logic below, since a Rankings-row skip has no
+  pack state to reconcile. Besides the in-pack "undo" while that pack
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
   lists every persistently-skipped movie (poster/title/year, matching the
@@ -542,7 +549,9 @@ the layout around.
   (Head to Head/Top 10 Tough Choice single-click submit instead, and a
   pack-choice turn's action is picking a candidate), so the flanking tabs
   never shift depending on pack type. The outer cells hold the Ranked
-  (`n/nnn`, subset-scoped — see **Progress tracking**) and Skipped (`n`,
+  ("Current Ranking" label, #353 — its `n/nnn` count still drives the
+  `aria-label` for screen readers and the Rankings header's own progress
+  line, subset-scoped, see **Progress tracking**) and Skipped (`n`,
   global — see the following paragraph) tabs (`App.jsx`) — each is a toggle, not just an
   opener: clicking a tab opens its own drawer (Rankings on the left,
   Skipped on the right — see **Skip ("Haven't Seen")** and **Left
@@ -561,9 +570,11 @@ the layout around.
   Ranked tab is mobile-only (`md:hidden`, via
   `visibility: hidden` rather than removing the grid cell, so the center
   column doesn't shift) since desktop already shows the Rankings panel
-  inline at the left edge; the Skipped tab shows on every breakpoint, since
-  that drawer (#269) is a fixed overlay regardless of screen size, and only
-  appears once `skippedCount > 0`. Because the footer is a normal-flow
+  inline at the left edge; the Skipped tab shows on every breakpoint,
+  whenever the pool has loaded, since that drawer (#269) is a fixed overlay
+  regardless of screen size — its own count simply reads `0` rather than
+  the tab disappearing when nothing's been skipped yet (#350). Because the
+  footer is a normal-flow
   sibling of the pack area rather than an overlay, #328's fixed-position
   hit-testing bug (a full-width fixed row swallowing taps on the tabs)
   cannot recur — each cell is its own box with nothing to overlap.

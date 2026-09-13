@@ -475,6 +475,19 @@ function App() {
   // the pool's current eligible movies, so a newly-skipped movie can never
   // resurface in one.
   function handleSkipMovie(movieId) {
+    // #355: also reachable from a Rankings-panel row, for a movie that
+    // isn't part of the active pack (or when there's no active pack at
+    // all, e.g. during Head to Head/pack-choice) — there's no pack state
+    // to reconcile in that case, so just mark it skipped directly rather
+    // than running it through the pack-aware logic below (which assumes
+    // the movie is one of activePack.movies).
+    if (!activePack?.movies?.some((m) => m.id === movieId)) {
+      api.markSkipped(movieId)
+      setMovies((prev) =>
+        prev.map((m) => (m.id === movieId ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
+      )
+      return
+    }
     // The pack is already down to its one remaining movie and awaiting the
     // "skip this one too?" decision (#156) — clicking that same movie's own
     // tile button in this state re-offers the prompt rather than executing
@@ -753,6 +766,7 @@ function App() {
                 movies={movies}
                 subset={subset}
                 onOpenDetail={setDetailMovie}
+                onSkip={handleSkipMovie}
                 open={showRankingsDrawer}
               />
             ) : error ? (
@@ -844,10 +858,7 @@ function App() {
               className="footer-tab md:invisible"
               aria-label={`${showRankingsDrawer ? 'Close' : 'Open'} rankings — ${rankedCount} of ${eligibleCount} ranked`}
             >
-              <span className="footer-tab-count">
-                {rankedCount}/{eligibleCount}
-              </span>
-              Ranked
+              Current Ranking
             </button>
           ) : (
             <span aria-hidden="true" />
@@ -862,7 +873,7 @@ function App() {
             <span aria-hidden="true" />
           )}
 
-          {skippedCount > 0 ? (
+          {movies ? (
             <button
               type="button"
               onClick={handleToggleSkippedView}
