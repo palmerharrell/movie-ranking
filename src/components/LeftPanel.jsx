@@ -10,7 +10,7 @@ function sortMovies(movies) {
   })
 }
 
-function RankingsRow({ movie, rank, isLast, onOpenDetail, onSkip }) {
+function RankingsRow({ movie, rank, isLast, heatColor, onOpenDetail, onSkip }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
   const rankedClass = movie.timesRanked >= 1 ? 'ranked' : ''
   const tensClass = rank % 10 === 0 && !isLast ? 'tens-line' : ''
@@ -19,6 +19,7 @@ function RankingsRow({ movie, rank, isLast, onOpenDetail, onSkip }) {
     <li
       onClick={() => onOpenDetail(movie)}
       className={`rankings-row flex cursor-pointer items-center gap-3 px-2 py-1.5 ${topClass} ${rankedClass} ${tensClass}`}
+      style={heatColor ? { '--row-heat': heatColor } : undefined}
     >
       <span className="rankings-rank w-[26px] shrink-0 text-right text-sm">{rank}</span>
       <div className="poster-placeholder rankings-poster shrink-0 overflow-hidden rounded-[4px] bg-cover">
@@ -49,7 +50,7 @@ function RankingsRow({ movie, rank, isLast, onOpenDetail, onSkip }) {
   )
 }
 
-export function LeftPanel({ movies, subset, onOpenDetail, onSkip, open }) {
+export function LeftPanel({ movies, subset, heatColors, onOpenDetail, onSkip, open }) {
   // #248: reset scroll position each time the (mobile) Rankings drawer is
   // opened, rather than leaving it wherever it was scrolled to last time —
   // `open` only toggles for the drawer (desktop shows this panel inline and
@@ -93,6 +94,7 @@ export function LeftPanel({ movies, subset, onOpenDetail, onSkip, open }) {
             movie={movie}
             rank={index + 1}
             isLast={index === sorted.length - 1}
+            heatColor={heatColors?.get(movie.id)}
             onOpenDetail={onOpenDetail}
             onSkip={onSkip}
           />
