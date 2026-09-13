@@ -8,6 +8,7 @@ import {
   getSavedRanking,
   getSavedRankingByShareSlug,
   setShareSlug,
+  getSuggestedMovies,
 } from './db.js'
 import { loadMovies } from './movieStore.js'
 
@@ -19,6 +20,18 @@ function mergeWithState(staticMovies, state) {
     eloRating: state.get(m.id)?.eloRating ?? 1000,
     timesRanked: state.get(m.id)?.timesRanked ?? 0,
   }))
+}
+
+// The full pool: movies.json's build-time-enriched entries plus anything
+// added live via Search & Suggest (#243, stored in the suggested_movies
+// table rather than movies.json itself — see db.js for why). Returns null
+// only when movies.json itself is missing (the pool has never been
+// enriched yet) — a suggestion can't usefully exist without the base pool
+// it's meant to sit alongside.
+function loadAllMovies(dataDir, db) {
+  const staticMovies = loadMovies(dataDir)
+  if (!staticMovies) return null
+  return [...staticMovies, ...getSuggestedMovies(db)]
 }
 
 // The pool's static metadata, optionally restricted to TMDb's "Family"
@@ -39,9 +52,11 @@ function mergeWithState(staticMovies, state) {
 // on top of whichever subset is active rather than a subset of its own.
 // Returns null if the enriched JSON doesn't exist yet. Per-visitor ranking
 // state (eloRating/timesRanked) lives in the browser now (#115) — see
-// src/lib/localRankingStore.js — so this is metadata only.
-export function getMovies(dataDir, { family = false, popular = false, genre = null, pg13 = false } = {}) {
-  const staticMovies = loadMovies(dataDir)
+// src/lib/localRankingStore.js — so this is metadata only. Includes
+// Search-&-Suggest additions (#243, see loadAllMovies) alongside
+// movies.json's own entries.
+export function getMovies(dataDir, db, { family = false, popular = false, genre = null, pg13 = false } = {}) {
+  const staticMovies = loadAllMovies(dataDir, db)
   if (!staticMovies) return null
   let result = family ? staticMovies.filter(isFamilyGenre) : staticMovies
   if (pg13) result = selectPg13OrUnder(result)
@@ -82,7 +97,7 @@ export function listSavedRankings(db, { subset, pg13 } = {}) {
 // padded out with movies that were never part of that run. Returns null if
 // the snapshot or the pool's static metadata isn't found.
 export function getSavedRankingMovies(db, dataDir, id) {
-  const staticMovies = loadMovies(dataDir)
+  const staticMovies = loadAllMovies(dataDir, db)
   if (!staticMovies) return null
 
   const saved = getSavedRanking(db, id)
@@ -110,7 +125,7 @@ export function getSavedRankingMovies(db, dataDir, id) {
 // null if no saved ranking has that slug or the pool's static metadata
 // isn't found.
 export function getSharedRankingTopTen(db, dataDir, slug) {
-  const staticMovies = loadMovies(dataDir)
+  const staticMovies = loadAllMovies(dataDir, db)
   if (!staticMovies) return null
 
   const saved = getSavedRankingByShareSlug(db, slug)

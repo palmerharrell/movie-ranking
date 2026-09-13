@@ -235,3 +235,23 @@ export function shareRanking(id) {
 export function getSharedRanking(slug) {
   return request(`/api/rankings/share/${slug}`)
 }
+
+// Search & Suggest (#243). Up to 5 live TMDb candidates for a typed title —
+// {tmdbId, title, year, posterUrl}[] — for the user to pick from before
+// anything is added, rather than trusting a single best-guess match.
+export function searchTmdbForSuggestion(query) {
+  return request(`/api/suggestions/search?q=${encodeURIComponent(query)}`)
+}
+
+// Enriches and persists the chosen TMDb candidate (#243), tagged
+// 'user-suggested' server-side — see server/suggestionService.js. Throws if
+// it's already in the pool. Returns the new movie's static metadata; the
+// caller is responsible for re-fetching movies/turn state afterward if it
+// wants the addition to show up immediately (App.jsx does this via
+// noteMoviesUpdate after a successful add).
+export function addSuggestedMovie(tmdbId) {
+  return request('/api/suggestions', {
+    method: 'POST',
+    body: JSON.stringify({ tmdbId, clientId: getOrCreateClientId() }),
+  })
+}

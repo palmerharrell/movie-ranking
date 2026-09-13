@@ -9,6 +9,7 @@ import { SaveRankingModal } from './components/SaveRankingModal.jsx'
 import { ResultsScreen } from './components/ResultsScreen.jsx'
 import { LoadRankingView } from './components/LoadRankingView.jsx'
 import { SkippedView } from './components/SkippedView.jsx'
+import { SearchSuggestModal } from './components/SearchSuggestModal.jsx'
 import { BannerMenu } from './components/BannerMenu.jsx'
 import { InstructionsModal } from './components/InstructionsModal.jsx'
 import { MovieDetailModal } from './components/MovieDetailModal.jsx'
@@ -125,6 +126,7 @@ function App() {
   const [showResetModal, setShowResetModal] = useState(false)
   const [showLoadView, setShowLoadView] = useState(false)
   const [showSkippedView, setShowSkippedView] = useState(false)
+  const [showSearchSuggest, setShowSearchSuggest] = useState(false)
   const [showRankingsDrawer, setShowRankingsDrawer] = useState(false)
   const [showInstructionsModal, setShowInstructionsModal] = useState(initialShowInstructions)
   // The movie shown in the big detail card (#222, #223) — tapping/clicking a
@@ -618,6 +620,15 @@ function App() {
       .catch((err) => setError(err.message))
   }
 
+  // A movie added via Search & Suggest (#243) lands server-side immediately
+  // (see server/suggestionService.js), but this browser's own `movies` state
+  // won't reflect it until re-fetched — best-effort, since the new movie
+  // will show up next time movies refetch anyway (e.g. the next "Rank →")
+  // even if this particular refresh fails.
+  function handleSuggestionAdded() {
+    api.getMovies(currentRankingOptions()).then(noteMoviesUpdate).catch(() => {})
+  }
+
   // "Yes" on the inline "skip this one too?" prompt (#156): skip the last
   // remaining movie the same way any other tile-skip does, then discard the
   // now-empty pack and advance, mirroring the old auto-discard behavior.
@@ -813,6 +824,7 @@ function App() {
               onRankings={handleToggleRankingsDrawer}
               onLoadRanking={() => setShowLoadView(true)}
               onSkipped={handleToggleSkippedView}
+              onSearchSuggest={() => setShowSearchSuggest(true)}
               onInstructions={() => setShowInstructionsModal(true)}
               pg13Checked={effectivePg13}
               pg13Disabled={isFamily}
@@ -1040,6 +1052,13 @@ function App() {
       )}
       {showLoadView && (
         <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
+      )}
+      {showSearchSuggest && (
+        <SearchSuggestModal
+          onClose={() => setShowSearchSuggest(false)}
+          onAdded={handleSuggestionAdded}
+          onOpenDetail={setDetailMovie}
+        />
       )}
       {showInstructionsModal && (
         <InstructionsModal

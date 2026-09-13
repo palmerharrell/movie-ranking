@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 // the rankings panel is always visible in the left column already, so that
 // item is hidden at the md breakpoint, same as the old standalone button was.
 // Instructions (#237) reopens the startup InstructionsModal on demand.
+// Search & Suggest (#243) opens SearchSuggestModal.jsx.
 //
 // The PG-13 & Under checkbox (#272) moved in here from its own spot in the
 // banner row, freeing up space there for the subset picker (#274). Unlike
@@ -25,6 +26,7 @@ export function BannerMenu({
   onRankings,
   onLoadRanking,
   onSkipped,
+  onSearchSuggest,
   onInstructions,
   pg13Checked,
   pg13Disabled,
@@ -88,6 +90,9 @@ export function BannerMenu({
           </button>
           <button type="button" onClick={() => pick(onSkipped)} className="banner-menu-item">
             Skipped
+          </button>
+          <button type="button" onClick={() => pick(onSearchSuggest)} className="banner-menu-item">
+            Search &amp; Suggest
           </button>
           <button type="button" onClick={() => pick(onInstructions)} className="banner-menu-item">
             Instructions

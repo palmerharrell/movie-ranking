@@ -21,6 +21,22 @@ export async function searchMovie(apiKey, title, year) {
   return data.results?.[0] || null
 }
 
+// Up to `limit` candidate matches for a live title search (#243's Search &
+// Suggest), unlike searchMovie's single best-guess result — a person
+// confirming which of several same-titled movies they mean needs to see
+// more than one option. Minimal fields only (no director/genres/etc.),
+// since a full /movie/{id} lookup only happens for whichever candidate gets
+// picked (see enrichMovieByTmdbId).
+export async function searchMovies(apiKey, query, limit = 5) {
+  const data = await tmdbFetch(apiKey, '/search/movie', { query })
+  return (data.results || []).slice(0, limit).map((r) => ({
+    tmdbId: r.id,
+    title: r.title,
+    year: r.release_date ? Number(r.release_date.slice(0, 4)) : null,
+    posterUrl: r.poster_path ? `https://image.tmdb.org/t/p/w185${r.poster_path}` : null,
+  }))
+}
+
 export async function getMovieDetails(apiKey, tmdbId) {
   return tmdbFetch(apiKey, `/movie/${tmdbId}`, {
     append_to_response: 'credits,keywords',

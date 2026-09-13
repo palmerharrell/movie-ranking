@@ -20,6 +20,7 @@ SERVER_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_DIR="$(dirname "$SERVER_DIR")"
 DATA_DIR="$REPO_DIR/data"
 LIB_DIR="$REPO_DIR/src/lib"
+SCRIPTS_DIR="$REPO_DIR/scripts"
 REPO_REMOTE_DIR="$(dirname "$REMOTE_DIR")"
 
 echo "Syncing server code to ${DROPLET_HOST}:${REMOTE_DIR} ..."
@@ -35,8 +36,11 @@ rsync -az "$DATA_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/data/"
 echo "Syncing shared elo/categoryGenerator lib (server imports these from ../src/lib) ..."
 rsync -az "$LIB_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/src/lib/"
 
+echo "Syncing TMDb enrichment scripts (server imports tmdb.js/enrichMovie.js/mergeSourceMovie.js from ../scripts for Search & Suggest, #243) ..."
+rsync -az "$SCRIPTS_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/scripts/"
+
 echo "Fixing ownership (rsync preserves the local file owner, not the service account) ..."
-ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/data ${REPO_REMOTE_DIR}/src"
+ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/data ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts"
 
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"
