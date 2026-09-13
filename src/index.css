@@ -1387,3 +1387,36 @@ body {
     background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
 }
+
+/* Start screen + its two full-screen sub-pickers (#361) */
+
+.start-screen-body {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.start-screen-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--text-high);
+}
+
+.start-screen-button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.start-screen-button--secondary {
+  border: 1px solid var(--surface-border);
+}
+
+.new-ranking-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-high);
+}
+
+.new-ranking-list,
+.continue-ranking-list {
+  scrollbar-width: thin;
+}

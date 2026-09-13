@@ -11,6 +11,7 @@ import {
   unmarkAllSkipped as unmarkAllSkippedLocal,
   restoreSkipped as restoreSkippedLocal,
   getSkippedCount as getSkippedCountLocal,
+  loadSnapshotForContinue,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
 
@@ -200,6 +201,17 @@ export function getSavedRankings(subset, pg13) {
 
 export function getSavedRanking(id) {
   return request(`/api/rankings/${id}`)
+}
+
+// "Continue" a saved ranking from the Start screen (#361) — imports the
+// snapshot's own eloRating for each of its movies into this browser's local
+// state (see loadSnapshotForContinue) and resets timesRanked to 0, so the
+// caller can then switch to the snapshot's own subset/pg13 and fetch a fresh
+// turn, same as Refine Ranking's own flow but starting from the snapshot's
+// ratings instead of whatever's currently active locally.
+export async function continueSavedRanking(id) {
+  const saved = await getSavedRanking(id)
+  loadSnapshotForContinue(saved.movies.map((m) => ({ movieId: m.id, eloRating: m.eloRating })))
 }
 
 // Lazily backfills a share slug (#220) for a saved ranking that predates

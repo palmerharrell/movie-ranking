@@ -136,3 +136,18 @@ export function resetTimesRankedOnly(movieIds) {
   }
   writeAll(state)
 }
+
+// "Continue" a saved ranking from the Start screen (#361): imports a saved
+// snapshot's own eloRating for each entry, overwriting whatever's currently
+// in this browser's local state for those movies (which may have drifted
+// since the snapshot was saved, e.g. a Reset or a further Refine pass), and
+// resets timesRanked to 0 — same "keep the rating, re-rank fresh" idea as
+// resetTimesRankedOnly above, just importing the rating from the snapshot
+// rather than reading whatever's already stored locally.
+export function loadSnapshotForContinue(entries) {
+  const state = readAll()
+  for (const { movieId, eloRating } of entries) {
+    state[movieId] = { eloRating, timesRanked: 0 }
+  }
+  writeAll(state)
+}
