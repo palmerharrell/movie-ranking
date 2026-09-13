@@ -11,6 +11,7 @@ import {
   unmarkAllSkipped as unmarkAllSkippedLocal,
   restoreSkipped as restoreSkippedLocal,
   getSkippedCount as getSkippedCountLocal,
+  getSkippedIdsMostRecentFirst,
   loadSnapshotForContinue,
 } from './localRankingStore.js'
 import { getOrCreateClientId } from './clientId.js'
@@ -110,10 +111,15 @@ export function restoreSkipped(movieId, eloRating, timesRanked) {
 // Every persistently-skipped movie across the whole pool, regardless of
 // which subset is currently active — skip state isn't scoped to a subset
 // (#136), so the Skipped view (#137) needs the unfiltered pool rather than
-// whatever subset the rest of the app is currently showing.
+// whatever subset the rest of the app is currently showing. Ordered
+// most-recently-skipped-first (#374) rather than `movies`' own alphabetical/
+// eloRating order.
 export async function getSkippedMovies() {
   const movies = await getMovies()
-  return movies.filter((m) => m.skipped)
+  const byId = new Map(movies.filter((m) => m.skipped).map((m) => [m.id, m]))
+  return getSkippedIdsMostRecentFirst()
+    .map((id) => byId.get(id))
+    .filter(Boolean)
 }
 
 // The true count of skipped movies across the whole pool (#337) — same
@@ -228,4 +234,24 @@ export function shareRanking(id) {
 // just the Top 10, public fields only (see getSharedRankingTopTen).
 export function getSharedRanking(slug) {
   return request(`/api/rankings/share/${slug}`)
+}
+
+// Search & Suggest (#243). Up to 5 live TMDb candidates for a typed title —
+// {tmdbId, title, year, posterUrl}[] — for the user to pick from before
+// anything is added, rather than trusting a single best-guess match.
+export function searchTmdbForSuggestion(query) {
+  return request(`/api/suggestions/search?q=${encodeURIComponent(query)}`)
+}
+
+// Enriches and persists the chosen TMDb candidate (#243), tagged
+// 'user-suggested' server-side — see server/suggestionService.js. Throws if
+// it's already in the pool. Returns the new movie's static metadata; the
+// caller is responsible for re-fetching movies/turn state afterward if it
+// wants the addition to show up immediately (App.jsx does this via
+// noteMoviesUpdate after a successful add).
+export function addSuggestedMovie(tmdbId) {
+  return request('/api/suggestions', {
+    method: 'POST',
+    body: JSON.stringify({ tmdbId, clientId: getOrCreateClientId() }),
+  })
 }

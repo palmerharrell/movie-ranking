@@ -80,6 +80,16 @@ export function unmarkAllSkipped(movieIds) {
   writeSkippedIds(ids)
 }
 
+// Skipped-movie ids in most-recently-skipped-first order (#374), for the
+// Skipped view's own list — `writeSkippedIds` serializes the Set in
+// insertion order (a plain JS Set iterates in insertion order, and
+// `markSkipped`/`unmarkSkipped`+re-add always append via `.add`), so the
+// stored array is already oldest-to-newest; this just reverses it rather
+// than tracking a separate timestamp per movie.
+export function getSkippedIdsMostRecentFirst() {
+  return [...readSkippedIds()].reverse()
+}
+
 // The true count of persistently-skipped movies across the whole pool,
 // regardless of which subset is active (#337) — a direct, synchronous read
 // of the same skipped-ids set the Skipped view's own list

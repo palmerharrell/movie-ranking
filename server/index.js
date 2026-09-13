@@ -12,6 +12,7 @@ import {
   getSharedRankingTopTen,
   ensureShareSlug,
 } from './rankingService.js'
+import { searchForSuggestion, addSuggestion } from './suggestionService.js'
 
 dotenv.config({ quiet: true })
 
@@ -20,6 +21,14 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data')
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db')
 const PORT = process.env.PORT || 3001
 const API_TOKEN = process.env.API_TOKEN
+// Only needed for Search & Suggest's live TMDb lookups (#243) — every other
+// endpoint serves already-enriched data, so a deployment that hasn't set
+// this yet still starts up; the two suggestion endpoints below just answer
+// 503 until it's configured, rather than the hard exit API_TOKEN gets.
+const TMDB_API_KEY = process.env.TMDB_API_KEY
+if (!TMDB_API_KEY) {
+  console.warn('Missing TMDB_API_KEY in .env — Search & Suggest endpoints will return 503.')
+}
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:5173'
 // Opt-in, off by default (unset in the droplet's own server/.env — see
 // CLAUDE.md's Online deployment section — so production CORS stays exactly
@@ -80,9 +89,37 @@ app.get('/api/movies', (req, res) => {
   const popular = req.query.popular === 'true'
   const genre = req.query.genre || null
   const pg13 = req.query.pg13 === 'true'
-  const movies = getMovies(DATA_DIR, { family, popular, genre, pg13 })
+  const movies = getMovies(DATA_DIR, db, { family, popular, genre, pg13 })
   if (!movies) return res.status(404).json({ error: 'Movie pool not found' })
   res.json(movies)
+})
+
+// Search & Suggest (#243): live TMDb candidates for a typed title, for the
+// user to pick from before anything is added — see suggestionService.js.
+app.get('/api/suggestions/search', async (req, res) => {
+  if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDb search is not configured on this server' })
+  const query = req.query.q || ''
+  try {
+    res.json(await searchForSuggestion(TMDB_API_KEY, query))
+  } catch (err) {
+    res.status(502).json({ error: err.message })
+  }
+})
+
+// Enriches and persists the TMDb candidate the user picked (#243). Not a
+// build-time addition to movies.json — see db.js's suggested_movies table
+// for why these are kept separately and merged in at read time.
+app.post('/api/suggestions', async (req, res) => {
+  if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDb search is not configured on this server' })
+  const tmdbId = Number(req.body.tmdbId)
+  if (!Number.isInteger(tmdbId)) {
+    return res.status(400).json({ error: 'tmdbId must be an integer' })
+  }
+  try {
+    res.json(await addSuggestion(db, DATA_DIR, TMDB_API_KEY, tmdbId, req.body.clientId))
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
 })
 
 app.post('/api/rankings', (req, res) => {

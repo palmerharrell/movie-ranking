@@ -139,8 +139,12 @@ exposed in the UI.
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
   lists every persistently-skipped movie (poster/title/year, matching the
-  Rankings row styling) with a per-movie "Un-skip" button and a "Clear All"
-  action that un-skips everything at once — both call
+  Rankings row styling), most-recently-skipped first (#374,
+  `localRankingStore.js`'s `getSkippedIdsMostRecentFirst` — the skipped-ids
+  set's own insertion order, reversed, rather than a separate stored
+  timestamp per movie) — the most useful order for spotting a skip to
+  undo, since that's usually the one just made — with a per-movie "Un-skip"
+  button and a "Clear All" action that un-skips everything at once — both call
   `api.unmarkSkipped`/`localRankingStore.js`'s `unmarkSkipped` directly,
   independent of whether the pack that skip happened in is still active, so
   a skip can be reversed at any time, not just immediately after it happens.
@@ -922,6 +926,66 @@ language entries, and 1 country entry, grouped in the picker:
   the toggle in the other state) is left untouched. This keeps a save from
   either being blocked by unrelated unranked movies, or fabricating
   "ranked" data for movies that were never actually compared.
+
+## Search & Suggest (#243)
+A ☰ menu item ("Search & Suggest", `src/components/SearchSuggestModal.jsx`,
+opened via `App.jsx`'s `showSearchSuggest` state) lets a visitor search the
+*entire* pool by title — unscoped by the active subset, mirroring the
+Skipped view's own unscoped fetch (#136), since a movie being looked for
+could belong to any subset — and, if it's missing, add it on the spot.
+- **Pool search:** live, client-side, case-insensitive substring match
+  against `title` as the user types (capped to 25 results), against the
+  pool fetched once on open via `api.getMovies()` (unfiltered). Clicking a
+  match opens the same `MovieDetailModal` every other movie row does.
+- **TMDb search:** a separate, explicit "Search TMDb" button/Enter
+  keypress (not fired on every keystroke, to keep this to one TMDb call
+  per actual search) hits `GET /api/suggestions/search?q=`, returning up
+  to 5 live candidates (`{tmdbId, title, year, posterUrl}`,
+  `scripts/tmdb.js`'s `searchMovies`) for the user to pick from — several
+  candidates rather than a single best guess, since a person confirming
+  which of several same-titled movies they mean needs to see more than
+  one option.
+- **Adding a candidate** is one click ("Add to Pool") — that click *is*
+  the human confirmation that the poster/year shown is the right movie, so
+  once clicked, `POST /api/suggestions` enriches and persists it
+  immediately with no further approval step
+  (`server/suggestionService.js`'s `addSuggestion`, reusing
+  `scripts/enrichMovie.js`'s `enrichMovieByTmdbId` — the same enrichment
+  the build-time pipeline uses, just skipping straight to a known tmdbId
+  instead of an ambiguous title/year search). Deduped against both
+  `movies.json` and prior suggestions by `tmdbId` before ever calling
+  TMDb; a duplicate throws `"This movie is already in the pool"`.
+- **Where it's stored — not movies.json:** unlike every other source in
+  the pool, a Search & Suggest addition is *not* written into
+  `data/movies.json`. `deploy.sh` rsyncs `data/` one-way, local repo to
+  droplet, overwriting the droplet's copy on every deploy — writing
+  straight into the droplet's `movies.json` would mean the very next
+  unrelated deploy silently wipes out anyone's suggestions. Instead, a new
+  `suggested_movies` SQLite table (`server/db.js`, alongside the existing
+  `saved_rankings` table) stores each addition (`id`, `tmdb_id` UNIQUE,
+  `data` — the full enriched movie JSON, `created_at`,
+  `suggested_by_client_id`), and `rankingService.js`'s `loadAllMovies`
+  merges these rows in with `movies.json`'s own entries at read time —
+  `getMovies`, `getSavedRankingMovies`, and `getSharedRankingTopTen` all go
+  through it. Since `server/movieStore.js` already reads `movies.json`
+  fresh off disk on every request (no cache), a suggestion is visible to
+  every visitor immediately, no redeploy needed. Tagged
+  `sources: ['user-suggested']` — distinct from `'personal'` and every
+  published-list source id — so a future curation pass (#351) can find
+  and review accumulated suggestions separately before folding any of
+  them into a real `data/sources/*.source.json` and letting it graduate
+  out of this table for good.
+- **Server-side TMDb key:** every other backend endpoint serves
+  already-enriched data and needs no TMDb access at runtime (see **Online
+  deployment**) — Search & Suggest is the one exception, since matching a
+  brand-new title happens live. `TMDB_API_KEY` in `server/.env` is
+  optional; if unset, the two suggestion endpoints answer `503` rather
+  than the server refusing to start (unlike the required `API_TOKEN`).
+  `deploy.sh` also syncs `scripts/` to the droplet now (previously just
+  `src/lib`), since `suggestionService.js` imports
+  `scripts/tmdb.js`/`scripts/enrichMovie.js` directly rather than
+  duplicating TMDb-lookup logic that already exists for the build-time
+  enrichment pipeline.
 
 ## PG-13 and under toggle (#193, #200, #272)
 A global checkbox in the ☰ menu (`BannerMenu.jsx`, below a divider — moved

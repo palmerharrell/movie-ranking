@@ -7,6 +7,7 @@ import {
   markSkipped,
   unmarkSkipped,
   restoreSkipped,
+  getSkippedIdsMostRecentFirst,
 } from './localRankingStore.js'
 
 function createMemoryStorage() {
@@ -83,6 +84,23 @@ describe('markSkipped / unmarkSkipped', () => {
     const byId = new Map(merged.map((m) => [m.id, m]))
     expect(byId.get('1').timesRanked).toBe(0)
     expect(byId.get('1').skipped).toBe(true)
+  })
+})
+
+describe('getSkippedIdsMostRecentFirst (#374)', () => {
+  it('returns skipped ids most-recently-skipped first', () => {
+    markSkipped('1')
+    markSkipped('2')
+    markSkipped('3')
+    expect(getSkippedIdsMostRecentFirst()).toEqual(['3', '2', '1'])
+  })
+
+  it('moves a re-skipped movie back to the front', () => {
+    markSkipped('1')
+    markSkipped('2')
+    unmarkSkipped('1')
+    markSkipped('1')
+    expect(getSkippedIdsMostRecentFirst()).toEqual(['1', '2'])
   })
 })
 
