@@ -17,21 +17,19 @@ export function MovieTile({ movie, rank, onSkip, disabled, frozen, onOpenDetail 
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...attributes}
       {...(frozen ? {} : listeners)}
       onClick={frozen ? undefined : () => onOpenDetail(movie)}
-      className={`movie-tile flex touch-none select-none items-center gap-2 rounded-lg border px-2.5 py-2.5 sm:gap-3 sm:px-3.5 ${frozen ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${isAlreadyRanked ? 'movie-tile--already-ranked' : ''}`}
+      className={`movie-tile flex touch-none select-none items-center gap-2.5 overflow-hidden rounded-lg border ${frozen ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${isAlreadyRanked ? 'movie-tile--already-ranked' : ''}`}
+      style={{ ...style, padding: 'var(--tile-pad)' }}
       aria-label={
         frozen
           ? `${movie.title}, awaiting skip confirmation`
           : `Drag to reorder ${movie.title}, or click to see full details${isAlreadyRanked ? ' (already ranked)' : ''}`
       }
     >
-      <div className="flex shrink-0 flex-col items-center gap-1.5">
-        <span className={`movie-tile-rank text-center text-lg font-bold ${rank === 1 ? 'top-1' : ''}`}>
-          {rank}
-        </span>
+      <div className="movie-tile-rank-col">
+        <span className={`movie-tile-rank font-bold ${rank === 1 ? 'top-1' : ''}`}>{rank}</span>
         <button
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
@@ -49,15 +47,15 @@ export function MovieTile({ movie, rank, onSkip, disabled, frozen, onOpenDetail 
             setTimeout(() => onSkip(movie.id), 0)
           }}
           disabled={disabled}
-          className="skip-button flex h-9 w-9 items-center justify-center text-base leading-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-6 sm:w-6 sm:text-sm"
+          className="skip-button flex h-11 w-11 items-center justify-center text-base leading-none disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={`Haven't seen ${movie.title} — remove from this pack`}
         >
           <span aria-hidden="true">✕</span>
         </button>
       </div>
-      <div className="poster-placeholder h-16 w-11 shrink-0 overflow-hidden rounded-[5px] bg-cover sm:h-20 sm:w-14">
+      <div className="poster-placeholder pack-tile-poster">
         {movie.posterUrl && (
-          <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
+          <img src={movie.posterUrl} alt="" className="h-full w-full object-contain" />
         )}
       </div>
       <div className="min-w-0 flex-1">

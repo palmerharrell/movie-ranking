@@ -210,7 +210,7 @@ export function ResultsScreen({ movies, onDismiss, title, subtitle, onBack, onSh
           </div>
         )}
 
-        <div ref={scrollRef} className="mt-10 min-h-0 flex-1 overflow-y-auto pr-1">
+        <div ref={scrollRef} className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
           <div className="results-top-ten-panel">
             <ol className="results-top-ten grid grid-cols-2 gap-3 sm:grid-cols-5">
               {topTen.map((movie, index) => (
