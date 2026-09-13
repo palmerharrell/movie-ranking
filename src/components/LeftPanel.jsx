@@ -10,7 +10,7 @@ function sortMovies(movies) {
   })
 }
 
-function RankingsRow({ movie, rank, isLast, onOpenDetail }) {
+function RankingsRow({ movie, rank, isLast, onOpenDetail, onSkip }) {
   const topClass = rank <= 3 ? `top-${rank}` : ''
   const rankedClass = movie.timesRanked >= 1 ? 'ranked' : ''
   const tensClass = rank % 10 === 0 && !isLast ? 'tens-line' : ''
@@ -26,7 +26,7 @@ function RankingsRow({ movie, rank, isLast, onOpenDetail }) {
           <img src={movie.posterUrl} alt="" className="h-full w-full object-cover" />
         )}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-medium" style={{ color: 'var(--text-high)' }}>
           {movie.title}
         </p>
@@ -34,11 +34,22 @@ function RankingsRow({ movie, rank, isLast, onOpenDetail }) {
           {movie.year}
         </p>
       </div>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          onSkip(movie.id)
+        }}
+        className="skip-button flex h-11 w-11 shrink-0 items-center justify-center text-base leading-none"
+        aria-label={`Haven't seen ${movie.title} — skip`}
+      >
+        <span aria-hidden="true">✕</span>
+      </button>
     </li>
   )
 }
 
-export function LeftPanel({ movies, subset, onOpenDetail, open }) {
+export function LeftPanel({ movies, subset, onOpenDetail, onSkip, open }) {
   // #248: reset scroll position each time the (mobile) Rankings drawer is
   // opened, rather than leaving it wherever it was scrolled to last time —
   // `open` only toggles for the drawer (desktop shows this panel inline and
@@ -83,6 +94,7 @@ export function LeftPanel({ movies, subset, onOpenDetail, open }) {
             rank={index + 1}
             isLast={index === sorted.length - 1}
             onOpenDetail={onOpenDetail}
+            onSkip={onSkip}
           />
         ))}
       </ol>
