@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=Bungee&family=Monoton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600;1,800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=Bungee&family=Monoton&family=Audiowide&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -105,8 +105,10 @@ body {
   --text-credit: #aab3cc;
   --poster-placeholder: repeating-linear-gradient(135deg, #1b2540 0 5px, #212c4c 5px 10px);
   --font-display: 'Archivo Black', sans-serif;
+  --font-title: 'Audiowide', sans-serif;
   --font-ui: 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
+  --title-glow-color: #ff8fd0;
 }
 
 /* ===================== Light/Dark Mode (#265) =====================
@@ -135,6 +137,7 @@ body {
   --text-faint: #8990ac;
   --text-credit: #565f80;
   --poster-placeholder: repeating-linear-gradient(135deg, #e7eaf4 0 5px, #dde1f0 5px 10px);
+  --title-glow-color: #d6316f;
 }
 
 /* ===================== App shell ===================== */
@@ -481,15 +484,27 @@ body {
   color: var(--text-high);
 }
 
+/* Screen titles (5-pack category label, Head to Head/Top 10 Tough Choice
+   label, pack-choice title) share one "neon marquee" treatment — Audiowide
+   with a pink glow — distinct from the subset pill's Archivo Black (see
+   design_handoff_movie_ranker/README.md's Type section). */
 .pack-category-label {
-  font-family: var(--font-display);
-  color: var(--accent);
+  font-family: var(--font-title);
+  color: var(--title-glow-color);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--title-glow-color) 85%, transparent),
+    0 0 18px color-mix(in srgb, var(--title-glow-color) 45%, transparent);
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  font-size: var(--label-font);
 }
 
-[data-theme='popular'] .pack-category-label {
-  font-weight: 400;
-  font-size: var(--label-font);
-  line-height: 1.15;
+/* The glow reads as a lighting effect against the dark neon background —
+   on Light Mode's white surface it just looks like blur, so drop it and
+   fall back to a plain, readable accent color. */
+[data-color-mode='light'] .pack-category-label {
+  color: var(--accent2);
+  text-shadow: none;
 }
 
 .pack-card {
