@@ -953,6 +953,19 @@ body {
   color: var(--text-high);
 }
 
+/* Refine Ranking / Save on the Results screen — plain text-only styling
+   reads as "not a button" next to Share/Start Over's filled backgrounds, so
+   give these two their own resting background plus a stronger hover tint.
+   Scoped to .results-actions rather than changing .modal-button-secondary
+   itself, which is also the plain Cancel button in several other modals. */
+.results-actions .modal-button-secondary {
+  background: color-mix(in srgb, var(--text-high) 6%, transparent);
+}
+
+.results-actions .modal-button-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-high) 14%, transparent);
+}
+
 .modal-button-danger {
   padding: 9px 18px;
   border-radius: 8px;
@@ -1061,7 +1074,7 @@ body {
 .results-close-button {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   z-index: 21;
   display: flex;
   align-items: center;
