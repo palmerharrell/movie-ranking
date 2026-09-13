@@ -550,7 +550,11 @@ body {
 /* Head to Head / Top 10 Tough Choice intro announcement (#298) — a
    screen-filling opaque takeover (not a translucent scrim like
    .modal-overlay) since it's meant to read as a full interruption before
-   the pack itself becomes visible/interactive underneath. */
+   the pack itself becomes visible/interactive underneath. #363 added the
+   motion/color layered in here: a radial color burst plus two expanding
+   rings behind the text (all `aria-hidden`, purely decorative — the
+   `role="status"`/`aria-live="polite"` text content is unaffected), and an
+   animated gradient sweep + pop-in on the text itself. */
 .pack-intro-overlay {
   position: fixed;
   inset: 0;
@@ -559,6 +563,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow: hidden;
   background: var(--bg-page);
   opacity: 1;
   transition: opacity 300ms ease;
@@ -568,14 +573,128 @@ body {
   opacity: 0;
 }
 
+.pack-intro-overlay.pack-intro-fading .pack-intro-text,
+.pack-intro-overlay.pack-intro-fading .pack-intro-burst,
+.pack-intro-overlay.pack-intro-fading .pack-intro-ring {
+  animation-play-state: paused;
+}
+
+.pack-intro-burst {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--accent) 32%, transparent) 0%,
+    color-mix(in srgb, var(--accent2) 16%, transparent) 35%,
+    transparent 70%
+  );
+  opacity: 0;
+  animation: pack-intro-burst-in 1400ms ease-out forwards;
+}
+
+.pack-intro-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(70vw, 70vh);
+  height: min(70vw, 70vh);
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  opacity: 0;
+  animation: pack-intro-ring-expand 1400ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+.pack-intro-ring--2 {
+  border-color: color-mix(in srgb, var(--accent2) 55%, transparent);
+  animation-delay: 160ms;
+}
+
+@keyframes pack-intro-burst-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes pack-intro-ring-expand {
+  0% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.25);
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
 .pack-intro-text {
+  position: relative;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 9vw, 4rem);
+  font-size: clamp(2.75rem, 13vw, 6.5rem);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   text-align: center;
-  color: var(--accent);
+  background-image: linear-gradient(
+    100deg,
+    var(--accent) 0%,
+    var(--accent2) 45%,
+    var(--accent) 90%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 45%, transparent));
+  animation:
+    pack-intro-pop 550ms cubic-bezier(0.22, 1.5, 0.36, 1) both,
+    pack-intro-shimmer 1800ms ease-in-out 550ms infinite;
+}
+
+@keyframes pack-intro-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(24px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pack-intro-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pack-intro-burst,
+  .pack-intro-ring {
+    display: none;
+  }
+
+  .pack-intro-text {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 /* Movie tile (pack) */
@@ -703,6 +822,15 @@ body {
   transform: translate(-50%, -50%) rotate(0deg) scale(1.7);
   z-index: 3;
   opacity: 1;
+  /* Border flash (the animation below) starts immediately, but the scale-up
+     transform is held back a beat (#366) so the flash reads as "this one's
+     selected" before the poster visibly grows, rather than both firing in
+     the same instant. */
+  transition:
+    transform 520ms cubic-bezier(0.2, 0.8, 0.25, 1) 120ms,
+    box-shadow 320ms ease,
+    opacity 320ms ease,
+    border-color 320ms ease;
   animation: h2hWinFlash 900ms ease-in-out 1;
 }
 
@@ -748,29 +876,6 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-}
-
-.head-to-head-confirm-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(5, 7, 15, 0.72);
-}
-
-.head-to-head-confirm-card {
-  width: 100%;
-  max-width: 300px;
-  padding: 18px;
-  border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  text-align: center;
-  color: var(--text-high);
 }
 
 .movie-detail-info-button {

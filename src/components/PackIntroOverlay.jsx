@@ -10,6 +10,9 @@ export function PackIntroOverlay({ label, fading }) {
       role="status"
       aria-live="polite"
     >
+      <div className="pack-intro-burst" aria-hidden="true" />
+      <div className="pack-intro-ring pack-intro-ring--1" aria-hidden="true" />
+      <div className="pack-intro-ring pack-intro-ring--2" aria-hidden="true" />
       <span className="pack-intro-text">{label}!</span>
     </div>
   )
