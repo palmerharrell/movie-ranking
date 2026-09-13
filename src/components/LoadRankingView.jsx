@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
-import { subsetLabel } from '../lib/genreSubsets.js'
+import { subsetLabel, subsetMoviesLabel } from '../lib/genreSubsets.js'
 import { buildShareUrl } from '../lib/shareLink.js'
 import { ResultsScreen } from './ResultsScreen.jsx'
 
@@ -39,7 +39,7 @@ export function LoadRankingView({ subset, pg13, onClose }) {
     return (
       <ResultsScreen
         movies={selected.movies}
-        title={selected.name}
+        scopeLabel={subsetMoviesLabel(subset, pg13)}
         onBack={() => setSelected(null)}
         onDismiss={onClose}
         onShare={handleShare}

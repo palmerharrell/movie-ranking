@@ -63,7 +63,10 @@ export function BannerMenu({
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={(event) => {
+          event.currentTarget.blur()
+          setOpen((prev) => !prev)
+        }}
         className="banner-menu-button"
         aria-label="Menu"
         aria-haspopup="true"

@@ -3,6 +3,7 @@ import {
   mergeWithLocalState,
   applyRankToLocalState,
   resetLocalState,
+  resetTimesRankedOnly,
   markSkipped,
   unmarkSkipped,
   restoreSkipped,
@@ -160,5 +161,30 @@ describe('resetLocalState', () => {
     expect(byId.get('1').timesRanked).toBe(0)
     expect(byId.get('2').timesRanked).toBe(0)
     expect(byId.get('3').timesRanked).toBe(1)
+  })
+})
+
+describe('resetTimesRankedOnly', () => {
+  it('resets timesRanked but keeps eloRating, for the given movie ids only', () => {
+    applyRankToLocalState(mergeWithLocalState(STATIC_MOVIES))
+    const before = new Map(mergeWithLocalState(STATIC_MOVIES).map((m) => [m.id, m.eloRating]))
+
+    resetTimesRankedOnly(['1', '2'])
+
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').timesRanked).toBe(0)
+    expect(byId.get('1').eloRating).toBe(before.get('1'))
+    expect(byId.get('2').timesRanked).toBe(0)
+    expect(byId.get('2').eloRating).toBe(before.get('2'))
+    expect(byId.get('3').timesRanked).toBe(1)
+  })
+
+  it('leaves a movie with no existing entry untouched', () => {
+    resetTimesRankedOnly(['1'])
+    const merged = mergeWithLocalState(STATIC_MOVIES)
+    const byId = new Map(merged.map((m) => [m.id, m]))
+    expect(byId.get('1').timesRanked).toBe(0)
+    expect(byId.get('1').eloRating).toBe(1000)
   })
 })
