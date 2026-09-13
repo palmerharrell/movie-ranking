@@ -878,12 +878,6 @@ body {
   color: var(--text-faint);
 }
 
-.movie-detail-info-button {
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--text-mid);
-  border: 1px solid var(--surface-border);
-}
-
 /* Pack choice screen (#297) — 3 candidate packs to pick from, replacing the
    old "Up Next" queue dropdown. Cards share .head-to-head-card's bordered/
    surfaced/hoverable treatment since both are "tap this whole card to
@@ -933,11 +927,6 @@ body {
   font-family: var(--font-ui);
   font-size: var(--pack-choice-title-font);
   line-height: 1.2;
-}
-
-.movie-detail-info-button:hover:not(:disabled) {
-  color: var(--text-high);
-  border-color: var(--accent);
 }
 
 .head-to-head-vs {
@@ -1386,4 +1375,37 @@ body {
     border-color: var(--accent-hover);
     background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
+}
+
+/* Start screen + its two full-screen sub-pickers (#361) */
+
+.start-screen-body {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.start-screen-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--text-high);
+}
+
+.start-screen-button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.start-screen-button--secondary {
+  border: 1px solid var(--surface-border);
+}
+
+.new-ranking-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-high);
+}
+
+.new-ranking-list,
+.continue-ranking-list {
+  scrollbar-width: thin;
 }

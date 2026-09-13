@@ -14,6 +14,9 @@ import { InstructionsModal } from './components/InstructionsModal.jsx'
 import { MovieDetailModal } from './components/MovieDetailModal.jsx'
 import { PackIntroOverlay } from './components/PackIntroOverlay.jsx'
 import { PackChoiceScreen } from './components/PackChoiceScreen.jsx'
+import { StartScreen } from './components/StartScreen.jsx'
+import { NewRankingScreen } from './components/NewRankingScreen.jsx'
+import { ContinueRankingScreen } from './components/ContinueRankingScreen.jsx'
 import * as api from './lib/api.js'
 import { isFamilyGenre } from './lib/familyMode.js'
 import { selectPopular } from './lib/popularMode.js'
@@ -87,6 +90,11 @@ function isFullyRanked(movies) {
 }
 
 function App() {
+  // The Start screen (#361) gates entry into the app: 'start' shows the
+  // Start a New Ranking / Continue choice, 'newRanking' shows the
+  // full-screen subset list, 'continueRanking' shows the list of saved
+  // rankings to resume, and 'app' is the normal ranking UI below.
+  const [screen, setScreen] = useState('start')
   const [subset, setSubset] = useState(initialSubset)
   const [pg13, setPg13] = useState(initialPg13)
   const [colorMode, setColorMode] = useState(initialColorMode)
@@ -387,11 +395,12 @@ function App() {
   // would otherwise flash the previous subset's content for a beat before
   // this settles (#175).
   useEffect(() => {
+    if (screen !== 'app') return
     setSkippedMovies([])
     setAwaitingLastSkipConfirm(false)
     loadSubset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subset, pg13])
+  }, [subset, pg13, screen])
 
   function handleReorder(reorderedMovies) {
     setTurn((prev) => ({ type: 'pack', pack: { ...prev.pack, movies: reorderedMovies } }))
@@ -682,6 +691,78 @@ function App() {
     }
   }
 
+  // "Start a New Ranking" (#361): picking a subset from the full-screen list
+  // just sets it active and enters the app, same as picking it from the
+  // banner's own subset pill later would — whatever local progress already
+  // exists for that subset (if any) picks up where it left off.
+  function handlePickNewSubset(id) {
+    setSubset(id)
+    setScreen('app')
+  }
+
+  // "Continue" a saved ranking (#361) — imports the snapshot's own
+  // eloRating for its movies into local state (api.continueSavedRanking,
+  // resetting timesRanked to 0) and switches into that snapshot's own
+  // subset/pg13, the same reset-then-refetch shape as Refine Ranking above
+  // but seeded from the snapshot instead of whatever's currently active.
+  // Left to throw on failure — ContinueRankingScreen's own handler shows the
+  // error inline and keeps the list open rather than entering the app.
+  async function handleContinueRanking(ranking) {
+    await api.continueSavedRanking(ranking.id)
+    setShowResultsScreen(false)
+    setResultsShareSlug(null)
+    setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
+    wasFullyRanked.current = false
+    setSubset(ranking.subset)
+    setPg13(!!ranking.pg13)
+    setScreen('app')
+  }
+
+  if (screen === 'start') {
+    return (
+      <div
+        data-theme="popular"
+        data-color-mode={colorMode}
+        className="app-shell flex flex-col overflow-hidden"
+        style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
+      >
+        <StartScreen onStartNew={() => setScreen('newRanking')} onContinue={() => setScreen('continueRanking')} />
+      </div>
+    )
+  }
+
+  if (screen === 'newRanking') {
+    return (
+      <div
+        data-theme="popular"
+        data-color-mode={colorMode}
+        className="app-shell flex flex-col overflow-hidden"
+        style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
+      >
+        <NewRankingScreen
+          allMoviesCount={allMoviesCount}
+          directorSubsets={directorSubsets}
+          onPick={handlePickNewSubset}
+          onBack={() => setScreen('start')}
+        />
+      </div>
+    )
+  }
+
+  if (screen === 'continueRanking') {
+    return (
+      <div
+        data-theme="popular"
+        data-color-mode={colorMode}
+        className="app-shell flex flex-col overflow-hidden"
+        style={{ '--film-reel-bg-url': `url(${filmReelBg})` }}
+      >
+        <ContinueRankingScreen onSelect={handleContinueRanking} onBack={() => setScreen('start')} />
+      </div>
+    )
+  }
+
   return (
     <div
       data-theme="popular"
@@ -828,7 +909,6 @@ function App() {
                     category={activePack}
                     onPick={handleHeadToHeadPick}
                     disabled={busy || switchingSubset || !!packIntro}
-                    onOpenDetail={setDetailMovie}
                   />
                 ) : (
                   <RightPanel

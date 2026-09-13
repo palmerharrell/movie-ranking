@@ -227,8 +227,9 @@ exposed in the UI.
   about. Falls through to the normal pack flow if the threshold isn't met
   or fewer than 2 ranked movies are available.
 - **Intro announcement (#298):** whenever a Head to Head or Top 10 Tough
-  Choice pack becomes the active pack — via "Rank →", picking a queued pack,
-  or a subset switch — `App.jsx` shows a screen-filling `PackIntroOverlay`
+  Choice pack becomes the active pack — via "Rank →", picking that pack as a
+  pack-choice candidate (#365), or a subset switch — `App.jsx` shows a
+  screen-filling `PackIntroOverlay`
   (`"Head to Head!"` or `"Top 10 Tough Choice!"`, taken straight from the
   pack's own `category.label`) for `PACK_INTRO_DISPLAY_MS` (1.4s) before
   fading out over `PACK_INTRO_FADE_MS` (300ms). The pack itself is already
@@ -281,16 +282,26 @@ exposed in the UI.
   Five, Head to Head, or Top 10 Tough Choice, exactly as generated before —
   or, with `PACK_CHOICE_CHANCE` (35%) probability checked first, a 3-way
   **choice** of candidate packs (`PackChoiceScreen.jsx`) that the user picks
-  between instead of one just appearing. Choice candidates are always 3
-  normal 5-tile packs (attribute-based or Random Five); Head to Head and Top
-  10 Tough Choice never appear as one of the 3 options (`allowHeadToHead:
-  false` when building each candidate) — those two only ever show up on
-  their own, un-chosen, forced turns, same frequency/logic as before. Each
+  between instead of one just appearing. Choice candidates are usually 3
+  normal 5-tile packs (attribute-based or Random Five), but a candidate can
+  also turn out to be Head to Head or Top 10 Tough Choice (#365) — each
+  candidate is built via the same `generateCategory` rolls (Tough
+  Choice/Head to Head/Random Five chances, in that order) a forced turn
+  would use, so a 2-movie candidate is just as possible as any other pack
+  type. `PackChoiceCard`'s poster-stack rendering already scales to any pack
+  size, and picking a Head to Head/Tough Choice candidate hands off to
+  `HeadToHeadPanel` the same way a forced turn of that type would — App.jsx
+  dispatches purely off the chosen pack's own `type`, with no
+  choice-specific branch. Each
   candidate also gets its own `forcedIndexOffset` into the #224
   forced-inclusion backstop, since all 3 are drawn from the same
   `movies`/`totalRankedCount` snapshot (none have been submitted yet) and
   would otherwise all force in the identical backstop movie if more than one
-  rolled Random Five. Picking a candidate (`onChoose`/`handleChoosePack` in
+  rolled Random Five (the offset has no effect on a Head to Head/Tough
+  Choice candidate, since that pack type never uses the backstop). A Head to
+  Head/Tough Choice candidate can still get deduped away by the same
+  distinct-label check every candidate goes through, same as two Random Five
+  rolls would. Picking a candidate (`onChoose`/`handleChoosePack` in
   `App.jsx`) needs no network round trip — the other two are simply
   discarded; the *next* turn is only generated once the chosen pack actually
   gets ranked/submitted. This is an explicit, acknowledged trade-off left
@@ -547,7 +558,7 @@ every component just reads the resulting vars (`--tile-gap`, `--tile-pad`,
 (640–819px, Safari with both toolbars — iPhone 11 ≈ 651px), **tight**
 (<640px, landscape or Safari with an extra banner, where credit lines drop
 entirely). Tap targets (44px minimum — the pack tile skip button, footer
-tabs, Head to Head info button) never shrink across tiers; only spacing,
+tabs) never shrink across tiers; only spacing,
 gaps, and non-essential type do. The footer (see **Footer** below) is a
 normal-flow sibling of the pack area rather than a `position: fixed` bar,
 so it can never cover content and needs no compensating bottom padding on
@@ -560,6 +571,35 @@ or category label always fits on one line instead of wrapping and pushing
 the layout around.
 
 ## UI layout
+- **Start screen (#361, `App.jsx`'s `screen` state):** the app's landing
+  gate, shown before any subset/pack loads — every launch starts here rather
+  than dropping straight back into whatever subset was last active. Two
+  buttons: **Start a New Ranking** opens `NewRankingScreen.jsx`, a
+  full-screen version of the banner's own subset-picker list
+  (`NewRankingScreen.jsx` mirrors `SubsetPicker.jsx`'s own Curated
+  Lists/Genres/Language/Directors/Not Recommended grouping) — picking any
+  option there just activates that subset and enters the app
+  (`handlePickNewSubset`), same as picking it from the banner pill later
+  would; whatever local progress already exists for that subset (if any)
+  picks up where it left off. **Continue** opens `ContinueRankingScreen.jsx`,
+  a scrollable list of every saved ranking across every subset+PG-13
+  combination (unlike `LoadRankingView.jsx`'s own list, which is scoped to
+  only the currently-active subset+toggle, since there's no active subset
+  yet at this point in the flow) — legacy snapshots saved before the
+  `subset` column existed (#186) are excluded, since there's no pool to
+  resume into without one. `StartScreen.jsx` itself checks
+  `api.getSavedRankings()` on mount and keeps the Continue button disabled
+  until at least one such resumable snapshot exists anywhere. Picking a saved
+  ranking here isn't the read-only view `LoadRankingView.jsx` shows —
+  `handleContinueRanking`/`api.continueSavedRanking` imports that snapshot's
+  own eloRating for each of its movies into this browser's local state
+  (`localRankingStore.js`'s `loadSnapshotForContinue`, overwriting whatever
+  was already stored locally for those movies) and resets `timesRanked` to
+  0, then switches to that snapshot's own subset/pg13 and enters the app —
+  the same "keep the rating, re-rank fresh" shape as **Refine Ranking**
+  below, just seeded from the snapshot instead of whatever's currently
+  active. Both sub-screens have a ← Back control returning to the Start
+  screen.
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
   sorted by eloRating. Header reads "\<Subset\> Rankings" (#316,
   `subsetLabel` — the same shared label `SaveRankingModal`/`ResetRankingModal`/
@@ -624,11 +664,13 @@ the layout around.
   next click) on pointerdown with zero required movement by default, so
   without a small movement threshold a tap could never fire `onClick` on a
   draggable tile. Head to Head cards (see **Category generation & turns**)
-  are themselves one big click target for submitting a pick, so they get a
-  small "ⓘ" button in the card's own corner instead (`onClick` there stops
-  propagation so it opens the detail card without also submitting a pick)
-  — the only place this is needed, since it's the one view where a movie's
-  full title has no other way to be seen.
+  are themselves one big click target for submitting a pick, so this modal
+  never opens for them — a "ⓘ" button in the card's corner used to open it
+  there (#223), but #356 removed it in favor of showing every one of those
+  same details (full title, year, director, full cast, genres) directly in
+  `HeadToHeadPanel.jsx`'s own caption beneath the posters instead, since
+  that's still the one view where a movie's full title has no other way to
+  be seen.
 - **Banner (responsive-redesign, `App.jsx`'s `.app-header-row`):** one row,
   fixed height at every density tier — replacing the earlier two-row
   layout (a centered "Movie Ranking" title badge on top, the subset picker
