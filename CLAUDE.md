@@ -139,8 +139,12 @@ exposed in the UI.
   is still active (`onUndoSkip`), a dedicated "Skipped" view (#137,
   `src/components/SkippedView.jsx`, opened via the ☰ menu's "Skipped" item)
   lists every persistently-skipped movie (poster/title/year, matching the
-  Rankings row styling) with a per-movie "Un-skip" button and a "Clear All"
-  action that un-skips everything at once — both call
+  Rankings row styling), most-recently-skipped first (#374,
+  `localRankingStore.js`'s `getSkippedIdsMostRecentFirst` — the skipped-ids
+  set's own insertion order, reversed, rather than a separate stored
+  timestamp per movie) — the most useful order for spotting a skip to
+  undo, since that's usually the one just made — with a per-movie "Un-skip"
+  button and a "Clear All" action that un-skips everything at once — both call
   `api.unmarkSkipped`/`localRankingStore.js`'s `unmarkSkipped` directly,
   independent of whether the pack that skip happened in is still active, so
   a skip can be reversed at any time, not just immediately after it happens.
