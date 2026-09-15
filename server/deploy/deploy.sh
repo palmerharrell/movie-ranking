@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-# Syncs /server to the droplet and restarts the API service.
-# Usage: DROPLET_HOST=user@host ./deploy.sh
+# Syncs /server code (not pool data) to the droplet and restarts the API
+# service. Usage: DROPLET_HOST=user@host ./deploy.sh
+#
+# Deliberately does NOT sync data/ (#383). The droplet's own data/movies.json
+# plus its suggested_movies table (server/db.js) is the live pool's source of
+# truth — Search & Suggest additions and any droplet-side curation only exist
+# there. Syncing data/ here would silently overwrite it with this machine's
+# possibly-stale copy on every routine code deploy. To pull the droplet's
+# current pool down to this machine instead (e.g. before a local curation
+# pass), use pull-pool-data.sh in this same directory. A brand-new droplet
+# still needs data/movies.json placed once by hand (or via
+# pull-pool-data.sh's underlying `GET /api/movies` reversed with a one-off
+# rsync) before the API can serve anything.
 set -euo pipefail
 
 DROPLET_HOST="${DROPLET_HOST:?Set DROPLET_HOST=user@host}"
@@ -18,7 +29,6 @@ REMOTE_USER="${REMOTE_USER:-movie-ranking}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_DIR="$(dirname "$SERVER_DIR")"
-DATA_DIR="$REPO_DIR/data"
 LIB_DIR="$REPO_DIR/src/lib"
 SCRIPTS_DIR="$REPO_DIR/scripts"
 REPO_REMOTE_DIR="$(dirname "$REMOTE_DIR")"
@@ -30,9 +40,6 @@ rsync -az --delete \
   --exclude .env \
   "$SERVER_DIR/" "${DROPLET_HOST}:${REMOTE_DIR}/"
 
-echo "Syncing enriched movie data ..."
-rsync -az "$DATA_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/data/"
-
 echo "Syncing shared elo/categoryGenerator lib (server imports these from ../src/lib) ..."
 rsync -az "$LIB_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/src/lib/"
 
@@ -40,7 +47,7 @@ echo "Syncing TMDb enrichment scripts (server imports tmdb.js/enrichMovie.js/mer
 rsync -az "$SCRIPTS_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/scripts/"
 
 echo "Fixing ownership (rsync preserves the local file owner, not the service account) ..."
-ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/data ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts"
+ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts"
 
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"

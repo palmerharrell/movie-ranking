@@ -478,6 +478,29 @@ exposed in the UI.
   person's own devices — only completed, named snapshots do (see below). Each
   browser also holds a durable random client id (`src/lib/clientId.js`),
   generated once and reused, unrelated to any account.
+- **Pool data direction (#383):** the droplet's own `data/movies.json` plus
+  its `suggested_movies` table (see **Search & Suggest**) is the live pool's
+  source of truth, not this dev machine's repo checkout.
+  `server/deploy/deploy.sh` syncs server code only — it deliberately never
+  touches `data/` on the droplet, so a routine code deploy can't silently
+  overwrite live pool data (additions from Search & Suggest, or any
+  droplet-side curation) with a possibly-stale local copy. To bring this
+  repo's `data/movies.json` up to date with the droplet, run
+  `server/deploy/pull-pool-data.sh` (see `server/deploy/README.md`), which
+  hits the running API's own `GET /api/movies` (already merged with
+  `suggested_movies` — see `loadAllMovies` below) and overwrites the local
+  file with the result; the pulled file is then reviewed and committed like
+  any other change, making the repo's copy a periodic snapshot/export of the
+  live pool rather than a hand-edited original. Enrichment
+  (`enrich.js`/`enrich-sources.js`, see **Confirmed decisions**) still runs
+  locally against this pulled-down copy — adding a new published-list
+  source is a curation decision (#351), not something to automate — a
+  fully-automated droplet-side enrichment job is tracked separately, not
+  part of this data-direction change. There is no routine "push"
+  script back up to the droplet; pushing a locally-edited `movies.json` is a
+  deliberate one-off action (see `server/deploy/README.md`), and folding
+  `suggested_movies` rows into `movies.json` for good is its own separate
+  piece of work (#382, **NOT YET IMPLEMENTED**).
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —
@@ -957,13 +980,9 @@ could belong to any subset — and, if it's missing, add it on the spot.
   TMDb; a duplicate throws `"This movie is already in the pool"`.
 - **Where it's stored — not movies.json:** unlike every other source in
   the pool, a Search & Suggest addition is *not* written into
-  `data/movies.json`. `deploy.sh` rsyncs `data/` one-way, local repo to
-  droplet, overwriting the droplet's copy on every deploy — writing
-  straight into the droplet's `movies.json` would mean the very next
-  unrelated deploy silently wipes out anyone's suggestions. Instead, a new
-  `suggested_movies` SQLite table (`server/db.js`, alongside the existing
-  `saved_rankings` table) stores each addition (`id`, `tmdb_id` UNIQUE,
-  `data` — the full enriched movie JSON, `created_at`,
+  `data/movies.json`. A new `suggested_movies` SQLite table (`server/db.js`,
+  alongside the existing `saved_rankings` table) stores each addition (`id`,
+  `tmdb_id` UNIQUE, `data` — the full enriched movie JSON, `created_at`,
   `suggested_by_client_id`), and `rankingService.js`'s `loadAllMovies`
   merges these rows in with `movies.json`'s own entries at read time —
   `getMovies`, `getSavedRankingMovies`, and `getSharedRankingTopTen` all go
@@ -974,7 +993,12 @@ could belong to any subset — and, if it's missing, add it on the spot.
   published-list source id — so a future curation pass (#351) can find
   and review accumulated suggestions separately before folding any of
   them into a real `data/sources/*.source.json` and letting it graduate
-  out of this table for good.
+  out of this table for good (#382, **NOT YET IMPLEMENTED** — the table
+  just accumulates indefinitely today, with no automated rollup). See
+  **Online deployment**'s pool-data-direction note (#383) for why this
+  table, not `movies.json` directly, is still the right place for a live
+  addition to land even now that `deploy.sh` no longer overwrites the
+  droplet's data on every deploy.
 - **Server-side TMDb key:** every other backend endpoint serves
   already-enriched data and needs no TMDb access at runtime (see **Online
   deployment**) — Search & Suggest is the one exception, since matching a
