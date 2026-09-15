@@ -2,8 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createDb, addSuggestedMovie } from './db.js'
-import { addSuggestion, searchForSuggestion } from './suggestionService.js'
+import { createDb, addSuggestedMovie, getSuggestedMovies } from './db.js'
+import { addSuggestion, searchForSuggestion, removeSuggestion } from './suggestionService.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, '__fixtures__', 'data')
@@ -31,4 +31,17 @@ test('addSuggestion throws for a tmdbId already suggested previously, without ca
 test('searchForSuggestion returns [] for a blank query, without calling TMDb', async () => {
   assert.deepEqual(await searchForSuggestion('unused-api-key', ''), [])
   assert.deepEqual(await searchForSuggestion('unused-api-key', '   '), [])
+})
+
+test('removeSuggestion deletes a pending suggestion by tmdbId and returns true', () => {
+  const db = freshDb()
+  addSuggestedMovie(db, { id: '555', tmdbId: 555, title: 'Graduated', sources: ['user-suggested'] })
+
+  assert.equal(removeSuggestion(db, 555), true)
+  assert.deepEqual(getSuggestedMovies(db), [])
+})
+
+test('removeSuggestion returns false for a tmdbId with no pending suggestion', () => {
+  const db = freshDb()
+  assert.equal(removeSuggestion(db, 999), false)
 })

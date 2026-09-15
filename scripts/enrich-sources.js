@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { enrichMovieByTitleYear } from './enrichMovie.js'
 import { sourceIdFromFilename, upsertSourceMovie } from './mergeSourceMovie.js'
+import { hashFile, loadState, saveState } from './enrichState.js'
 
 dotenv.config({ quiet: true })
 
@@ -11,6 +12,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const SOURCES_DIR = path.join(ROOT, 'data', 'sources')
 const OUTPUT_FILE = path.join(ROOT, 'data', 'movies.json')
+// Tracks a content hash per already-processed source file (#385) — read by
+// --changed-only below to skip re-enriching sources nothing has touched
+// since last time. Lives in data/ alongside movies.json (droplet-local
+// generated state, gitignored, same reasoning as movies.json itself: it
+// describes this machine's/droplet's own processing history, not something
+// to check into the repo).
+const STATE_FILE = path.join(ROOT, 'data', '.enrich-state.json')
 
 function loadPool() {
   if (!fs.existsSync(OUTPUT_FILE)) return []
@@ -43,12 +51,15 @@ async function main() {
   // (#151) needs merging and re-enriching the other ~50 sources' several
   // thousand already-merged entries would just burn TMDb quota for no
   // change (upsertSourceMovie never overwrites an existing entry's fields
-  // on a source-only match anyway).
-  const requestedSourceIds = process.argv.slice(2)
+  // on a source-only match anyway). Explicit source ids always force
+  // reprocessing regardless of --changed-only below.
+  const args = process.argv.slice(2)
+  const changedOnly = args.includes('--changed-only')
+  const requestedSourceIds = args.filter((a) => a !== '--changed-only')
   const allSourceFiles = fs.existsSync(SOURCES_DIR)
     ? fs.readdirSync(SOURCES_DIR).filter((f) => f.endsWith('.source.json'))
     : []
-  const sourceFiles =
+  let sourceFiles =
     requestedSourceIds.length > 0
       ? allSourceFiles.filter((f) => requestedSourceIds.includes(sourceIdFromFilename(f)))
       : allSourceFiles
@@ -59,6 +70,22 @@ async function main() {
         : `No *.source.json files found in ${SOURCES_DIR}.`,
     )
     process.exit(1)
+  }
+
+  // --changed-only (#385, meant for the scheduled droplet job — see
+  // server/deploy/README.md) skips any source file whose content hash
+  // matches what's already recorded in STATE_FILE from a previous run,
+  // instead of re-enriching all ~50 sources' several thousand entries every
+  // time nothing changed. Only applies when no explicit sourceIds were
+  // given — an explicit id on the command line is a deliberate request to
+  // reprocess that source right now.
+  const state = loadState(STATE_FILE)
+  if (changedOnly && requestedSourceIds.length === 0) {
+    sourceFiles = sourceFiles.filter((file) => hashFile(path.join(SOURCES_DIR, file)) !== state[file])
+    if (sourceFiles.length === 0) {
+      console.log('No source files changed since the last run — nothing to do.')
+      return
+    }
   }
 
   let pool = loadPool()
@@ -85,9 +112,11 @@ async function main() {
       if ((i + 1) % 20 === 0) console.log(`  ${i + 1}/${entries.length}`)
     }
     console.log(`${sourceId}: ${added} new, ${merged} merged into existing entries`)
+    state[file] = hashFile(path.join(SOURCES_DIR, file))
   }
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(pool, null, 2))
+  saveState(STATE_FILE, state)
   console.log(`Wrote ${pool.length} movies to ${OUTPUT_FILE}`)
 }
 
