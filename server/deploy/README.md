@@ -46,6 +46,19 @@ One-time setup on the droplet, then a repeatable `deploy.sh` for updates.
    cd /opt/movie-ranking/server && sudo -u movie-ranking npm ci --omit=dev
    ```
 
+5b. **Install `dotenv` at the repo root (#385)**, so `scripts/enrich-sources.js`
+   (imported by the scheduled enrichment timer below, and by `enrich.js`/
+   `discoverTopMovies.js`/`refreshEnrichedFields.js` if ever run here by
+   hand) can resolve it — Node's module resolution looks for `node_modules`
+   starting from the *importing file's own directory* upward, so
+   `server/node_modules` (installed above) isn't visible to files under
+   `scripts/`, a sibling directory:
+   ```
+   cd /opt/movie-ranking && sudo -u movie-ranking npm install --no-save dotenv@^17.4.2
+   ```
+   Skip this if `TMDB_API_KEY` isn't set — the scheduled enrichment timer is
+   optional and `scripts/` isn't otherwise imported server-side.
+
 6. **Install and enable the systemd service:**
    ```
    sudo cp deploy/movie-ranking-api.service /etc/systemd/system/

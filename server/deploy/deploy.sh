@@ -62,5 +62,15 @@ ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} $
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"
 
+# scripts/enrich-sources.js (the scheduled enrichment timer, #385) imports
+# dotenv — Node's module resolution looks for node_modules starting from the
+# importing file's own directory upward, so server/node_modules (installed
+# above) isn't visible to scripts/, a sibling directory. Installed
+# unconditionally (cheap, idempotent no-op once present) so this can't
+# silently regress on a future droplet rebuild even if the one-time setup
+# step in README.md is missed.
+echo "Ensuring scripts/ can resolve dotenv (#385) ..."
+ssh "$DROPLET_HOST" "cd ${REPO_REMOTE_DIR} && npm install --no-save dotenv@^17.4.2"
+
 echo "Done. Tailing recent logs:"
 ssh "$DROPLET_HOST" "sudo journalctl -u movie-ranking-api -n 20 --no-pager"
