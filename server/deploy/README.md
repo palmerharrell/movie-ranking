@@ -85,7 +85,29 @@ From the repo root, after merging changes to `server/`:
 ```
 DROPLET_HOST=user@droplet ./server/deploy/deploy.sh
 ```
-This rsyncs `server/`, `data/`, and `src/lib/`, fixes ownership back to the
+This rsyncs `server/`, `src/lib/`, and `scripts/`, fixes ownership back to the
 `movie-ranking` service account (rsync otherwise preserves the deploying
 machine's local file owner), reinstalls dependencies, and restarts the
-systemd service. It does not touch `.env` or `data.db` on the droplet.
+systemd service. It does not touch `.env`, `data.db`, or `data/` on the
+droplet (#383) — the droplet's own `data/movies.json` plus its
+`suggested_movies` table (server/db.js) is the live pool's source of truth,
+so a routine code deploy must not silently overwrite it with this machine's
+possibly-stale copy.
+
+## Pulling pool data down for local curation
+
+To bring this repo's `data/movies.json` up to date with whatever's live on
+the droplet (including anything added via Search & Suggest, #243) before a
+local curation pass:
+```
+API_BASE_URL=https://api.example.com API_TOKEN=<the droplet's API_TOKEN> ./server/deploy/pull-pool-data.sh
+```
+This calls the running API's own `GET /api/movies` (which already merges
+`movies.json` with `suggested_movies` — see `rankingService.js`'s
+`loadAllMovies`) and overwrites the local `data/movies.json` with the result.
+Review the diff (`git diff data/movies.json`) and commit it like any other
+change — the repo's copy is a periodic snapshot of the droplet's live data,
+not a hand-edited original. There's currently no reverse "push" script:
+pushing a locally-edited `data/movies.json` back up is a deliberate one-off
+action (e.g. `rsync -az data/ user@droplet:/opt/movie-ranking/data/`), not
+part of the routine `deploy.sh` flow.
