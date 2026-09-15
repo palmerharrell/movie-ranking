@@ -2,18 +2,40 @@ import { NOTABLE_STUDIOS, KEYWORD_LABELS } from '../src/lib/curatedAttributes.js
 
 const BASE_URL = 'https://api.themoviedb.org/3'
 
+// Retries on 429 (rate limited) and 5xx (transient) — a maintainer running
+// enrichMovie.js by hand notices and re-runs on failure, but the unattended
+// scheduled batch job (#385, enrich-sources.js) has no one watching, so a
+// single transient TMDb hiccup shouldn't kill an entire run. Honors TMDb's
+// own Retry-After header when present, otherwise a simple exponential
+// backoff (1s, 2s, 4s, 8s).
+const MAX_RETRIES = 4
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function tmdbFetch(apiKey, endpoint, params = {}) {
   const url = new URL(BASE_URL + endpoint)
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null) url.searchParams.set(k, v)
   }
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
-  })
-  if (!res.ok) {
-    throw new Error(`TMDb request failed (${res.status}): ${url}`)
+
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+    })
+    if (res.ok) return res.json()
+
+    const retryable = res.status === 429 || res.status >= 500
+    if (!retryable || attempt >= MAX_RETRIES) {
+      throw new Error(`TMDb request failed (${res.status}): ${url}`)
+    }
+    const retryAfterSeconds = Number(res.headers.get('retry-after'))
+    const delayMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+      ? retryAfterSeconds * 1000
+      : 2 ** attempt * 1000
+    await sleep(delayMs)
   }
-  return res.json()
 }
 
 export async function searchMovie(apiKey, title, year) {

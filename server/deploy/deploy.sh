@@ -2,16 +2,22 @@
 # Syncs /server code (not pool data) to the droplet and restarts the API
 # service. Usage: DROPLET_HOST=user@host ./deploy.sh
 #
-# Deliberately does NOT sync data/ (#383). The droplet's own data/movies.json
-# plus its suggested_movies table (server/db.js) is the live pool's source of
-# truth — Search & Suggest additions and any droplet-side curation only exist
-# there. Syncing data/ here would silently overwrite it with this machine's
-# possibly-stale copy on every routine code deploy. To pull the droplet's
-# current pool down to this machine instead (e.g. before a local curation
-# pass), use pull-pool-data.sh in this same directory. A brand-new droplet
-# still needs data/movies.json placed once by hand (or via
-# pull-pool-data.sh's underlying `GET /api/movies` reversed with a one-off
-# rsync) before the API can serve anything.
+# Deliberately does NOT sync data/movies.json or data/.enrich-state.json
+# (#383). The droplet's own data/movies.json plus its suggested_movies table
+# (server/db.js) is the live pool's source of truth — Search & Suggest
+# additions and any droplet-side curation only exist there. Syncing those
+# here would silently overwrite them with this machine's possibly-stale copy
+# on every routine code deploy. To pull the droplet's current pool down to
+# this machine instead (e.g. before a local curation pass), use
+# pull-pool-data.sh in this same directory. A brand-new droplet still needs
+# data/movies.json placed once by hand (or via pull-pool-data.sh's
+# underlying `GET /api/movies` reversed with a one-off rsync) before the API
+# can serve anything.
+#
+# data/sources/*.source.json IS synced below, unlike the rest of data/ — it's
+# git-tracked curation input (#351), not live pool state, so a routine code
+# deploy keeping it current is safe and lets the scheduled enrichment job
+# (#385, movie-ranking-enrich.timer) see new/changed sources.
 set -euo pipefail
 
 DROPLET_HOST="${DROPLET_HOST:?Set DROPLET_HOST=user@host}"
@@ -31,6 +37,7 @@ SERVER_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_DIR="$(dirname "$SERVER_DIR")"
 LIB_DIR="$REPO_DIR/src/lib"
 SCRIPTS_DIR="$REPO_DIR/scripts"
+SOURCES_DIR="$REPO_DIR/data/sources"
 REPO_REMOTE_DIR="$(dirname "$REMOTE_DIR")"
 
 echo "Syncing server code to ${DROPLET_HOST}:${REMOTE_DIR} ..."
@@ -46,8 +53,11 @@ rsync -az "$LIB_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/src/lib/"
 echo "Syncing TMDb enrichment scripts (server imports tmdb.js/enrichMovie.js/mergeSourceMovie.js from ../scripts for Search & Suggest, #243) ..."
 rsync -az "$SCRIPTS_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/scripts/"
 
+echo "Syncing curated source lists (git-tracked input for the scheduled enrichment job, #385) ..."
+rsync -az --delete "$SOURCES_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/data/sources/"
+
 echo "Fixing ownership (rsync preserves the local file owner, not the service account) ..."
-ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts"
+ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts ${REPO_REMOTE_DIR}/data/sources"
 
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"
