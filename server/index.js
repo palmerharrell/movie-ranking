@@ -12,7 +12,8 @@ import {
   getSharedRankingTopTen,
   ensureShareSlug,
 } from './rankingService.js'
-import { searchForSuggestion, addSuggestion } from './suggestionService.js'
+import { searchForSuggestion, addSuggestion, removeSuggestion } from './suggestionService.js'
+import { getSuggestedMovies } from './db.js'
 
 dotenv.config({ quiet: true })
 
@@ -94,6 +95,17 @@ app.get('/api/movies', (req, res) => {
   res.json(movies)
 })
 
+// Raw, unmerged rows from suggested_movies (#382) — deliberately NOT the
+// same as filtering GET /api/movies for sources.includes('user-suggested'):
+// once a suggestion graduates into movies.json (scripts/graduateSuggestions.js),
+// its movies.json entry keeps that same source tag forever, so that filter
+// alone can't tell "still pending in this table" apart from "already
+// graduated" once both exist. Used by graduateSuggestions.js's list/graduate/
+// clear commands; not called by the app's own UI.
+app.get('/api/suggestions', (req, res) => {
+  res.json(getSuggestedMovies(db))
+})
+
 // Search & Suggest (#243): live TMDb candidates for a typed title, for the
 // user to pick from before anything is added — see suggestionService.js.
 app.get('/api/suggestions/search', async (req, res) => {
@@ -120,6 +132,22 @@ app.post('/api/suggestions', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
+})
+
+// Removes a suggestion once it's been folded into data/movies.json for good
+// and pushed to the droplet (#382) — a maintenance action, not something the
+// app's own UI calls. Deleting it before the corresponding movies.json entry
+// actually reaches the droplet would make that movie briefly vanish from the
+// pool entirely, so scripts/graduateSuggestions.js only calls this after
+// confirming the push.
+app.delete('/api/suggestions/:tmdbId', (req, res) => {
+  const tmdbId = Number(req.params.tmdbId)
+  if (!Number.isInteger(tmdbId)) {
+    return res.status(400).json({ error: 'tmdbId must be an integer' })
+  }
+  const removed = removeSuggestion(db, tmdbId)
+  if (!removed) return res.status(404).json({ error: 'No pending suggestion with that tmdbId' })
+  res.status(204).end()
 })
 
 app.post('/api/rankings', (req, res) => {

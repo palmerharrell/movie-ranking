@@ -1,6 +1,6 @@
 import { searchMovies } from '../scripts/tmdb.js'
 import { enrichMovieByTmdbId } from '../scripts/enrichMovie.js'
-import { addSuggestedMovie, getSuggestedMovies } from './db.js'
+import { addSuggestedMovie, getSuggestedMovies, removeSuggestedMovie } from './db.js'
 import { loadMovies } from './movieStore.js'
 
 // The source id every Search & Suggest addition is tagged with (#243) —
@@ -42,4 +42,13 @@ export async function addSuggestion(db, dataDir, apiKey, tmdbId, clientId) {
 
   const movie = { id: String(enriched.tmdbId), ...enriched, sources: [SUGGESTION_SOURCE_ID] }
   return addSuggestedMovie(db, movie, clientId)
+}
+
+// Removes one suggestion once it's been folded into data/movies.json for
+// good and pushed to the droplet (#382, scripts/graduateSuggestions.js) —
+// see removeSuggestedMovie in db.js for why this matters. Returns true if a
+// matching suggestion was removed, false if tmdbId wasn't a pending
+// suggestion.
+export function removeSuggestion(db, tmdbId) {
+  return removeSuggestedMovie(db, tmdbId)
 }

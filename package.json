@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "enrich": "node scripts/enrich.js",
     "enrich-sources": "node scripts/enrich-sources.js",
+    "graduate-suggestions": "node scripts/graduateSuggestions.js",
     "test": "vitest run"
   },
   "dependencies": {

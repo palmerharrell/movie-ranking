@@ -489,18 +489,35 @@ exposed in the UI.
   `server/deploy/pull-pool-data.sh` (see `server/deploy/README.md`), which
   hits the running API's own `GET /api/movies` (already merged with
   `suggested_movies` — see `loadAllMovies` below) and overwrites the local
-  file with the result; the pulled file is then reviewed and committed like
-  any other change, making the repo's copy a periodic snapshot/export of the
-  live pool rather than a hand-edited original. Enrichment
+  file with the result. `data/movies.json` is gitignored (a generated build
+  artifact — see **Data model**'s note on `movies.json`'s own contents —
+  not checked into the repo) rather than a hand-edited original, so there's
+  no diff to review/commit here; it's simply this machine's refreshed
+  working copy for local curation/enrichment. Enrichment
   (`enrich.js`/`enrich-sources.js`, see **Confirmed decisions**) still runs
   locally against this pulled-down copy — adding a new published-list
   source is a curation decision (#351), not something to automate — a
   fully-automated droplet-side enrichment job is tracked separately, not
   part of this data-direction change. There is no routine "push"
   script back up to the droplet; pushing a locally-edited `movies.json` is a
-  deliberate one-off action (see `server/deploy/README.md`), and folding
-  `suggested_movies` rows into `movies.json` for good is its own separate
-  piece of work (#382, **NOT YET IMPLEMENTED**).
+  deliberate one-off action (see `server/deploy/README.md`). Folding
+  `suggested_movies` rows into `movies.json` for good (#382) is its own
+  manual, three-step flow — `scripts/graduateSuggestions.js`'s `list`/
+  `graduate`/`clear`(`-all`) commands, documented in
+  `server/deploy/README.md`'s **Graduating Search & Suggest additions**
+  section — deliberately not a fully-automatic job, so a maintainer reviews
+  what's being folded in before it becomes permanent. `graduate` folds every
+  currently-pending suggestion into the local `data/movies.json` (via the
+  same `upsertSourceMovie` dedup-by-`tmdbId` logic `enrich-sources.js` uses,
+  tagged with the `'user-suggested'` source id — no TMDb re-fetch needed,
+  since a suggestion already carries full enriched data); after that's
+  pushed to the droplet, `clear`/`clear-all` deletes the now-redundant rows
+  from `suggested_movies` via the new `DELETE /api/suggestions/:tmdbId`
+  endpoint (see **Endpoints** below) — run in that order, since clearing a
+  row before its `movies.json` entry has actually reached the droplet would
+  make that movie briefly vanish from the live pool entirely (`loadAllMovies`
+  concatenates `movies.json` with `suggested_movies` with no dedup of its
+  own).
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —
@@ -560,6 +577,12 @@ exposed in the UI.
       ranking's public Top 10 by its share slug: `{name, subset, pg13,
       movies}`, `movies` limited to `id`/`title`/`year`/`posterUrl` only;
       see **Sharing** under **Saved rankings**
+    - `DELETE /api/suggestions/:tmdbId` (#382) — removes a
+      Search & Suggest addition from the `suggested_movies` table by its
+      `tmdbId`, once it's been folded into `data/movies.json` for good and
+      pushed to the droplet. A maintenance action `scripts/graduateSuggestions.js`
+      calls, not something the app's own UI ever calls; 404s if `tmdbId`
+      isn't a pending suggestion. See **Search & Suggest** below.
   - Auth: single-user app, so a shared bearer token in an env var, checked on
     every request, is sufficient — no user accounts needed yet; the one
     exception is the public share endpoint above, deliberately excluded
@@ -991,11 +1014,11 @@ could belong to any subset — and, if it's missing, add it on the spot.
   every visitor immediately, no redeploy needed. Tagged
   `sources: ['user-suggested']` — distinct from `'personal'` and every
   published-list source id — so a future curation pass (#351) can find
-  and review accumulated suggestions separately before folding any of
-  them into a real `data/sources/*.source.json` and letting it graduate
-  out of this table for good (#382, **NOT YET IMPLEMENTED** — the table
-  just accumulates indefinitely today, with no automated rollup). See
-  **Online deployment**'s pool-data-direction note (#383) for why this
+  and review accumulated suggestions separately before folding them into
+  `data/movies.json` and letting them graduate out of this table for good
+  (#382, `scripts/graduateSuggestions.js` — see **Online deployment**'s
+  pool-data-direction note for the full `list`/`graduate`/`clear` flow).
+  See **Online deployment**'s pool-data-direction note (#383) for why this
   table, not `movies.json` directly, is still the right place for a live
   addition to land even now that `deploy.sh` no longer overwrites the
   droplet's data on every deploy.

@@ -9,9 +9,10 @@
 #
 # Usage: API_BASE_URL=https://api.example.com API_TOKEN=... ./pull-pool-data.sh
 #
-# After running, review the diff (git diff data/movies.json) before
-# committing — this overwrites the local file, so any uncommitted local edits
-# to it would be lost.
+# data/movies.json is gitignored (a generated build artifact, not checked
+# into the repo — see .gitignore) rather than something to `git diff`/commit,
+# so back this file up yourself first if you want to compare before/after —
+# this overwrites it outright.
 set -euo pipefail
 
 API_BASE_URL="${API_BASE_URL:?Set API_BASE_URL=https://your-api-host}"
@@ -34,4 +35,4 @@ console.log('Wrote ' + movies.length + ' movies to $OUT_FILE')
 "
 rm -f "$TMP_FILE"
 
-echo "Done. Run 'git diff data/movies.json' to review before committing."
+echo "Done."
