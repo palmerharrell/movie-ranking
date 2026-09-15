@@ -36,6 +36,9 @@ One-time setup on the droplet, then a repeatable `deploy.sh` for updates.
    PORT=3001
    DATA_DIR=/opt/movie-ranking/data
    DB_PATH=/opt/movie-ranking/server/data.db
+   TMDB_API_KEY=<your TMDb API key — powers Search & Suggest (#243) and the
+     scheduled source enrichment job (#385); both are optional and simply
+     stay disabled without it>
    ```
 
 5. **Install dependencies:**
@@ -50,6 +53,22 @@ One-time setup on the droplet, then a repeatable `deploy.sh` for updates.
    sudo systemctl enable --now movie-ranking-api
    sudo systemctl status movie-ranking-api
    ```
+
+6b. **Install and enable the scheduled source enrichment timer (#385,
+   optional — skip if `TMDB_API_KEY` isn't set)**, which runs
+   `scripts/enrich-sources.js --changed-only` daily so a new/changed
+   `data/sources/*.source.json` (synced by `deploy.sh`, see **Ongoing
+   deploys**) gets enriched automatically instead of requiring a manual
+   local run:
+   ```
+   sudo cp deploy/movie-ranking-enrich.service deploy/movie-ranking-enrich.timer /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now movie-ranking-enrich.timer
+   sudo systemctl list-timers movie-ranking-enrich.timer
+   ```
+   Trigger a run immediately (e.g. to test) with
+   `sudo systemctl start movie-ranking-enrich.service`, then check
+   `sudo journalctl -u movie-ranking-enrich.service -n 50 --no-pager`.
 
 7. **Set up Caddy for TLS + reverse proxy.** Edit `deploy/Caddyfile`, replacing
    `api.example.com` with the real subdomain (must have DNS pointed at the
@@ -85,14 +104,17 @@ From the repo root, after merging changes to `server/`:
 ```
 DROPLET_HOST=user@droplet ./server/deploy/deploy.sh
 ```
-This rsyncs `server/`, `src/lib/`, and `scripts/`, fixes ownership back to the
-`movie-ranking` service account (rsync otherwise preserves the deploying
-machine's local file owner), reinstalls dependencies, and restarts the
-systemd service. It does not touch `.env`, `data.db`, or `data/` on the
-droplet (#383) — the droplet's own `data/movies.json` plus its
-`suggested_movies` table (server/db.js) is the live pool's source of truth,
-so a routine code deploy must not silently overwrite it with this machine's
-possibly-stale copy.
+This rsyncs `server/`, `src/lib/`, `scripts/`, and `data/sources/`, fixes
+ownership back to the `movie-ranking` service account (rsync otherwise
+preserves the deploying machine's local file owner), reinstalls
+dependencies, and restarts the systemd service. It does not touch `.env`,
+`data.db`, `data/movies.json`, or `data/.enrich-state.json` on the droplet
+(#383) — the droplet's own `data/movies.json` plus its `suggested_movies`
+table (server/db.js) is the live pool's source of truth, so a routine code
+deploy must not silently overwrite it with this machine's possibly-stale
+copy. `data/sources/*.source.json` IS synced (git-tracked curation input,
+not live pool state — see #385) so the scheduled enrichment timer below
+always sees the latest sources.
 
 ## Pulling pool data down for local curation
 
@@ -112,6 +134,37 @@ demand. There's currently no reverse "push" script: pushing a
 locally-edited `data/movies.json` back up is a deliberate one-off action
 (e.g. `rsync -az data/ user@droplet:/opt/movie-ranking/data/`), not part of
 the routine `deploy.sh` flow.
+
+## Scheduled source enrichment (#385)
+
+Adding a new published-list source (#351) — e.g. an AFI Top 100 list, or a
+new `scripts/discoverTopMovies.js` genre target — used to require running
+`npm run enrich-sources` locally against TMDb before the new movies showed
+up anywhere. The `movie-ranking-enrich.timer` set up in **One-time setup**
+above runs `scripts/enrich-sources.js --changed-only` on the droplet daily
+instead, writing straight into the droplet's live `data/movies.json` (same
+trust level as Search & Suggest's own live writes — `upsertSourceMovie`
+never overwrites an existing entry's fields on a source-only match, so this
+can only add coverage, never corrupt what's already there).
+
+`--changed-only` skips any `data/sources/*.source.json` file whose content
+hash matches what a previous run already recorded in
+`data/.enrich-state.json` (gitignored, droplet-local) — so a nightly run
+only spends TMDb quota on sources that are actually new or edited, not all
+~50+ every time. Add or edit a `.source.json` file locally, commit it, and
+the next `deploy.sh` run (or a manual
+`rsync -az data/sources/ user@droplet:/opt/movie-ranking/data/sources/`)
+puts it in front of the timer.
+
+To force a specific source to re-enrich regardless of its recorded hash
+(e.g. after a schema change to what enrichment extracts) — the same
+explicit-argument behavior the script always had, run on the droplet:
+```
+ssh user@droplet 'cd /opt/movie-ranking && TMDB_API_KEY=... node scripts/enrich-sources.js afi-top-100'
+```
+TMDb rate limits (429s) and transient 5xx errors are retried with backoff
+(`scripts/tmdb.js`) — necessary for an unattended batch job with no one
+watching, unlike a manual local run.
 
 ## Graduating Search & Suggest additions (#382)
 

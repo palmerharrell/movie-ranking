@@ -493,12 +493,21 @@ exposed in the UI.
   artifact — see **Data model**'s note on `movies.json`'s own contents —
   not checked into the repo) rather than a hand-edited original, so there's
   no diff to review/commit here; it's simply this machine's refreshed
-  working copy for local curation/enrichment. Enrichment
-  (`enrich.js`/`enrich-sources.js`, see **Confirmed decisions**) still runs
-  locally against this pulled-down copy — adding a new published-list
-  source is a curation decision (#351), not something to automate — a
-  fully-automated droplet-side enrichment job is tracked separately, not
-  part of this data-direction change. There is no routine "push"
+  working copy for local curation/enrichment. Personal-import enrichment
+  (`enrich.js`, see **Confirmed decisions**) still runs locally against this
+  pulled-down copy — it has no TMDb-side source file to schedule against,
+  just a local Letterboxd export. Published-list source enrichment
+  (`enrich-sources.js`) instead runs automatically on the droplet (#385,
+  `movie-ranking-enrich.timer`, see `server/deploy/README.md`'s **Scheduled
+  source enrichment** section) — daily, incremental (only re-enriching a
+  `data/sources/*.source.json` file whose content has changed since its
+  last run, tracked in `data/.enrich-state.json`), writing straight into
+  the droplet's live `data/movies.json`. Deciding *which* published lists
+  to add stays a manual curation decision (#351) — you add/edit a
+  `.source.json` file locally and commit it, `deploy.sh` syncs
+  `data/sources/` (git-tracked curation input, unlike `movies.json`) to the
+  droplet on the next code deploy, and the timer picks it up from there.
+  There is no routine "push"
   script back up to the droplet; pushing a locally-edited `movies.json` is a
   deliberate one-off action (see `server/deploy/README.md`). Folding
   `suggested_movies` rows into `movies.json` for good (#382) is its own

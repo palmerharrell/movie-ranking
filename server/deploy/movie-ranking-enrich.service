@@ -1,0 +1,11 @@
+[Unit]
+Description=Movie Ranking incremental source enrichment (#385)
+
+[Service]
+Type=oneshot
+User=movie-ranking
+WorkingDirectory=/opt/movie-ranking
+EnvironmentFile=/opt/movie-ranking/server/.env
+ExecStart=/usr/bin/node scripts/enrich-sources.js --changed-only
+NoNewPrivileges=true
+PrivateTmp=true
