@@ -105,9 +105,33 @@ API_BASE_URL=https://api.example.com API_TOKEN=<the droplet's API_TOKEN> ./serve
 This calls the running API's own `GET /api/movies` (which already merges
 `movies.json` with `suggested_movies` — see `rankingService.js`'s
 `loadAllMovies`) and overwrites the local `data/movies.json` with the result.
-Review the diff (`git diff data/movies.json`) and commit it like any other
-change — the repo's copy is a periodic snapshot of the droplet's live data,
-not a hand-edited original. There's currently no reverse "push" script:
-pushing a locally-edited `data/movies.json` back up is a deliberate one-off
-action (e.g. `rsync -az data/ user@droplet:/opt/movie-ranking/data/`), not
-part of the routine `deploy.sh` flow.
+`data/movies.json` is gitignored (a generated build artifact, not checked
+into the repo), so there's no diff to commit — it's just this machine's
+working copy for local curation/enrichment, refreshed from the droplet on
+demand. There's currently no reverse "push" script: pushing a
+locally-edited `data/movies.json` back up is a deliberate one-off action
+(e.g. `rsync -az data/ user@droplet:/opt/movie-ranking/data/`), not part of
+the routine `deploy.sh` flow.
+
+## Graduating Search & Suggest additions (#382)
+
+Search & Suggest additions (#243) accumulate in the droplet's
+`suggested_movies` table rather than `movies.json` directly (see CLAUDE.md's
+**Search & Suggest** section). To fold accumulated suggestions into
+`data/movies.json` for good instead of leaving them there indefinitely:
+
+```
+API_BASE_URL=https://api.example.com API_TOKEN=<the droplet's API_TOKEN> npm run graduate-suggestions -- list
+API_BASE_URL=https://api.example.com API_TOKEN=<the droplet's API_TOKEN> npm run graduate-suggestions -- graduate
+```
+`graduate` writes the folded-in result straight to this machine's local
+`data/movies.json` (gitignored, nothing to commit — see above). Push that
+updated file to the droplet (same one-off `rsync` as above). Only after
+that push has landed, clear the now-redundant rows from the droplet's table:
+```
+API_BASE_URL=https://api.example.com API_TOKEN=<the droplet's API_TOKEN> npm run graduate-suggestions -- clear-all
+```
+Clearing before the push would make a graduated movie briefly vanish from
+the live pool (its `suggested_movies` row gone, its `movies.json` entry not
+yet on the droplet) — see `scripts/graduateSuggestions.js`'s own comments
+for the full ordering rationale.

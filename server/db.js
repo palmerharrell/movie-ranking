@@ -215,3 +215,14 @@ export function addSuggestedMovie(db, movie, clientId) {
   ).run(movie.id, movie.tmdbId, JSON.stringify(movie), clientId ?? null)
   return movie
 }
+
+// Removes one suggestion by tmdb_id (#382) — used once a suggestion has been
+// folded into data/movies.json for good (scripts/graduateSuggestions.js) and
+// pushed to the droplet, so it doesn't keep appearing twice: once from
+// movies.json, once from this table (loadAllMovies concatenates both with no
+// dedup of its own). Returns true if a row was deleted, false if tmdb_id
+// wasn't found.
+export function removeSuggestedMovie(db, tmdbId) {
+  const result = db.prepare('DELETE FROM suggested_movies WHERE tmdb_id = ?').run(tmdbId)
+  return result.changes > 0
+}
