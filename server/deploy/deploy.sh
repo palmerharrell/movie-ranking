@@ -17,7 +17,12 @@
 # data/sources/*.source.json IS synced below, unlike the rest of data/ — it's
 # git-tracked curation input (#351), not live pool state, so a routine code
 # deploy keeping it current is safe and lets the scheduled enrichment job
-# (#385, movie-ranking-enrich.timer) see new/changed sources.
+# (#385, movie-ranking-enrich.timer) see new/changed sources. data/
+# excluded-movies.json (#391) is git-tracked curation input in the same
+# spirit and is synced below too — both the scheduled enrichment job and
+# the live Search & Suggest endpoint (server/suggestionService.js) need the
+# droplet's own copy up to date so a pruned movie can't silently re-enter
+# the pool.
 set -euo pipefail
 
 DROPLET_HOST="${DROPLET_HOST:?Set DROPLET_HOST=user@host}"
@@ -38,6 +43,7 @@ REPO_DIR="$(dirname "$SERVER_DIR")"
 LIB_DIR="$REPO_DIR/src/lib"
 SCRIPTS_DIR="$REPO_DIR/scripts"
 SOURCES_DIR="$REPO_DIR/data/sources"
+EXCLUDED_MOVIES_FILE="$REPO_DIR/data/excluded-movies.json"
 REPO_REMOTE_DIR="$(dirname "$REMOTE_DIR")"
 
 echo "Syncing server code to ${DROPLET_HOST}:${REMOTE_DIR} ..."
@@ -56,8 +62,11 @@ rsync -az "$SCRIPTS_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/scripts/"
 echo "Syncing curated source lists (git-tracked input for the scheduled enrichment job, #385) ..."
 rsync -az --delete "$SOURCES_DIR/" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/data/sources/"
 
+echo "Syncing persistent movie-exclusion list (#391) ..."
+rsync -az "$EXCLUDED_MOVIES_FILE" "${DROPLET_HOST}:${REPO_REMOTE_DIR}/data/excluded-movies.json"
+
 echo "Fixing ownership (rsync preserves the local file owner, not the service account) ..."
-ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts ${REPO_REMOTE_DIR}/data/sources"
+ssh "$DROPLET_HOST" "sudo chown -R ${REMOTE_USER}:${REMOTE_USER} ${REMOTE_DIR} ${REPO_REMOTE_DIR}/src ${REPO_REMOTE_DIR}/scripts ${REPO_REMOTE_DIR}/data/sources ${REPO_REMOTE_DIR}/data/excluded-movies.json"
 
 echo "Installing dependencies and restarting service ..."
 ssh "$DROPLET_HOST" "cd ${REMOTE_DIR} && npm ci --omit=dev && sudo systemctl restart movie-ranking-api"
