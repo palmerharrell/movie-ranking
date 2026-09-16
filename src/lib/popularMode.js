@@ -47,8 +47,7 @@ export const CLASSIC_ERA_QUOTA = 20
 // sharing the genre/keyword, independent of the subset's overall size
 // (#203, found via the Musicals subset missing golden-age titles). This is
 // a floor, not a fixed partition: a subset whose natural top-N already
-// meets the quota (e.g. Italian, whose classics are popular enough to rank
-// highly on their own) is returned unchanged.
+// meets the quota is returned unchanged.
 export function selectTopByVoteCountWithEraQuota(movies, n, quota, cutoffYear) {
   const isClassic = (m) => m.year != null && m.year < cutoffYear
   return selectTopByVoteCountWithQuotas(movies, n, [{ matches: isClassic, quota }])

@@ -61,14 +61,6 @@ describe('selectGenreSubset', () => {
     ])
   })
 
-  it('matches by originalLanguage for language subsets', () => {
-    const movies = [
-      movie({ id: 'fr', originalLanguage: 'fr' }),
-      movie({ id: 'en', originalLanguage: 'en' }),
-    ]
-    expect(selectGenreSubset(movies, 'french').map((m) => m.id)).toEqual(['fr'])
-  })
-
   it('matches by productionCountries including GB for the british subset', () => {
     const movies = [
       movie({ id: 'gb', productionCountries: ['GB'] }),
@@ -189,10 +181,6 @@ describe('genreSubsetExclusions', () => {
       { type: 'genre', value: 'Romance' },
       { type: 'genre', value: 'Comedy' },
     ])
-  })
-
-  it('returns the language attribute for a language subset', () => {
-    expect(genreSubsetExclusions('french')).toEqual([{ type: 'language', value: 'fr' }])
   })
 
   it('returns the keyword attribute for musicals', () => {

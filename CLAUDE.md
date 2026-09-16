@@ -708,7 +708,7 @@ the layout around.
   buttons: **Start a New Ranking** opens `NewRankingScreen.jsx`, a
   full-screen version of the banner's own subset-picker list
   (`NewRankingScreen.jsx` mirrors `SubsetPicker.jsx`'s own Curated
-  Lists/Genres/Language/Directors/Not Recommended grouping) — picking any
+  Lists/Genres/Directors/Not Recommended grouping) — picking any
   option there just activates that subset and enters the app
   (`handlePickNewSubset`), same as picking it from the banner pill later
   would; whatever local progress already exists for that subset (if any)
@@ -863,8 +863,9 @@ There are no more cosmetic-only "themes" — the banner's picker
 **subset of the pool** to rank, and each subset carries its own visual
 identity (a `data-theme` value with its own CSS custom-property palette in
 `src/index.css`) purely as a side effect of which subset is active, not as
-an independent choice. Three general entries plus 15 genre entries, 3
-language entries, and 1 country entry, grouped in the picker:
+an independent choice. Three general entries plus 15 genre entries and 1
+country entry, grouped in the picker (#381 dropped the earlier French/
+Spanish/Italian language entries — see below):
 - **Popular** (`subset: 'popular'`, the default) — the top
   `POPULAR_POOL_SIZE` movies by TMDb `voteCount` (see **Popular subset**
   above). Dark, moody "Neon" palette (navy background, teal/pink accents) —
@@ -910,26 +911,26 @@ language entries, and 1 country entry, grouped in the picker:
   previously had its own bespoke warm/parchment-toned palette, which made it
   the last subset with a distinct visual identity; removed for the same
   reason Family's bespoke palette was, above.
-- **Genre/language subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
+- **Genre subsets** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`) —
   Comedies, Action, Mysteries, Horror, Sci-Fi, Fantasy, Romance, Rom-Com,
-  Musicals, Dramas, Adventure, Animation, Thrillers, Crime, French, Spanish,
-  Italian, Comic Book (see below). TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
+  Musicals, Dramas, Adventure, Animation, Thrillers, Crime, Comic Book (see
+  below). TMDb's "Family" genre is deliberately not a `GENRE_SUBSETS` entry
   — it's the defining attribute of the general **Family** subset above
   instead, so a second "Family" entry in the picker's Genres group would be
   redundant (this was previously framed as avoiding a naming collision with
   the old MPAA-based Family subset, #150; now that Family means this genre,
   it's the same subset, not a collision to avoid). Each filters the pool by
   the movie's own genre(s) (`genres[]`,
-  matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`),
-  keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad `Music`
-  genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister Act*,
-  which are real musicals TMDb doesn't keyword-tag), or `originalLanguage`
-  (French/Spanish/Italian) — then caps to `GENRE_SUBSET_POOL_SIZE` (150,
+  matched with AND semantics — Rom-Com requires both `Romance` and `Comedy`)
+  or keyword (`Musicals` — TMDb's `musical` keyword, not the too-broad
+  `Music` genre; plus two hardcoded `tmdbId` exceptions, *Coco* and *Sister
+  Act*, which are real musicals TMDb doesn't keyword-tag) — then caps to
+  `GENRE_SUBSET_POOL_SIZE` (150,
   raised from 100 in #330 — 100 gave too few packs per full subset run for
   Head to Head to show up more than once or twice, on top of just being
   more depth generally) via the shared `selectTopByVoteCountWithQuotas`
   (`src/lib/popularMode.js`) — smaller than Popular's `POPULAR_POOL_SIZE`
-  (300), since niche genre/language/country subsets don't have as much
+  (300), since niche genre/country subsets don't have as much
   depth of genuinely popular titles as Popular/Family/All Movies do;
   sharing Popular's cap left a long tail of obscure matches that users
   ended up skipping en masse (#165, e.g. nearly a third of the Sci-Fi
@@ -953,9 +954,9 @@ language entries, and 1 country entry, grouped in the picker:
   features, and a handful of votes is enough to tell an obscure-but-real
   classic from preservation ephemera almost nobody has "seen" (#207). Both
   are floors, not fixed partitions — a subset whose classics/canonical
-  movies are already popular enough to rank highly on their own (e.g.
-  Italian) is returned unchanged — and neither floor evicts a movie already
-  kept to satisfy the other, so filling one can't silently undo the other.
+  movies are already popular enough to rank highly on their own is returned
+  unchanged — and neither floor evicts a movie already kept to satisfy the
+  other, so filling one can't silently undo the other.
   Both floors together still don't guarantee any specific title clears the
   cap: with a fixed-size quota and, in a subset like Musicals, dozens of
   genuine classics/canonical titles competing for it, a lower-voteCount
@@ -966,12 +967,12 @@ language entries, and 1 country entry, grouped in the picker:
   into the pool — a Comedy added via personal import still surfaces here if
   popular enough. See **Building the list** below for how the pool is kept
   stocked with genuinely popular movies per subset, not just whatever we'd
-  already collected. Every genre/language subset here, plus Popular and
+  already collected. Every genre subset here, plus Popular and
   Family above, also excludes Marvel/DC movies (#180) — see **Comic Book**
   below for where they went and why.
 - **British** (`src/lib/genreSubsets.js`'s `GENRE_SUBSETS`, `id: 'british'`,
   #151) — filters by `productionCountries` including `"GB"` (unlike the
-  genre/language subsets above, "British" isn't derivable from `genres[]`/
+  genre subsets above, "British" isn't derivable from `genres[]`/
   `originalLanguage`, so it gets its own field — see **Data model**), then
   caps to `GENRE_SUBSET_POOL_SIZE` (150) via `selectTopByVoteCountWithQuotas`,
   same smaller-than-Popular cap and classic-era/canonical-source quotas as
