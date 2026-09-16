@@ -162,6 +162,20 @@ app.get('/api/search-tmdb', async (req, res) => {
   }
 })
 
+// Shared by /api/add and /api/unexclude — both land a TMDb-resolved movie
+// straight into movies.json the same way. Returns the new movie object, or
+// throws if TMDb has no data for it.
+async function enrichAndAddMovie(movies, tmdbId, title, year) {
+  const enriched = await enrichMovieByTmdbId(TMDB_API_KEY, tmdbId, title, year)
+  if (!enriched) {
+    throw new Error('TMDb has no data for this movie')
+  }
+  const movie = { id: String(enriched.tmdbId), ...enriched, sources: ['user-suggested'] }
+  movies.unshift(movie)
+  saveMovies(movies)
+  return movie
+}
+
 app.post('/api/add', async (req, res) => {
   if (!TMDB_API_KEY) {
     return res.status(503).json({ error: 'TMDb search is not configured — set TMDB_API_KEY in the repo root .env' })
@@ -178,13 +192,40 @@ app.post('/api/add', async (req, res) => {
   }
 
   try {
-    const enriched = await enrichMovieByTmdbId(TMDB_API_KEY, tmdbId, title, year)
-    if (!enriched) {
-      return res.status(502).json({ error: 'TMDb has no data for this movie' })
-    }
-    const movie = { id: String(enriched.tmdbId), ...enriched, sources: ['user-suggested'] }
-    movies.unshift(movie)
-    saveMovies(movies)
+    const movie = await enrichAndAddMovie(movies, tmdbId, title, year)
+    res.json(movie)
+  } catch (err) {
+    res.status(502).json({ error: err.message })
+  }
+})
+
+app.get('/api/excluded', (req, res) => {
+  res.json(loadExcluded())
+})
+
+app.post('/api/unexclude', async (req, res) => {
+  if (!TMDB_API_KEY) {
+    return res.status(503).json({ error: 'TMDb search is not configured — set TMDB_API_KEY in the repo root .env' })
+  }
+  const { tmdbId } = req.body || {}
+  if (!tmdbId) return res.status(400).json({ error: 'tmdbId is required' })
+
+  const excluded = loadExcluded()
+  const entry = excluded.find((e) => e.tmdbId === tmdbId)
+  if (!entry) {
+    return res.status(404).json({ error: 'This movie is not on the exclusion list' })
+  }
+
+  const movies = loadMovies()
+  if (movies.some((m) => m.tmdbId === tmdbId)) {
+    // Already back in the pool somehow — just drop the stale exclusion entry.
+    saveExcluded(excluded.filter((e) => e.tmdbId !== tmdbId))
+    return res.json(movies.find((m) => m.tmdbId === tmdbId))
+  }
+
+  try {
+    const movie = await enrichAndAddMovie(movies, tmdbId, entry.title, entry.year)
+    saveExcluded(excluded.filter((e) => e.tmdbId !== tmdbId))
     res.json(movie)
   } catch (err) {
     res.status(502).json({ error: err.message })
