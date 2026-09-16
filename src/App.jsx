@@ -224,6 +224,32 @@ function App() {
     return { family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13, subset }
   }
 
+  // Skip paths (#253) patch the already-scoped `movies` state directly
+  // rather than refetching through noteMoviesUpdate, since a skip is a pure
+  // client-side local-state change with no new server/local-store data to
+  // reconcile. But that means, unlike a "Rank ->"/Head to Head submission,
+  // they never checked whether the patch just completed the visible pool —
+  // e.g. skipping ("haven't seen") the very last remaining un-ranked movie
+  // removes it from the ranked-progress denominator (see **Progress
+  // tracking**) and can *by itself* make every remaining movie satisfy
+  // "ranked at least once," which per **Saved rankings** should surface the
+  // Results screen immediately, exactly like ranking it would. Mirrors
+  // noteMoviesUpdate's own transition check (only fire on the false->true
+  // edge) so this doesn't re-open the Results screen on every subsequent
+  // skip once the pool is already complete.
+  function applyMoviesPatch(updater) {
+    setMovies((prev) => {
+      if (!prev) return prev
+      const updated = updater(prev)
+      const fullyRanked = isFullyRanked(updated)
+      if (fullyRanked && !wasFullyRanked.current) {
+        setShowResultsScreen(true)
+      }
+      wasFullyRanked.current = fullyRanked
+      return updated
+    })
+  }
+
   // The live Results screen's Share button: if nothing's been saved yet for
   // this run, save it first (under a generated default name) to get a share
   // slug, then copy the link. ResultsScreen's own handleShareClick already
@@ -330,8 +356,19 @@ function App() {
   // or a subset switch) and the newly-active pack is one of those two
   // types. Distinguishing "Head to Head" from "Top 10 Tough Choice" is just
   // a matter of using the pack's own label — both share HEAD_TO_HEAD_TYPE.
+  // #253: a "Rank ->"/Head to Head submission that both completes the pool
+  // *and* rolls a Head to Head/Tough Choice pack as the already-generated
+  // next turn (see **Saved rankings**'s "next pack ... simply becomes
+  // visible again") would otherwise fire this effect purely off the new
+  // `activePack` reference, popping the "Head to Head!" announcement
+  // (z-index 60) on top of the just-triggered Results screen (z-index 50)
+  // the same instant it appears. Gating on `showResultsScreen` suppresses
+  // the intro while that screen is up; re-including it in the dependency
+  // array means dismissing the Results screen (with the same Head to
+  // Head/Tough Choice pack still active underneath) re-runs this effect and
+  // shows the announcement then instead — so it's deferred, not skipped.
   useEffect(() => {
-    if (!activePack || activePack.type !== HEAD_TO_HEAD_TYPE) {
+    if (!activePack || activePack.type !== HEAD_TO_HEAD_TYPE || showResultsScreen) {
       setPackIntro(null)
       return undefined
     }
@@ -348,7 +385,7 @@ function App() {
       clearTimeout(fadeTimer)
       clearTimeout(removeTimer)
     }
-  }, [activePack])
+  }, [activePack, showResultsScreen])
 
   // Fetches the active subset's movies/turn. Used both by the effect below
   // on subset change and by the banner's Retry action after a failure —
@@ -520,7 +557,7 @@ function App() {
     // the movie is one of activePack.movies).
     if (!activePack?.movies?.some((m) => m.id === movieId)) {
       api.markSkipped(movieId)
-      setMovies((prev) =>
+      applyMoviesPatch((prev) =>
         prev.map((m) => (m.id === movieId ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
       )
       return
@@ -553,7 +590,7 @@ function App() {
     // local `movies` state too rather than leaving the stale pre-skip rating
     // displayed until the next refetch.
     api.markSkipped(movieId)
-    setMovies((prev) =>
+    applyMoviesPatch((prev) =>
       prev.map((m) => (m.id === movieId ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
     )
   }
@@ -636,7 +673,7 @@ function App() {
     const lastMovie = activePack.movies[0]
     setAwaitingLastSkipConfirm(false)
     api.markSkipped(lastMovie.id)
-    setMovies((prev) =>
+    applyMoviesPatch((prev) =>
       prev.map((m) => (m.id === lastMovie.id ? { ...m, skipped: true, eloRating: 1000, timesRanked: 0 } : m))
     )
     setSkippedMovies([])
