@@ -527,6 +527,29 @@ exposed in the UI.
   make that movie briefly vanish from the live pool entirely (`loadAllMovies`
   concatenates `movies.json` with `suggested_movies` with no dedup of its
   own).
+- **Persistent exclusion list (#391):** because `data/movies.json` is
+  gitignored and gets regenerated (published-list source enrichment can
+  re-derive an entry from scratch, and a manual prune script can delete one
+  directly out of the file), a movie removed from the pool by hand has no
+  durable record anywhere that it should *stay* removed — the next
+  `enrich-sources.js` run (or a re-run of `enrich.js`) has no way to know it
+  was ever excluded and will happily re-add it. `data/excluded-movies.json`
+  is a git-tracked, hand-curated list (same category as `data/sources/
+  *.source.json` — curation input, not a generated artifact) of movies that
+  must never re-enter the pool: an array of `{tmdbId, title, year, reason}`
+  objects, `reason` free text rather than an enum for auditability (e.g.
+  "uncorroborated low-vote National Film Registry entry (home movie/student
+  film/raw footage)"). `scripts/excludedMovies.js`'s `isExcluded(tmdbId)`
+  loads it once and is checked at every point a movie can enter the pool:
+  `enrich-sources.js` and `enrich.js` skip a match on the list instead of
+  merging it in, `server/suggestionService.js`'s `addSuggestion` rejects
+  adding one (same shape as its existing "already in the pool" duplicate
+  check), and `scripts/graduateSuggestions.js`'s `graduate` command skips
+  graduating a pending suggestion that's on the list, as defense in depth in
+  case it was suggested before being added to the exclusion list. The file
+  starts empty (`[]`) — nothing populates it automatically; adding an entry
+  is a manual curation step, same spirit as deciding which published lists
+  to add (#351) above.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —

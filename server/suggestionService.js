@@ -1,5 +1,6 @@
 import { searchMovies } from '../scripts/tmdb.js'
 import { enrichMovieByTmdbId } from '../scripts/enrichMovie.js'
+import { isExcluded } from '../scripts/excludedMovies.js'
 import { addSuggestedMovie, getSuggestedMovies, removeSuggestedMovie } from './db.js'
 import { loadMovies } from './movieStore.js'
 
@@ -33,6 +34,12 @@ export async function addSuggestion(db, dataDir, apiKey, tmdbId, clientId) {
   const alreadyInPool = [...staticMovies, ...suggested].some((m) => m.tmdbId === tmdbId)
   if (alreadyInPool) {
     throw new Error('This movie is already in the pool')
+  }
+  // #391: a movie on the curated exclusion list (data/excluded-movies.json)
+  // was deliberately pruned and should never re-enter the pool, including
+  // via a fresh Search & Suggest addition.
+  if (isExcluded(tmdbId)) {
+    throw new Error('This movie has been excluded from the pool')
   }
 
   const enriched = await enrichMovieByTmdbId(apiKey, tmdbId)

@@ -117,17 +117,20 @@ From the repo root, after merging changes to `server/`:
 ```
 DROPLET_HOST=user@droplet ./server/deploy/deploy.sh
 ```
-This rsyncs `server/`, `src/lib/`, `scripts/`, and `data/sources/`, fixes
-ownership back to the `movie-ranking` service account (rsync otherwise
-preserves the deploying machine's local file owner), reinstalls
-dependencies, and restarts the systemd service. It does not touch `.env`,
-`data.db`, `data/movies.json`, or `data/.enrich-state.json` on the droplet
-(#383) — the droplet's own `data/movies.json` plus its `suggested_movies`
-table (server/db.js) is the live pool's source of truth, so a routine code
-deploy must not silently overwrite it with this machine's possibly-stale
-copy. `data/sources/*.source.json` IS synced (git-tracked curation input,
-not live pool state — see #385) so the scheduled enrichment timer below
-always sees the latest sources.
+This rsyncs `server/`, `src/lib/`, `scripts/`, `data/sources/`, and
+`data/excluded-movies.json`, fixes ownership back to the `movie-ranking`
+service account (rsync otherwise preserves the deploying machine's local
+file owner), reinstalls dependencies, and restarts the systemd service. It
+does not touch `.env`, `data.db`, `data/movies.json`, or
+`data/.enrich-state.json` on the droplet (#383) — the droplet's own
+`data/movies.json` plus its `suggested_movies` table (server/db.js) is the
+live pool's source of truth, so a routine code deploy must not silently
+overwrite it with this machine's possibly-stale copy. `data/sources/
+*.source.json` and `data/excluded-movies.json` ARE synced (git-tracked
+curation input, not live pool state — see #385, #391) so the scheduled
+enrichment timer below always sees the latest sources and exclusions, and
+the live Search & Suggest endpoint always rejects the latest exclusions
+too.
 
 ## Pulling pool data down for local curation
 

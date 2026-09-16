@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import { enrichMovieByTitleYear } from './enrichMovie.js'
 import { sourceIdFromFilename, upsertSourceMovie } from './mergeSourceMovie.js'
 import { hashFile, loadState, saveState } from './enrichState.js'
+import { isExcluded } from './excludedMovies.js'
 
 dotenv.config({ quiet: true })
 
@@ -101,6 +102,13 @@ async function main() {
       const movie = await enrichMovieByTitleYear(apiKey, entry.title, entry.year)
       if (!movie) {
         console.warn(`No TMDb match for "${entry.title}" (${entry.year}) — skipping`)
+        continue
+      }
+      // #391: a movie deliberately pruned out of the pool (see
+      // data/excluded-movies.json) must never get silently re-added by a
+      // regenerating source-enrichment run.
+      if (isExcluded(movie.tmdbId)) {
+        console.warn(`"${entry.title}" (${entry.year}) is on the exclusion list — skipping`)
         continue
       }
       const before = pool.length
