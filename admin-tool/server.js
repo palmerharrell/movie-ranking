@@ -1,11 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import express from 'express'
 import dotenv from 'dotenv'
 import { searchMovies } from '../scripts/tmdb.js'
 import { enrichMovieByTmdbId } from '../scripts/enrichMovie.js'
 import { isExcluded } from '../scripts/excludedMovies.js'
+
+const execFileAsync = promisify(execFile)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.join(__dirname, '..')
@@ -25,6 +29,41 @@ const DATA_DIR = process.env.DATA_DIR || path.join(REPO_ROOT, 'data')
 const MOVIES_FILE = path.join(DATA_DIR, 'movies.json')
 const EXCLUDED_FILE = path.join(DATA_DIR, 'excluded-movies.json')
 const PORT = process.env.ADMIN_TOOL_PORT || 4100
+
+// Same SSH alias documented in the "Droplet SSH access" setup — rsync
+// happily takes an SSH config Host alias in place of user@host, so no new
+// config is needed for the common case. REMOTE_DATA_DIR matches the path
+// server/deploy/deploy.sh and pull-pool-data.sh already assume.
+//
+// `env ?? default` (not `||`) deliberately distinguishes "unset, use the
+// default" from "explicitly set to an empty string" — the latter is almost
+// certainly a mistake (e.g. a template that forgot to fill in a value), and
+// with `||` it would silently fall through to the real droplet instead of
+// failing loudly. An empty-but-defined override fails fast at startup
+// rather than quietly pushing somewhere unintended.
+function requireNonEmptyEnv(name, fallback) {
+  const value = process.env[name]
+  if (value === undefined) return fallback
+  if (!value.trim()) {
+    throw new Error(`${name} is set but empty — unset it to use the default, or provide a real value.`)
+  }
+  return value
+}
+
+const DROPLET_HOST = requireNonEmptyEnv('DROPLET_HOST', 'movie-ranking-droplet')
+const REMOTE_DATA_DIR = requireNonEmptyEnv('REMOTE_DATA_DIR', '/opt/movie-ranking/data')
+
+// #399: pushes only the two files this tool itself edits — never the whole
+// data/ directory — so a push can't accidentally carry along unrelated
+// local-only content (e.g. data/letterboxd-export/). `-i` (itemize changes)
+// gives a human-readable diff-style line per file even under --dry-run, so
+// the preview step has something meaningful to show before a real push.
+function rsyncPushArgs(dryRun) {
+  const args = ['-az', '-i']
+  if (dryRun) args.push('--dry-run')
+  args.push(MOVIES_FILE, EXCLUDED_FILE, `${DROPLET_HOST}:${REMOTE_DATA_DIR}/`)
+  return args
+}
 
 // This tool edits data/movies.json + data/excluded-movies.json directly on
 // disk, exactly like scripts/graduateSuggestions.js and
@@ -149,6 +188,24 @@ app.post('/api/add', async (req, res) => {
     res.json(movie)
   } catch (err) {
     res.status(502).json({ error: err.message })
+  }
+})
+
+app.post('/api/push/preview', async (req, res) => {
+  try {
+    const { stdout } = await execFileAsync('rsync', rsyncPushArgs(true))
+    res.json({ output: stdout.trim(), changed: stdout.trim().length > 0 })
+  } catch (err) {
+    res.status(502).json({ error: err.stderr?.trim() || err.message })
+  }
+})
+
+app.post('/api/push/execute', async (req, res) => {
+  try {
+    const { stdout } = await execFileAsync('rsync', rsyncPushArgs(false))
+    res.json({ output: stdout.trim() })
+  } catch (err) {
+    res.status(502).json({ error: err.stderr?.trim() || err.message })
   }
 })
 

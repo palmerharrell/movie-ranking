@@ -582,11 +582,16 @@ exposed in the UI.
   deployed Search & Suggest feature (#243) uses, except it enriches and
   appends straight into local `data/movies.json` rather than the droplet's
   `suggested_movies` table, since this tool is owner-only and already
-  local-file-based like the exclude side. Like every other edit to these
-  two files, changes are local-only until pushed: commit
-  `data/excluded-movies.json` as usual, and push the updated
-  `data/movies.json` to the droplet via the same one-off `rsync` documented
-  in `server/deploy/README.md`.
+  local-file-based like the exclude side. Both stay local-only until pushed:
+  a **Push to Droplet** button (#399) runs an `rsync --dry-run` preview
+  (shown to the owner before anything is sent) and, on confirm, `rsync`s
+  just `data/movies.json` and `data/excluded-movies.json` — not the whole
+  `data/` directory, so a push can't carry along unrelated local-only
+  content — to the droplet over the `movie-ranking-droplet` SSH alias,
+  taking effect immediately (`server/movieStore.js` re-reads `movies.json`
+  fresh on every request, no restart needed). Committing
+  `data/excluded-movies.json` to git for the repo's own history is still a
+  separate, manual step independent of this push.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —

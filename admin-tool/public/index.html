@@ -84,6 +84,26 @@
     border-radius: 4px;
     font-size: 11px;
   }
+  .banner-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+  }
+  .banner-row .banner { flex: 1; padding: 0; border: none; background: none; }
+  .push-btn {
+    flex: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
 
   main {
     flex: 1;
@@ -278,6 +298,19 @@
     resize: vertical;
   }
   .reason-actions { display: flex; gap: 10px; }
+
+  .diff-box {
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
 </head>
 <body>
@@ -291,10 +324,12 @@
   </div>
 </header>
 
-<div class="banner">
-  Editing this machine's local copy only. Commit <code>data/excluded-movies.json</code> and push
-  <code>data/movies.json</code> to the droplet for changes to go live —
-  <code>rsync -az data/ user@droplet:/opt/movie-ranking/data/</code>.
+<div class="banner-row">
+  <div class="banner">
+    Editing this machine's local copy. Push to make it live — still commit
+    <code>data/excluded-movies.json</code> to git separately for the record.
+  </div>
+  <button class="push-btn" id="push-btn">Push to Droplet</button>
 </div>
 
 <main>
@@ -334,6 +369,19 @@
     <div class="reason-actions">
       <button class="btn btn-ghost" id="reason-cancel">Cancel</button>
       <button class="btn btn-accent" id="reason-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="reason-sheet" id="push-sheet">
+  <div class="reason-card">
+    <h2>Push to droplet</h2>
+    <div class="inline-msg" id="push-status">Checking what would change…</div>
+    <div class="diff-box" id="push-diff" hidden></div>
+    <div class="inline-msg error" id="push-error"></div>
+    <div class="reason-actions">
+      <button class="btn btn-ghost" id="push-cancel">Close</button>
+      <button class="btn btn-danger" id="push-confirm" disabled hidden>Push</button>
     </div>
   </div>
 </div>
@@ -564,6 +612,77 @@
       addMsg.textContent = 'Add failed.';
       btn.disabled = false;
       btn.textContent = 'Add to Pool';
+    }
+  });
+
+  // Push to droplet
+  const pushSheet = el('push-sheet');
+  const pushStatus = el('push-status');
+  const pushDiff = el('push-diff');
+  const pushError = el('push-error');
+  const pushConfirm = el('push-confirm');
+  const pushCancel = el('push-cancel');
+
+  function resetPushSheet() {
+    pushStatus.textContent = 'Checking what would change…';
+    pushDiff.hidden = true;
+    pushDiff.textContent = '';
+    pushError.textContent = '';
+    pushConfirm.hidden = true;
+    pushConfirm.disabled = true;
+    pushConfirm.textContent = 'Push';
+  }
+
+  async function openPushPreview() {
+    resetPushSheet();
+    pushSheet.classList.add('visible');
+    try {
+      const res = await fetch('/api/push/preview', { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) {
+        pushStatus.textContent = 'Preview failed.';
+        pushError.textContent = body.error || 'Could not reach the droplet.';
+        return;
+      }
+      if (!body.changed) {
+        pushStatus.textContent = 'No changes — the droplet already matches your local files.';
+        return;
+      }
+      pushStatus.textContent = 'This would change on the droplet:';
+      pushDiff.hidden = false;
+      pushDiff.textContent = body.output;
+      pushConfirm.hidden = false;
+      pushConfirm.disabled = false;
+    } catch (err) {
+      pushStatus.textContent = 'Preview failed.';
+      pushError.textContent = 'Could not reach the droplet.';
+    }
+  }
+
+  el('push-btn').addEventListener('click', openPushPreview);
+  pushCancel.addEventListener('click', () => pushSheet.classList.remove('visible'));
+
+  pushConfirm.addEventListener('click', async () => {
+    pushConfirm.disabled = true;
+    pushConfirm.textContent = 'Pushing…';
+    pushError.textContent = '';
+    try {
+      const res = await fetch('/api/push/execute', { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) {
+        pushError.textContent = body.error || 'Push failed.';
+        pushConfirm.disabled = false;
+        pushConfirm.textContent = 'Push';
+        return;
+      }
+      pushStatus.textContent = 'Pushed to the droplet.';
+      pushDiff.hidden = false;
+      pushDiff.textContent = body.output || '(no output)';
+      pushConfirm.hidden = true;
+    } catch (err) {
+      pushError.textContent = 'Push failed.';
+      pushConfirm.disabled = false;
+      pushConfirm.textContent = 'Push';
     }
   });
 
