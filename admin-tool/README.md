@@ -6,8 +6,9 @@ app, never shipped in the public GitHub Pages bundle, and reachable from
 your phone on the same Wi-Fi as this machine (#392).
 
 It reads and writes `../data/movies.json` and `../data/excluded-movies.json`
-directly on disk. It does **not** talk to the droplet — see **Getting
-changes live** below.
+directly on disk, and can push those two files straight to the droplet over
+SSH via the **Push to Droplet** button (#399) — see **Getting changes
+live** below.
 
 ## Run it
 
@@ -32,18 +33,28 @@ while you're actively curating, on your home network.
 
 ## Getting changes live
 
-Everything this tool does only touches your local working copy. To make it
-real for every visitor:
+Every add/exclude only touches your local working copy until you push:
 
-1. Commit `data/excluded-movies.json` (git-tracked) and open a PR as usual.
-2. Push the updated `data/movies.json` (gitignored, not part of the PR) to
-   the droplet — same one-off `rsync` used for graduated Search & Suggest
-   additions (see `server/deploy/README.md`):
-   ```
-   rsync -az data/ user@droplet:/opt/movie-ranking/data/
-   ```
+1. Click **Push to Droplet**. It first runs an `rsync --dry-run` and shows
+   you exactly what would change on the droplet — nothing is sent yet at
+   this point. If it says "no changes," you're already in sync (or there's
+   nothing to push).
+2. Review the preview, then click **Push** to actually send `movies.json`
+   and `excluded-movies.json` to the droplet's `data/` directory. This
+   takes effect immediately — `server/movieStore.js` re-reads `movies.json`
+   fresh on every request, no restart needed.
+3. Separately, still commit `data/excluded-movies.json` (git-tracked) and
+   open a PR as usual — the push above only updates the *droplet's* live
+   copy, not this repo's own history, so committing keeps the exclusion
+   list's audit trail intact.
+
+By default the push targets the `movie-ranking-droplet` SSH host alias (see
+the "Droplet SSH access" setup) and `/opt/movie-ranking/data`. Override with
+`DROPLET_HOST`/`REMOTE_DATA_DIR` env vars if your setup differs.
 
 If you haven't pulled the droplet's latest pool data recently, run
 `server/deploy/pull-pool-data.sh` first so you're not curating against a
 stale local copy — the tool's header shows when your local `movies.json`
-was last modified as a sanity check.
+was last modified as a sanity check, and the dry-run preview will also
+surface a stale-push risk (e.g. it looking like it would remove entries
+that were added live since your last pull).
