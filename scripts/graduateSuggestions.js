@@ -39,6 +39,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { upsertSourceMovie } from './mergeSourceMovie.js'
+import { isExcluded } from './excludedMovies.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const MOVIES_FILE = path.join(__dirname, '..', 'data', 'movies.json')
@@ -103,15 +104,29 @@ async function runGraduate(apiBaseUrl, apiToken) {
     return
   }
 
+  // #391: defense in depth — a suggestion normally can't be added in the
+  // first place once its tmdbId is excluded (see
+  // server/suggestionService.js's addSuggestion), but a suggestion could
+  // already be sitting pending from before it was added to the exclusion
+  // list, so skip it here too rather than folding it into movies.json.
+  const toGraduate = pending.filter((m) => !isExcluded(m.tmdbId))
+  const skipped = pending.filter((m) => isExcluded(m.tmdbId))
+
   let pool = loadLocalPool()
-  for (const movie of pending) {
+  for (const movie of toGraduate) {
     pool = upsertSourceMovie(pool, movie, SUGGESTION_SOURCE_ID)
   }
   fs.writeFileSync(MOVIES_FILE, JSON.stringify(pool, null, 2) + '\n')
 
-  console.log(`Folded ${pending.length} suggestion(s) into ${MOVIES_FILE}:`)
-  for (const m of pending) {
+  console.log(`Folded ${toGraduate.length} suggestion(s) into ${MOVIES_FILE}:`)
+  for (const m of toGraduate) {
     console.log(`  ${m.title} (${m.year}) — tmdbId ${m.tmdbId}`)
+  }
+  if (skipped.length > 0) {
+    console.log(`\nSkipped ${skipped.length} suggestion(s) on the exclusion list (not folded in):`)
+    for (const m of skipped) {
+      console.log(`  ${m.title} (${m.year}) — tmdbId ${m.tmdbId}`)
+    }
   }
   console.log(
     '\nNext: push data/movies.json to the droplet (see server/deploy/README.md), ' +

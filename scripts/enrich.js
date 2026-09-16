@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import { parseLetterboxdExport } from './parseLetterboxdExport.js'
 import { enrichMovieByTitleYear } from './enrichMovie.js'
 import { upsertPersonalMovie } from './mergeSourceMovie.js'
+import { isExcluded } from './excludedMovies.js'
 
 dotenv.config({ quiet: true })
 
@@ -45,6 +46,11 @@ async function main() {
     const fields = await enrichMovieByTitleYear(apiKey, movie.title, movie.year)
     if (!fields) {
       console.warn(`No TMDb match for "${movie.title}" (${movie.year}) — skipping (likely a TV series or other non-movie entry)`)
+    } else if (isExcluded(fields.tmdbId)) {
+      // #391: same exclusion-list check enrich-sources.js applies, for
+      // consistency — a personal-import re-run shouldn't re-add a
+      // deliberately pruned movie either.
+      console.warn(`"${movie.title}" (${movie.year}) is on the exclusion list — skipping`)
     } else {
       pool = upsertPersonalMovie(pool, fields, movie.key)
       count++
