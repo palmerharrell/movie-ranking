@@ -577,16 +577,26 @@ exposed in the UI.
   title with Decade/Genre filters (mobile-first, checkboxes per row), then
   bulk-exclude a selection with one shared reason, writing
   `data/excluded-movies.json` entries and removing the matching entries
-  from `data/movies.json` — and **add** — a TMDb search-and-confirm flow
+  from `data/movies.json` — **add** — a TMDb search-and-confirm flow
   reusing the same `scripts/tmdb.js`/`scripts/enrichMovie.js` helpers the
   deployed Search & Suggest feature (#243) uses, except it enriches and
   appends straight into local `data/movies.json` rather than the droplet's
   `suggested_movies` table, since this tool is owner-only and already
-  local-file-based like the exclude side. Like every other edit to these
-  two files, changes are local-only until pushed: commit
-  `data/excluded-movies.json` as usual, and push the updated
-  `data/movies.json` to the droplet via the same one-off `rsync` documented
-  in `server/deploy/README.md`.
+  local-file-based like the exclude side — and **undo** (#401): an
+  Excluded tab lists every `data/excluded-movies.json` entry with an
+  Un-exclude button that removes it from the list and re-adds the movie via
+  the same TMDb re-enrichment path Add uses (no data survives from before
+  the exclusion — TMDb is already the source of truth for every field, so
+  nothing meaningful is lost). All three stay local-only until pushed: a
+  **Push to Droplet** button (#399) runs an `rsync --dry-run` preview
+  (shown to the owner before anything is sent) and, on confirm, `rsync`s
+  just `data/movies.json` and `data/excluded-movies.json` — not the whole
+  `data/` directory, so a push can't carry along unrelated local-only
+  content — to the droplet over the `movie-ranking-droplet` SSH alias,
+  taking effect immediately (`server/movieStore.js` re-reads `movies.json`
+  fresh on every request, no restart needed). Committing
+  `data/excluded-movies.json` to git for the repo's own history is still a
+  separate, manual step independent of this push.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —
