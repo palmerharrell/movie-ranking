@@ -1,9 +1,16 @@
 # Pool Curator (owner-only, local network)
 
 A standalone tool for browsing the movie pool, permanently excluding
-movies, and adding new ones by TMDb search — separate from the deployed
-app, never shipped in the public GitHub Pages bundle, and reachable from
-your phone on the same Wi-Fi as this machine (#392).
+movies, adding new ones by TMDb search, and undoing an exclusion — separate
+from the deployed app, never shipped in the public GitHub Pages bundle, and
+reachable from your phone on the same Wi-Fi as this machine (#392, #401).
+
+The **Excluded** tab lists every entry in `data/excluded-movies.json`
+(title, year, reason) with an "Un-exclude" button per row — it removes the
+entry from the exclusion list and re-adds the movie to `data/movies.json`
+by re-enriching it from TMDb (the same lookup the Add tab uses). No data is
+carried over from before the exclusion, since TMDb is already the source of
+truth for every field.
 
 It reads and writes `../data/movies.json` and `../data/excluded-movies.json`
 directly on disk, and can push those two files straight to the droplet over

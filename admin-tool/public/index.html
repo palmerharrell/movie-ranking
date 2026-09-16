@@ -321,6 +321,7 @@
   <div class="tabs">
     <div class="tab active" data-view="pool">Pool</div>
     <div class="tab" data-view="add">Add</div>
+    <div class="tab" data-view="excluded">Excluded</div>
   </div>
 </header>
 
@@ -353,6 +354,11 @@
     </div>
     <div class="inline-msg" id="add-msg"></div>
     <div id="tmdb-results"></div>
+  </div>
+
+  <div id="excluded-view" class="add-view">
+    <div class="inline-msg" id="excluded-msg">Loading…</div>
+    <div id="excluded-list"></div>
   </div>
 </main>
 
@@ -537,6 +543,8 @@
     tab.classList.add('active');
     el('pool-view').classList.toggle('visible', tab.dataset.view === 'pool');
     el('add-view').classList.toggle('visible', tab.dataset.view === 'add');
+    el('excluded-view').classList.toggle('visible', tab.dataset.view === 'excluded');
+    if (tab.dataset.view === 'excluded') loadExcludedList();
   }));
 
   // Add view
@@ -683,6 +691,75 @@
       pushError.textContent = 'Push failed.';
       pushConfirm.disabled = false;
       pushConfirm.textContent = 'Push';
+    }
+  });
+
+  // Excluded view
+  const excludedList = el('excluded-list');
+  const excludedMsg = el('excluded-msg');
+
+  async function loadExcludedList() {
+    excludedMsg.textContent = 'Loading…';
+    excludedMsg.className = 'inline-msg';
+    excludedList.innerHTML = '';
+    try {
+      const res = await fetch('/api/excluded');
+      const entries = await res.json();
+      if (!res.ok) {
+        excludedMsg.className = 'inline-msg error';
+        excludedMsg.textContent = entries.error || 'Failed to load.';
+        return;
+      }
+      excludedMsg.textContent = entries.length ? '' : 'Nothing excluded.';
+      excludedList.innerHTML = entries.map((e) => `
+        <div class="candidate" data-id="${e.tmdbId}" data-title="${escapeHtml(e.title)}" data-year="${e.year || ''}">
+          <div class="movie-info">
+            <div class="movie-title">${escapeHtml(e.title)} <span style="color:var(--muted);font-weight:400">(${e.year || '—'})</span></div>
+            <div class="movie-meta">${escapeHtml(e.reason)}</div>
+          </div>
+          <button data-unexclude="${e.tmdbId}">Un-exclude</button>
+        </div>
+      `).join('');
+    } catch (err) {
+      excludedMsg.className = 'inline-msg error';
+      excludedMsg.textContent = 'Failed to load.';
+    }
+  }
+
+  excludedList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-unexclude]');
+    if (!btn) return;
+    const card = btn.closest('.candidate');
+    const tmdbId = Number(card.dataset.id);
+    const title = card.dataset.title;
+    const year = card.dataset.year ? Number(card.dataset.year) : null;
+    btn.disabled = true;
+    btn.textContent = 'Un-excluding…';
+    try {
+      const res = await fetch('/api/unexclude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tmdbId }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        excludedMsg.className = 'inline-msg error';
+        excludedMsg.textContent = body.error || 'Un-exclude failed.';
+        btn.disabled = false;
+        btn.textContent = 'Un-exclude';
+        return;
+      }
+      state.movies.unshift(body);
+      populateFilters();
+      applyFilters();
+      excludedMsg.className = 'inline-msg';
+      excludedMsg.textContent = `Un-excluded "${title}".`;
+      card.remove();
+    } catch (err) {
+      excludedMsg.className = 'inline-msg error';
+      excludedMsg.textContent = 'Un-exclude failed.';
+      btn.disabled = false;
+      btn.textContent = 'Un-exclude';
     }
   });
 
