@@ -86,29 +86,19 @@ function OutsideRow({ movie, rank }) {
   )
 }
 
-// `onBack`/`readOnly` support the read-only saved-snapshot view (#107, via
-// LoadRankingView). `scopeLabel` (e.g. "CHRISTOPHER NOLAN MOVIES") describes
-// what pool this ranking covers — shown alongside the "TOP N" heading in
-// both the live and read-only screen; a saved ranking's own custom name is
-// only shown in the Load Ranking picker list, not repeated here. `onShare`,
-// when given, shows a "Share" button in both the live and read-only footer
-// — it's an async () => Promise<void> that resolves and copies the share
-// link itself (App.jsx saves lazily on first Share if nothing's been saved
-// yet; LoadRankingView backfills a slug via api.shareRanking for a legacy
-// snapshot that predates sharing) — ResultsScreen only owns the
-// click-feedback state, not how the link is produced. `onRefine`/`onSave`/
-// `onStartOver` are live-only (hidden when `readOnly`).
-export function ResultsScreen({
-  movies,
-  onDismiss,
-  scopeLabel,
-  onBack,
-  onShare,
-  onRefine,
-  onSave,
-  onStartOver,
-  readOnly,
-}) {
+// `scopeLabel` (e.g. "CHRISTOPHER NOLAN MOVIES") describes what pool this
+// ranking covers — shown alongside the "TOP N" heading; a saved ranking's
+// own custom name is only shown in the Load Ranking picker list, not
+// repeated here. `onShare`, when given, shows a "Share" button — it's an
+// async () => Promise<void> that resolves and copies the share link itself
+// (App.jsx saves lazily on first Share if nothing's been saved yet) —
+// ResultsScreen only owns the click-feedback state, not how the link is
+// produced. This screen used to also support a read-only saved-snapshot
+// view for LoadRankingView (#107, via an `onBack`/`readOnly` pair), but
+// #379 replaced that with importing the snapshot into local state and
+// showing this same screen live instead — every render of it now has
+// `onRefine`/`onSave`/`onStartOver` available.
+export function ResultsScreen({ movies, onDismiss, scopeLabel, onShare, onRefine, onSave, onStartOver }) {
   const [shareState, setShareState] = useState('idle') // idle | pending | copied | error
   const sorted = sortMovies(movies)
   const topTen = sorted.slice(0, 10)
@@ -173,11 +163,6 @@ export function ResultsScreen({
         >
           ×
         </button>
-        {onBack && (
-          <button type="button" onClick={onBack} className="modal-back mt-1 text-xs shrink-0">
-            ← Back to list
-          </button>
-        )}
         {heading && (
           <div className="results-top-ten-row shrink-0">
             <p className="results-top-ten-heading">
@@ -228,35 +213,27 @@ export function ResultsScreen({
           )}
         </div>
 
-        {(onShare || !readOnly) && (
-          <div className="results-actions mt-4 flex flex-wrap shrink-0 items-center justify-end gap-2">
-            {onShare && (
-              <button
-                type="button"
-                onClick={handleShareClick}
-                disabled={shareState === 'pending'}
-                className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {shareLabel}
-              </button>
-            )}
-            {!readOnly && (
-              <button type="button" onClick={onRefine} className="modal-button-secondary text-sm">
-                Refine Ranking
-              </button>
-            )}
-            {!readOnly && (
-              <button type="button" onClick={onSave} className="modal-button-secondary text-sm">
-                Save
-              </button>
-            )}
-            {!readOnly && (
-              <button type="button" onClick={onStartOver} className="modal-button-danger text-sm">
-                Start Over
-              </button>
-            )}
-          </div>
-        )}
+        <div className="results-actions mt-4 flex flex-wrap shrink-0 items-center justify-end gap-2">
+          {onShare && (
+            <button
+              type="button"
+              onClick={handleShareClick}
+              disabled={shareState === 'pending'}
+              className="modal-button-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {shareLabel}
+            </button>
+          )}
+          <button type="button" onClick={onRefine} className="modal-button-secondary text-sm">
+            Refine Ranking
+          </button>
+          <button type="button" onClick={onSave} className="modal-button-secondary text-sm">
+            Save
+          </button>
+          <button type="button" onClick={onStartOver} className="modal-button-danger text-sm">
+            Start Over
+          </button>
+        </div>
       </div>
     </div>
   )

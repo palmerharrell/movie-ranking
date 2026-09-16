@@ -1,51 +1,41 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
-import { subsetLabel, subsetMoviesLabel } from '../lib/genreSubsets.js'
-import { buildShareUrl } from '../lib/shareLink.js'
-import { ResultsScreen } from './ResultsScreen.jsx'
+import { subsetLabel } from '../lib/genreSubsets.js'
 
 // Saved rankings are scoped to the subset they were saved from (#186
 // follow-up) and to whether the PG-13-and-under toggle (#193) was active, so
 // this only ever lists — and lets you load — snapshots that match the
 // currently active subset+toggle combination.
-export function LoadRankingView({ subset, pg13, onClose }) {
+//
+// #379: picking a snapshot here used to open a read-only view of it
+// (`ResultsScreen` with `readOnly`) — a deliberate #107 restriction against
+// mutating a historical snapshot. That restriction has been lifted: picking
+// one now imports its eloRating into local state and re-ranks it live, the
+// same "keep the rating, re-rank fresh" flow `ContinueRankingScreen.jsx`
+// already offers from the Start screen (`onSelect` is `App.jsx`'s
+// `handleLoadRanking`, which shares the same `api.continueSavedRanking`
+// import step `handleContinueRanking` uses). This view's own job shrinks to
+// just listing candidates and handing the pick off — the interactive
+// Results screen it lands on lives in `App.jsx`, not here.
+export function LoadRankingView({ subset, pg13, onSelect, onClose }) {
   const [rankings, setRankings] = useState(null)
-  const [selected, setSelected] = useState(null)
   const [error, setError] = useState(null)
+  const [loadingId, setLoadingId] = useState(null)
   const label = pg13 ? `${subsetLabel(subset)} (PG-13 & Under)` : subsetLabel(subset)
 
   useEffect(() => {
     api.getSavedRankings(subset, pg13).then(setRankings).catch((err) => setError(err.message))
   }, [subset, pg13])
 
-  function handleSelect(id) {
+  async function handleSelect(ranking) {
     setError(null)
-    api.getSavedRanking(id).then(setSelected).catch((err) => setError(err.message))
-  }
-
-  // A snapshot saved before sharing existed (#220) has no shareSlug yet —
-  // back-fill one on first click rather than up front for every listed
-  // snapshot, then reuse it on any later click within this same session.
-  async function handleShare() {
-    const shareSlug = selected.shareSlug ?? (await api.shareRanking(selected.id)).shareSlug
-    if (!selected.shareSlug) setSelected((prev) => ({ ...prev, shareSlug }))
-    await navigator.clipboard.writeText(buildShareUrl(shareSlug))
-  }
-
-  // A selected snapshot displays via the same tiered Results screen shown on
-  // live completion (#107) — read-only, with a "Back to list" link in place
-  // of the Save Ranking footer button.
-  if (selected) {
-    return (
-      <ResultsScreen
-        movies={selected.movies}
-        scopeLabel={subsetMoviesLabel(subset, pg13)}
-        onBack={() => setSelected(null)}
-        onDismiss={onClose}
-        onShare={handleShare}
-        readOnly
-      />
-    )
+    setLoadingId(ranking.id)
+    try {
+      await onSelect(ranking)
+    } catch (err) {
+      setError(err.message)
+      setLoadingId(null)
+    }
   }
 
   return (
@@ -78,8 +68,9 @@ export function LoadRankingView({ subset, pg13, onClose }) {
                   <li key={ranking.id}>
                     <button
                       type="button"
-                      onClick={() => handleSelect(ranking.id)}
-                      className="saved-ranking-row flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left"
+                      onClick={() => handleSelect(ranking)}
+                      disabled={loadingId !== null}
+                      className="saved-ranking-row flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="text-sm font-medium" style={{ color: 'var(--text-high)' }}>
                         {ranking.name}
@@ -88,7 +79,7 @@ export function LoadRankingView({ subset, pg13, onClose }) {
                         </span>
                       </span>
                       <span className="font-mono text-[11px]" style={{ color: 'var(--text-low)' }}>
-                        {new Date(ranking.createdAt).toLocaleDateString()}
+                        {loadingId === ranking.id ? '…' : new Date(ranking.createdAt).toLocaleDateString()}
                       </span>
                     </button>
                   </li>

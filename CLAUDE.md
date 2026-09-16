@@ -409,18 +409,27 @@ exposed in the UI.
   active subset or toggle (closing and reopening the dialog) shows that
   combination's own saves instead. Snapshots saved before this scoping
   existed have no `subset`/`pg13` and are excluded from every filtered list.
-  Listed by name/date/movie count; opening one displays it via the same
-  tiered Results screen shown on live completion (#107, `ResultsScreen.jsx`
-  reused by `LoadRankingView.jsx` with `readOnly` — Top 10 grid, 11-25 and
-  26-100 tiers, and anything outside the snapshot's top 100) — only the
-  movies that were actually part of that saved run, not the current full
-  pool — read-only (no Refine Ranking/Save/Start Over buttons; a "Back to
-  list" link replaces them), and it does not affect or restore live ranking
-  state.
+  Listed by name/date/movie count. Picking one is no longer a read-only view
+  (#379 lifted the earlier #107 restriction against mutating a historical
+  snapshot): `App.jsx`'s `handleLoadRanking` imports that snapshot's
+  eloRating into this browser's local state and resets `timesRanked` to 0
+  (`api.continueSavedRanking`, the same import step **Continue** uses from
+  the Start screen — see **UI layout**'s Start screen bullet), overwriting
+  whatever local progress already existed for that subset+pg13 combination.
+  Unlike Continue, it doesn't need to switch subset/pg13 — a listed snapshot
+  is already scoped to whichever subset+toggle combination is currently
+  active (see above) — so it fetches a fresh pack for that same scope
+  directly instead of relying on Continue's subset-switch effect. This
+  lands on a live pack for a fresh full re-rank pass, the same
+  "keep the rating, re-rank fresh" shape as **Refine Ranking** above; the
+  interactive Results screen (Refine Ranking/Save/Start Over/Share, same as
+  a live completion) only reappears once that pass is actually completed,
+  same as any other live run.
 - **Sharing (#220):** a "Share" button in `ResultsScreen.jsx`'s footer —
-  both the live post-completion screen and the read-only Load Ranking view —
-  copies a public link to that ranking's Top 10 to the clipboard. On the
-  live screen, if nothing has been saved for this run yet, clicking Share
+  the same live screen shown on completion, after loading a saved ranking
+  (see **Load** above), or after **Continue** (see **UI layout**'s Start
+  screen bullet) — copies a public link to that ranking's Top 10 to the
+  clipboard. If nothing has been saved for this run yet, clicking Share
   saves it first under a generated default name (same
   `generateRankingName` the Save button's prompt pre-fills) to get a share
   slug, then copies the link — so Share always works without requiring an
@@ -453,12 +462,17 @@ exposed in the UI.
     `posterUrl` — no `eloRating`/`timesRanked`/`ownerClientId`) — see
     `getSharedRankingTopTen` in `server/rankingService.js`.
   - **Legacy backfill:** a snapshot saved before this feature has no slug
-    yet. `LoadRankingView.jsx`'s Share button calls the authenticated
-    `POST /api/rankings/:id/share` the first time it's clicked on such a
-    snapshot, which lazily generates and persists one
-    (`ensureShareSlug`/`setShareSlug`) and reuses it on any later click in
-    that same session. The live post-completion screen never needs this
-    path, since a fresh save already has a slug.
+    yet. `POST /api/rankings/:id/share` (`ensureShareSlug`/`setShareSlug`,
+    `api.shareRanking`) lazily generates and persists one for such a
+    snapshot the first time it's needed. Before #379, `LoadRankingView.jsx`'s
+    own read-only Share button called this directly; now that loading a
+    snapshot lands on the normal live Results screen instead (see **Load**),
+    that screen's Share button goes through the same
+    save-first-if-unsaved path every other live completion uses, so this
+    endpoint currently has no frontend caller — kept as a documented,
+    tested (`server/rankingService.test.js`) backend capability rather than
+    removed, since deleting it would be an unrelated, unrequested API
+    change.
 
 ## Online deployment
 - **Frontend:** static build hosted on GitHub Pages. It never needs the TMDb key
@@ -575,8 +589,10 @@ exposed in the UI.
       **Saved rankings**) — composable with each other
     - `GET /api/rankings/:id` — a saved snapshot's movies (static metadata +
       snapshot-time `eloRating`, limited to the movies that were part of
-      that save), sorted descending, for read-only display; also includes
-      `shareSlug` (`null` if not yet assigned)
+      that save), sorted descending; used both to display a snapshot and,
+      via `api.continueSavedRanking` (#379), to import its ratings into
+      local state for Continue/Load Ranking. Also includes `shareSlug`
+      (`null` if not yet assigned)
     - `POST /api/rankings/:id/share` (#220) — lazily assigns and persists a
       share slug for a saved ranking that doesn't have one yet (a no-op,
       returning the existing slug, if it already does); see **Sharing**
@@ -648,8 +664,7 @@ the layout around.
   `subset` column existed (#186) are excluded, since there's no pool to
   resume into without one. `StartScreen.jsx` itself checks
   `api.getSavedRankings()` on mount and keeps the Continue button disabled
-  until at least one such resumable snapshot exists anywhere. Picking a saved
-  ranking here isn't the read-only view `LoadRankingView.jsx` shows —
+  until at least one such resumable snapshot exists anywhere.
   `handleContinueRanking`/`api.continueSavedRanking` imports that snapshot's
   own eloRating for each of its movies into this browser's local state
   (`localRankingStore.js`'s `loadSnapshotForContinue`, overwriting whatever
@@ -657,7 +672,15 @@ the layout around.
   0, then switches to that snapshot's own subset/pg13 and enters the app —
   the same "keep the rating, re-rank fresh" shape as **Refine Ranking**
   below, just seeded from the snapshot instead of whatever's currently
-  active. Both sub-screens have a ← Back control returning to the Start
+  active. `LoadRankingView.jsx`'s own in-app "Load Ranking" entry point
+  (#379, see **Saved rankings**'s **Load** bullet) shares this same
+  `api.continueSavedRanking` import step rather than the read-only view it
+  used to show — since its own list is already scoped to the
+  currently-active subset+toggle, it skips the subset/pg13 switch and
+  fetches a fresh pack for that scope directly instead of relying on this
+  effect. Neither entry point warns before overwriting whatever local
+  progress already existed for the target subset+pg13 — there's no
+  existing confirmation step here to mirror. Both sub-screens have a ← Back control returning to the Start
   screen.
 - **Left panel:** full ranked list of every movie (poster thumbnail + title + year),
   sorted by eloRating. Header reads "\<Subset\> Rankings" (#316,

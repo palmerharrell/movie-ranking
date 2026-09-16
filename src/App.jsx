@@ -731,6 +731,43 @@ function App() {
     setScreen('app')
   }
 
+  // "Load Ranking" from the in-app ☰ menu (#379) — LoadRankingView only ever
+  // lists snapshots scoped to the *currently active* subset+pg13 (unlike
+  // Continue's unscoped list above), so this shares handleContinueRanking's
+  // import step (api.continueSavedRanking) but not its subset/pg13/screen
+  // switch, since those are already correct. Switching to the same subset/
+  // pg13 values wouldn't retrigger the subset-switch effect (its dependency
+  // array wouldn't change), so this fetches the fresh movies/turn directly
+  // instead — the same reset-then-refetch shape handleRefineRanking above
+  // uses, just seeded from the snapshot's ratings instead of whatever's
+  // currently active locally. Like Refine, this lands on a live pack for a
+  // fresh full pass rather than immediately reopening the Results screen —
+  // the import resets timesRanked to 0, so noteMoviesUpdate's own
+  // fully-ranked check naturally won't fire again until that pass completes.
+  // Left to throw on failure — LoadRankingView's own handler shows the error
+  // inline and keeps the list open rather than dismissing it.
+  async function handleLoadRanking(ranking) {
+    await api.continueSavedRanking(ranking.id)
+    setShowLoadView(false)
+    setShowResultsScreen(false)
+    setResultsShareSlug(null)
+    setSkippedMovies([])
+    setAwaitingLastSkipConfirm(false)
+    wasFullyRanked.current = false
+    try {
+      const [updatedMovies, nextTurn] = await Promise.all([
+        api.getMovies({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+        api.getNextTurn({ family: isFamily, popular: isPopular, genre: activeGenre, pg13: effectivePg13 }),
+      ])
+      noteMoviesUpdate(updatedMovies)
+      setTurn(nextTurn)
+    } catch (err) {
+      setMovies(null)
+      setTurn(null)
+      setError(err.message)
+    }
+  }
+
   // Hot (top-ranked) -> cold (bottom-ranked) gradient colors (#352), keyed
   // by movie id so the Rankings panel and pack tiles color the same movie
   // identically. Scoped to the same non-skipped pool the Rankings panel
@@ -1051,7 +1088,12 @@ function App() {
         />
       )}
       {showLoadView && (
-        <LoadRankingView subset={subset} pg13={effectivePg13} onClose={() => setShowLoadView(false)} />
+        <LoadRankingView
+          subset={subset}
+          pg13={effectivePg13}
+          onSelect={handleLoadRanking}
+          onClose={() => setShowLoadView(false)}
+        />
       )}
       {showSearchSuggest && (
         <SearchSuggestModal
