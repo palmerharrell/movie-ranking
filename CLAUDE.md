@@ -564,6 +564,29 @@ exposed in the UI.
   starts empty (`[]`) — nothing populates it automatically; adding an entry
   is a manual curation step, same spirit as deciding which published lists
   to add (#351) above.
+- **Owner curation tool (#392, `admin-tool/`):** a standalone, local-network-only
+  Express app (own `package.json`, no build step, plain HTML/JS frontend) —
+  deliberately separate from both the deployed backend (`server/`, whose
+  shared `API_TOKEN` is baked into the public bundle and isn't a real
+  secret from anyone who opens dev tools) and the public frontend, since a
+  "permanently remove this movie for everyone" action can't be reachable by
+  every visitor. Run with `cd admin-tool && npm start`, it binds
+  `0.0.0.0:4100` (no auth — trusted-LAN-only by design) so it's reachable
+  from a phone on the same Wi-Fi, not just `localhost`. It's the interface
+  for both sides of local curation: **browse/exclude** — search the pool by
+  title with Decade/Genre filters (mobile-first, checkboxes per row), then
+  bulk-exclude a selection with one shared reason, writing
+  `data/excluded-movies.json` entries and removing the matching entries
+  from `data/movies.json` — and **add** — a TMDb search-and-confirm flow
+  reusing the same `scripts/tmdb.js`/`scripts/enrichMovie.js` helpers the
+  deployed Search & Suggest feature (#243) uses, except it enriches and
+  appends straight into local `data/movies.json` rather than the droplet's
+  `suggested_movies` table, since this tool is owner-only and already
+  local-file-based like the exclude side. Like every other edit to these
+  two files, changes are local-only until pushed: commit
+  `data/excluded-movies.json` as usual, and push the updated
+  `data/movies.json` to the droplet via the same one-off `rsync` documented
+  in `server/deploy/README.md`.
 - **Backend:** a small Node (Express or Fastify) API on the existing DigitalOcean
   droplet, whose only job is persisting completed saved-ranking snapshots
   across sessions and devices, plus serving the pool's static metadata —

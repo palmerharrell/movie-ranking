@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pool Curator</title>
+<style>
+  :root {
+    --bg: #10151a;
+    --surface: #171e25;
+    --surface-2: #1e2731;
+    --border: #2b3742;
+    --text: #e7ecf0;
+    --muted: #8b98a3;
+    --accent: #35d6c4;
+    --accent-dim: #1c3a37;
+    --danger: #e2604f;
+    --danger-dim: #3a2320;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  h1 {
+    margin: 0 0 2px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .status-line {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 0;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 0;
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .tab.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .banner {
+    font-size: 11.5px;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    line-height: 1.4;
+  }
+  .banner code {
+    background: var(--bg);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 90px;
+  }
+
+  .filters {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  input[type="text"], select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    min-height: 44px;
+  }
+  .select-row {
+    display: flex;
+    gap: 8px;
+  }
+  .select-row select { flex: 1; min-width: 0; }
+
+  .row-count {
+    padding: 8px 16px 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  ul.movie-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px;
+  }
+  .movie-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .movie-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex: none;
+    accent-color: var(--accent);
+  }
+  .poster {
+    width: 40px;
+    height: 60px;
+    flex: none;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--surface-2);
+  }
+  .movie-info { min-width: 0; flex: 1; }
+  .movie-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .movie-meta {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .show-more {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 12px 16px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .action-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: none;
+    gap: 10px;
+  }
+  .action-bar.visible { display: flex; }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    min-height: 44px;
+  }
+  .btn-danger { background: var(--danger); color: #1c0d0a; }
+  .btn-ghost { background: var(--surface-2); color: var(--muted); flex: 0 0 90px; }
+  .btn-accent { background: var(--accent); color: #072421; }
+
+  .add-view { padding: 16px; display: none; flex-direction: column; gap: 10px; }
+  .add-view.visible { display: flex; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input { flex: 1; }
+  .search-row button {
+    flex: none;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #072421;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .candidate {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  .candidate .movie-info { flex: 1; }
+  .candidate button {
+    flex: none;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .candidate button:disabled { opacity: 0.5; }
+  .inline-msg { font-size: 13px; color: var(--muted); }
+  .inline-msg.error { color: var(--danger); }
+
+  #pool-view { display: none; flex-direction: column; }
+  #pool-view.visible { display: flex; }
+
+  .reason-sheet {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: flex-end;
+    z-index: 20;
+  }
+  .reason-sheet.visible { display: flex; }
+  .reason-card {
+    width: 100%;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .reason-card h2 { margin: 0; font-size: 16px; }
+  .reason-card textarea {
+    width: 100%;
+    min-height: 70px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .reason-actions { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pool Curator</h1>
+  <div class="status-line" id="status-line">Loading pool…</div>
+  <div class="tabs">
+    <div class="tab active" data-view="pool">Pool</div>
+    <div class="tab" data-view="add">Add</div>
+  </div>
+</header>
+
+<div class="banner">
+  Editing this machine's local copy only. Commit <code>data/excluded-movies.json</code> and push
+  <code>data/movies.json</code> to the droplet for changes to go live —
+  <code>rsync -az data/ user@droplet:/opt/movie-ranking/data/</code>.
+</div>
+
+<main>
+  <div id="pool-view" class="visible">
+    <div class="filters">
+      <input type="text" id="search-input" placeholder="Search title…" autocomplete="off" />
+      <div class="select-row">
+        <select id="decade-select"><option value="">All decades</option></select>
+        <select id="genre-select"><option value="">All genres</option></select>
+      </div>
+    </div>
+    <div class="row-count" id="row-count"></div>
+    <ul class="movie-list" id="movie-list"></ul>
+    <button class="show-more" id="show-more" hidden>Show more</button>
+  </div>
+
+  <div id="add-view" class="add-view">
+    <div class="search-row">
+      <input type="text" id="tmdb-search-input" placeholder="Search TMDb by title…" autocomplete="off" />
+      <button id="tmdb-search-btn">Search</button>
+    </div>
+    <div class="inline-msg" id="add-msg"></div>
+    <div id="tmdb-results"></div>
+  </div>
+</main>
+
+<div class="action-bar" id="action-bar">
+  <button class="btn btn-ghost" id="clear-selection">Clear</button>
+  <button class="btn btn-danger" id="exclude-selected">Exclude <span id="selected-count">0</span></button>
+</div>
+
+<div class="reason-sheet" id="reason-sheet">
+  <div class="reason-card">
+    <h2>Why exclude this?</h2>
+    <textarea id="reason-text" placeholder="e.g. uncorroborated low-vote National Film Registry entry"></textarea>
+    <div class="inline-msg error" id="reason-error"></div>
+    <div class="reason-actions">
+      <button class="btn btn-ghost" id="reason-cancel">Cancel</button>
+      <button class="btn btn-accent" id="reason-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const state = {
+    movies: [],
+    filtered: [],
+    selected: new Set(),
+    renderLimit: 200,
+  };
+
+  const el = (id) => document.getElementById(id);
+  const searchInput = el('search-input');
+  const decadeSelect = el('decade-select');
+  const genreSelect = el('genre-select');
+  const movieList = el('movie-list');
+  const rowCount = el('row-count');
+  const showMoreBtn = el('show-more');
+  const actionBar = el('action-bar');
+  const selectedCountEl = el('selected-count');
+  const statusLine = el('status-line');
+
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function loadData() {
+    const [movies, status] = await Promise.all([
+      fetch('/api/movies').then((r) => r.json()),
+      fetch('/api/status').then((r) => r.json()),
+    ]);
+    state.movies = movies;
+    populateFilters();
+    applyFilters();
+    const when = status.moviesJsonModifiedAt ? new Date(status.moviesJsonModifiedAt).toLocaleString() : 'unknown';
+    statusLine.textContent = `${status.movieCount} movies · movies.json updated ${when}`;
+  }
+
+  function populateFilters() {
+    const decades = [...new Set(state.movies.map((m) => m.decade).filter(Boolean))].sort().reverse();
+    const genres = [...new Set(state.movies.flatMap((m) => m.genres || []))].sort();
+    const prevDecade = decadeSelect.value;
+    const prevGenre = genreSelect.value;
+    decadeSelect.innerHTML = '<option value="">All decades</option>' +
+      decades.map((d) => `<option value="${d}">${d}</option>`).join('');
+    genreSelect.innerHTML = '<option value="">All genres</option>' +
+      genres.map((g) => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    decadeSelect.value = prevDecade;
+    genreSelect.value = prevGenre;
+  }
+
+  function applyFilters() {
+    const q = searchInput.value.trim().toLowerCase();
+    const decade = decadeSelect.value;
+    const genre = genreSelect.value;
+    state.filtered = state.movies.filter((m) => {
+      if (q && !m.title.toLowerCase().includes(q)) return false;
+      if (decade && m.decade !== decade) return false;
+      if (genre && !(m.genres || []).includes(genre)) return false;
+      return true;
+    });
+    state.renderLimit = 200;
+    renderList();
+  }
+
+  function renderList() {
+    const items = state.filtered.slice(0, state.renderLimit);
+    rowCount.textContent = `${state.filtered.length} match${state.filtered.length === 1 ? '' : 'es'}`;
+    movieList.innerHTML = items.map((m) => `
+      <li class="movie-row" data-id="${m.tmdbId}">
+        <input type="checkbox" data-id="${m.tmdbId}" ${state.selected.has(m.tmdbId) ? 'checked' : ''} />
+        <img class="poster" src="${m.posterUrl || ''}" alt="" loading="lazy" />
+        <div class="movie-info">
+          <div class="movie-title">${escapeHtml(m.title)} <span style="color:var(--muted);font-weight:400">(${m.year || '—'})</span></div>
+          <div class="movie-meta">${escapeHtml(m.director || '')}${m.director && m.genres?.length ? ' · ' : ''}${escapeHtml((m.genres || []).join(', '))}</div>
+        </div>
+      </li>
+    `).join('');
+    showMoreBtn.hidden = state.filtered.length <= state.renderLimit;
+  }
+
+  movieList.addEventListener('change', (e) => {
+    if (e.target.matches('input[type="checkbox"]')) {
+      const id = Number(e.target.dataset.id);
+      if (e.target.checked) state.selected.add(id);
+      else state.selected.delete(id);
+      updateActionBar();
+    }
+  });
+
+  function updateActionBar() {
+    selectedCountEl.textContent = state.selected.size;
+    actionBar.classList.toggle('visible', state.selected.size > 0);
+  }
+
+  el('clear-selection').addEventListener('click', () => {
+    state.selected.clear();
+    renderList();
+    updateActionBar();
+  });
+
+  showMoreBtn.addEventListener('click', () => {
+    state.renderLimit += 200;
+    renderList();
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+  decadeSelect.addEventListener('change', applyFilters);
+  genreSelect.addEventListener('change', applyFilters);
+
+  // Exclude flow
+  const reasonSheet = el('reason-sheet');
+  const reasonText = el('reason-text');
+  const reasonError = el('reason-error');
+
+  el('exclude-selected').addEventListener('click', () => {
+    reasonText.value = '';
+    reasonError.textContent = '';
+    reasonSheet.classList.add('visible');
+  });
+  el('reason-cancel').addEventListener('click', () => reasonSheet.classList.remove('visible'));
+
+  el('reason-confirm').addEventListener('click', async () => {
+    const reason = reasonText.value.trim();
+    if (!reason) {
+      reasonError.textContent = 'A reason is required.';
+      return;
+    }
+    const tmdbIds = [...state.selected];
+    const res = await fetch('/api/exclude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tmdbIds, reason }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      reasonError.textContent = body.error || 'Failed to exclude.';
+      return;
+    }
+    state.movies = state.movies.filter((m) => !tmdbIds.includes(m.tmdbId));
+    state.selected.clear();
+    applyFilters();
+    updateActionBar();
+    reasonSheet.classList.remove('visible');
+  });
+
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach((tab) => tab.addEventListener('click', () => {
+    tabs.forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+    el('pool-view').classList.toggle('visible', tab.dataset.view === 'pool');
+    el('add-view').classList.toggle('visible', tab.dataset.view === 'add');
+  }));
+
+  // Add view
+  const tmdbInput = el('tmdb-search-input');
+  const tmdbResults = el('tmdb-results');
+  const addMsg = el('add-msg');
+
+  async function runTmdbSearch() {
+    const q = tmdbInput.value.trim();
+    if (!q) return;
+    addMsg.className = 'inline-msg';
+    addMsg.textContent = 'Searching…';
+    tmdbResults.innerHTML = '';
+    try {
+      const res = await fetch('/api/search-tmdb?q=' + encodeURIComponent(q));
+      const body = await res.json();
+      if (!res.ok) {
+        addMsg.className = 'inline-msg error';
+        addMsg.textContent = body.error || 'Search failed.';
+        return;
+      }
+      addMsg.textContent = body.length ? '' : 'No results.';
+      tmdbResults.innerHTML = body.map((c) => `
+        <div class="candidate" data-id="${c.tmdbId}" data-title="${escapeHtml(c.title)}" data-year="${c.year || ''}">
+          <img class="poster" src="${c.posterUrl || ''}" alt="" />
+          <div class="movie-info">
+            <div class="movie-title">${escapeHtml(c.title)}</div>
+            <div class="movie-meta">${c.year || '—'}</div>
+          </div>
+          <button data-add="${c.tmdbId}">Add to Pool</button>
+        </div>
+      `).join('');
+    } catch (err) {
+      addMsg.className = 'inline-msg error';
+      addMsg.textContent = 'Search failed.';
+    }
+  }
+
+  el('tmdb-search-btn').addEventListener('click', runTmdbSearch);
+  tmdbInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runTmdbSearch(); });
+
+  tmdbResults.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-add]');
+    if (!btn) return;
+    const card = btn.closest('.candidate');
+    const tmdbId = Number(card.dataset.id);
+    const title = card.dataset.title;
+    const year = card.dataset.year ? Number(card.dataset.year) : null;
+    btn.disabled = true;
+    btn.textContent = 'Adding…';
+    try {
+      const res = await fetch('/api/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tmdbId, title, year }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        addMsg.className = 'inline-msg error';
+        addMsg.textContent = body.error || 'Add failed.';
+        btn.disabled = false;
+        btn.textContent = 'Add to Pool';
+        return;
+      }
+      state.movies.unshift(body);
+      populateFilters();
+      applyFilters();
+      addMsg.className = 'inline-msg';
+      addMsg.textContent = `Added "${body.title}" to the pool.`;
+      card.remove();
+    } catch (err) {
+      addMsg.className = 'inline-msg error';
+      addMsg.textContent = 'Add failed.';
+      btn.disabled = false;
+      btn.textContent = 'Add to Pool';
+    }
+  });
+
+  loadData();
+})();
+</script>
+</body>
+</html>
