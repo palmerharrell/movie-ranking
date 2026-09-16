@@ -40,8 +40,8 @@ function isBritish(movie) {
   return (movie.productionCountries || []).includes('GB')
 }
 
-// Each entry's `genres`/`language`/`keyword` fields double as the subset's
-// own defining attribute(s) — used both to build `matches` below and (via
+// Each entry's `genres`/`keyword` fields double as the subset's own defining
+// attribute(s) — used both to build `matches` below and (via
 // `genreSubsetExclusions`) to tell categoryGenerator.js which attribute
 // value(s) would be tautological to build a category on while this subset
 // is already active (#160), e.g. no "Science Fiction Movies" category while
@@ -64,9 +64,6 @@ export const GENRE_SUBSETS = [
   { id: 'animation', label: 'Animation', genres: ['Animation'] },
   { id: 'thriller', label: 'Thrillers', genres: ['Thriller'] },
   { id: 'crime', label: 'Crime', genres: ['Crime'] },
-  { id: 'french', label: 'French', language: 'fr' },
-  { id: 'spanish', label: 'Spanish', language: 'es' },
-  { id: 'italian', label: 'Italian', language: 'it' },
   { id: 'british', label: 'British', matches: isBritish, country: 'GB' },
   // The only subset that includes Marvel/DC movies (#181) — every other
   // subset below excludes them via selectGenreSubset/selectPopular (#180).
@@ -76,13 +73,8 @@ export const GENRE_SUBSETS = [
   { id: 'comicbook', label: 'Comic Book', matches: isComicBook, keyword: 'superhero' },
 ].map((config) => ({
   ...config,
-  matches:
-    config.matches ??
-    ((m) =>
-      config.genres ? hasAllGenres(m, config.genres) : m.originalLanguage === config.language),
+  matches: config.matches ?? ((m) => hasAllGenres(m, config.genres)),
 }))
-
-export const LANGUAGE_SUBSET_IDS = ['french', 'spanish', 'italian']
 
 // Directors, unlike every entry in GENRE_SUBSETS, aren't a fixed curated
 // list — which directors qualify depends on who's actually prolific in the
@@ -214,7 +206,6 @@ export function genreSubsetExclusions(subsetId) {
   if (!config) return []
   const exclusions = []
   if (config.genres) exclusions.push(...config.genres.map((genre) => ({ type: 'genre', value: genre })))
-  if (config.language) exclusions.push({ type: 'language', value: config.language })
   if (config.keyword) exclusions.push({ type: 'keyword', value: config.keyword })
   // No 'country' attribute type exists in categoryGenerator.js yet, so this
   // is inert today — kept so British doesn't silently reintroduce the #160
