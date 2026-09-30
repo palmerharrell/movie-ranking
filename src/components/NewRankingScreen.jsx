@@ -1,15 +1,13 @@
-import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS } from '../lib/genreSubsets.js'
+import { GENRE_SUBSETS } from '../lib/genreSubsets.js'
 
 const CURATED_SUBSETS = [{ id: 'popular', label: 'Popular' }]
 const FAMILY_SUBSET = { id: 'family', label: 'Family' }
 
 // Same grouping SubsetPicker.jsx's dropdown uses (Curated Lists / Genres /
-// Language / Directors / Not Recommended), just laid out as a full-screen
-// list rather than a small dropdown — this is "Start a New Ranking" from the
-// Start screen (#361): picking any option here starts ranking that subset,
-// exactly like picking it from the banner's own subset pill later would.
-const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter((g) => !LANGUAGE_SUBSET_IDS.includes(g.id))
-const LANGUAGE_SUBSETS = GENRE_SUBSETS.filter((g) => LANGUAGE_SUBSET_IDS.includes(g.id))
+// Directors / Not Recommended), just laid out as a full-screen list rather
+// than a small dropdown — this is "Start a New Ranking" from the Start
+// screen (#361): picking any option here starts ranking that subset, exactly
+// like picking it from the banner's own subset pill later would.
 
 function SubsetRow({ id, label, onPick }) {
   return (
@@ -35,11 +33,7 @@ export function NewRankingScreen({ allMoviesCount, directorSubsets, onPick, onBa
         ))}
         <div className="subset-dropdown-group-label">Genres</div>
         <SubsetRow id={FAMILY_SUBSET.id} label={FAMILY_SUBSET.label} onPick={onPick} />
-        {GENRE_ONLY_SUBSETS.map((s) => (
-          <SubsetRow key={s.id} id={s.id} label={s.label} onPick={onPick} />
-        ))}
-        <div className="subset-dropdown-group-label">Language</div>
-        {LANGUAGE_SUBSETS.map((s) => (
+        {GENRE_SUBSETS.map((s) => (
           <SubsetRow key={s.id} id={s.id} label={s.label} onPick={onPick} />
         ))}
         {directorSubsets.length > 0 && (

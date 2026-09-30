@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { GENRE_SUBSETS, LANGUAGE_SUBSET_IDS, subsetLabel } from '../lib/genreSubsets.js'
+import { GENRE_SUBSETS, subsetLabel } from '../lib/genreSubsets.js'
 import { useFitText } from '../lib/useFitText.js'
 
 const CURATED_SUBSETS = [{ id: 'popular', label: 'Popular' }]
@@ -8,11 +8,9 @@ const CURATED_SUBSETS = [{ id: 'popular', label: 'Popular' }]
 // #183 it's grouped with the other genre-style subsets in the picker.
 const FAMILY_SUBSET = { id: 'family', label: 'Family' }
 
-// British is TMDb production-country based rather than genre/language, but
-// per #183 it's grouped with the genre subsets in the picker too — there's
-// no dedicated "Country" group left once it moves.
-const GENRE_ONLY_SUBSETS = GENRE_SUBSETS.filter((g) => !LANGUAGE_SUBSET_IDS.includes(g.id))
-const LANGUAGE_SUBSETS = GENRE_SUBSETS.filter((g) => LANGUAGE_SUBSET_IDS.includes(g.id))
+// British is TMDb production-country based rather than genre, but per #183
+// it's grouped with the genre subsets in the picker too — there's no
+// dedicated "Country" group left once it moves.
 
 function SubsetOption({ id, label, active, onPick }) {
   return (
@@ -98,11 +96,7 @@ export function SubsetPicker({ subset, onChange, allMoviesCount, directorSubsets
               active={subset === FAMILY_SUBSET.id}
               onPick={pick}
             />
-            {GENRE_ONLY_SUBSETS.map((s) => (
-              <SubsetOption key={s.id} id={s.id} label={s.label} active={subset === s.id} onPick={pick} />
-            ))}
-            <div className="subset-dropdown-group-label">Language</div>
-            {LANGUAGE_SUBSETS.map((s) => (
+            {GENRE_SUBSETS.map((s) => (
               <SubsetOption key={s.id} id={s.id} label={s.label} active={subset === s.id} onPick={pick} />
             ))}
             {directorSubsets.length > 0 && (
